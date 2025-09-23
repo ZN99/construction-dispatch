@@ -91,7 +91,11 @@ def dashboard(request):
 
 def project_list(request):
     """案件一覧表示"""
-    projects = Project.objects.all()
+    # パフォーマンス最適化：関連データを事前取得
+    projects = Project.objects.select_related().prefetch_related(
+        'progress_steps',
+        'progress_steps__template'
+    )
 
     # フィルタリング
     order_status = request.GET.get('order_status')
@@ -116,8 +120,8 @@ def project_list(request):
             Q(project_manager__icontains=search_query)
         )
 
-    # ページネーション
-    paginator = Paginator(projects, 20)
+    # ページネーション（50件ずつ表示に変更してパフォーマンス向上）
+    paginator = Paginator(projects, 50)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -749,7 +753,16 @@ def project_delete(request, pk):
 def project_api_list(request):
     """DataTables用API"""
     if request.method == 'GET':
-        projects = Project.objects.all()
+        # パフォーマンス最適化：関連データを事前取得し、必要な列のみ選択
+        projects = Project.objects.select_related().prefetch_related(
+            'progress_steps',
+            'progress_steps__template'
+        ).only(
+            'id', 'management_no', 'site_name', 'site_address', 'work_type',
+            'order_status', 'contractor_name', 'project_manager',
+            'estimate_amount', 'billing_amount', 'work_start_date', 'work_end_date',
+            'created_at', 'updated_at'
+        )
 
         # DataTables検索
         search_value = request.GET.get('search[value]', '')

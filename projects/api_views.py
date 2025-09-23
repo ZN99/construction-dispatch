@@ -55,8 +55,13 @@ def add_survey_step(request, project_id):
     try:
         project = get_object_or_404(OrderProject, id=project_id)
 
-        # 既にsurvey_requiredがTrueの場合は何もしない
-        if project.survey_required:
+        # 既存の現地調査ステップがあるかチェック
+        existing_survey_step = ProjectProgressStep.objects.filter(
+            project=project,
+            template__name="現地調査"
+        ).exists()
+
+        if existing_survey_step:
             return JsonResponse({
                 "success": False,
                 "error": "現地調査は既に設定されています"
