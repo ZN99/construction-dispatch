@@ -25,25 +25,25 @@ for pt_data in project_types:
     else:
         print(f'工種 "{project_type.name}" は既に存在します')
 
-# サンプル顧客データ
+# サンプル顧客データ（架空の企業）
 customers = [
     {
-        "name": "田中建設",
+        "name": "架空建設株式会社",
         "phone": "03-1234-5678",
-        "email": "tanaka@example.com",
-        "address": "東京都新宿区西新宿1-1-1",
+        "email": "info@sample-construction.example.com",
+        "address": "東京都○○区サンプル町1-1-1",
     },
     {
-        "name": "佐藤工務店",
+        "name": "テスト工務店",
         "phone": "06-9876-5432",
-        "email": "sato@example.com",
-        "address": "大阪府大阪市中央区難波1-1-1",
+        "email": "contact@test-koumuten.example.com",
+        "address": "大阪府○○市テスト区1-1-1",
     },
     {
-        "name": "山田リフォーム",
+        "name": "ダミーリフォーム合同会社",
         "phone": "045-1111-2222",
-        "email": "yamada@example.com",
-        "address": "神奈川県横浜市西区みなとみらい1-1-1",
+        "email": "info@dummy-reform.example.com",
+        "address": "神奈川県○○市ダミー区1-1-1",
     },
 ]
 

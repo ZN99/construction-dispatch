@@ -18,23 +18,23 @@ from order_management.models import Project
 from surveys.models import Survey, SurveyRoom, SurveyWall, SurveyDamage
 
 def create_test_data():
-    # Create test users if they don't exist
+    # Create test users if they don't exist (架空の人物)
     surveyor1, created = User.objects.get_or_create(
-        username='tanaka',
+        username='sample_taro',
         defaults={
             'first_name': '太郎',
-            'last_name': '田中',
-            'email': 'tanaka@example.com',
+            'last_name': 'サンプル',
+            'email': 'sample.taro@demo.example.com',
             'is_active': True
         }
     )
 
     surveyor2, created = User.objects.get_or_create(
-        username='sato',
+        username='test_hanako',
         defaults={
             'first_name': '花子',
-            'last_name': '佐藤',
-            'email': 'sato@example.com',
+            'last_name': 'テスト',
+            'email': 'test.hanako@demo.example.com',
             'is_active': True
         }
     )
@@ -43,11 +43,11 @@ def create_test_data():
     project = Project.objects.first()
     if not project:
         project = Project.objects.create(
-            management_no='TEST-001',
-            site_name='テスト案件 - マンション原状回復',
-            site_address='東京都港区白金台1-1-1',
-            work_type='原状回復',
-            notes='テスト用の調査案件です'
+            management_no='DEMO-001',
+            site_name='デモ案件 - 住宅内装リフォーム',
+            site_address='○○県○○市サンプル町1-1-1',
+            work_type='内装リフォーム',
+            notes='デモ用の調査案件です（架空の物件）'
         )
 
     # Create test surveys

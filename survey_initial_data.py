@@ -8,31 +8,31 @@ django.setup()
 from projects.models import Surveyor, Survey, Project
 from django.utils import timezone
 
-# 調査員データの初期化
+# 調査員データの初期化（架空の人物）
 surveyors = [
     {
-        "name": "田中 一郎",
+        "name": "サンプル 太郎",
         "phone": "090-1234-5678",
-        "email": "tanaka@survey.com",
-        "base_location": "東京都新宿区",
+        "email": "sample.taro@demo-survey.example.com",
+        "base_location": "東京都○○区",
         "daily_capacity": 3,
         "work_start_time": "09:00",
         "work_end_time": "17:00",
     },
     {
-        "name": "佐藤 花子",
+        "name": "テスト 花子",
         "phone": "090-2345-6789",
-        "email": "sato@survey.com",
-        "base_location": "東京都渋谷区",
+        "email": "test.hanako@demo-survey.example.com",
+        "base_location": "東京都○○区",
         "daily_capacity": 4,
         "work_start_time": "08:30",
         "work_end_time": "17:30",
     },
     {
-        "name": "山田 太郎",
+        "name": "ダミー 次郎",
         "phone": "090-3456-7890",
-        "email": "yamada@survey.com",
-        "base_location": "神奈川県横浜市",
+        "email": "dummy.jiro@demo-survey.example.com",
+        "base_location": "神奈川県○○市",
         "daily_capacity": 2,
         "work_start_time": "09:30",
         "work_end_time": "16:30",
