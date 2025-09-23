@@ -150,7 +150,7 @@ def create_test_data():
         )
 
     print("✅ テストデータの作成が完了しました！")
-    print(f"- 調査員: {surveyor1.get_full_name()}, {surveyor2.get_full_name()}")
+    print(f"- 調査員: {surveyor1.name}, {surveyor2.name}")
     print(f"- 案件: {project.site_name}")
     print(f"- 調査数: {Survey.objects.count()}件")
     print("\n🌐 調査管理画面を確認:")
