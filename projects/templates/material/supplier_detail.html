@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ supplier.name }} - 供給業者詳細{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-building"></i> {{ supplier.name }}</h2>
+                <div>
+                    <a href="{% url 'projects:material_supplier_edit' supplier.id %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> 編集
+                    </a>
+                    <a href="{% url 'projects:material_supplier_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> 一覧に戻る
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 基本情報 -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-info-circle"></i> 基本情報</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="30%">供給業者名:</th>
+                                    <td>{{ supplier.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>代表者:</th>
+                                    <td>{{ supplier.representative|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>担当者:</th>
+                                    <td>{{ supplier.contact_person|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>電話番号:</th>
+                                    <td>{{ supplier.phone|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>FAX:</th>
+                                    <td>{{ supplier.fax|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>メールアドレス:</th>
+                                    <td>
+                                        {% if supplier.email %}
+                                            <a href="mailto:{{ supplier.email }}">{{ supplier.email }}</a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>ウェブサイト:</th>
+                                    <td>
+                                        {% if supplier.website %}
+                                            <a href="{{ supplier.website }}" target="_blank">{{ supplier.website }}</a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 住所・取引情報 -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-map-marker-alt"></i> 住所・取引情報</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="30%">郵便番号:</th>
+                                    <td>{{ supplier.postal_code|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>住所:</th>
+                                    <td>{{ supplier.address|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>取扱品目:</th>
+                                    <td>{{ supplier.specialties|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>支払条件:</th>
+                                    <td>{{ supplier.payment_terms|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>納期:</th>
+                                    <td>{{ supplier.delivery_terms|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>ステータス:</th>
+                                    <td>
+                                        {% if supplier.is_active %}
+                                            <span class="badge bg-success">アクティブ</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">非アクティブ</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>評価:</th>
+                                    <td>
+                                        {% if supplier.rating %}
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= supplier.rating %}
+                                                    <i class="fas fa-star text-warning"></i>
+                                                {% else %}
+                                                    <i class="far fa-star text-muted"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                            ({{ supplier.rating }}/5)
+                                        {% else %}
+                                            <span class="text-muted">未評価</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 発注履歴 -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-history"></i> 発注履歴</h5>
+                </div>
+                <div class="card-body">
+                    {% if material_orders %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>発注番号</th>
+                                        <th>案件名</th>
+                                        <th>発注日</th>
+                                        <th>納期</th>
+                                        <th>金額</th>
+                                        <th>ステータス</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for order in material_orders %}
+                                    <tr>
+                                        <td>{{ order.order_number }}</td>
+                                        <td>{{ order.project.site_name }}</td>
+                                        <td>{{ order.order_date|date:"Y/m/d" }}</td>
+                                        <td>{{ order.delivery_date|date:"Y/m/d"|default:"-" }}</td>
+                                        <td>¥{{ order.total_amount|floatformat:0|default:0 }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ order.get_status_color }}">
+                                                {{ order.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'projects:material_order_detail' order.id %}" class="btn btn-sm btn-outline-primary">
+                                                詳細
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 統計情報 -->
+                        <div class="row mt-4">
+                            <div class="col-md-3">
+                                <div class="card bg-primary text-white">
+                                    <div class="card-body text-center">
+                                        <h5>総発注回数</h5>
+                                        <h3>{{ total_orders }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body text-center">
+                                        <h5>総発注金額</h5>
+                                        <h3>¥{{ total_amount|floatformat:0 }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-info text-white">
+                                    <div class="card-body text-center">
+                                        <h5>平均納期</h5>
+                                        <h3>{{ avg_delivery_days|default:0 }}日</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-warning text-white">
+                                    <div class="card-body text-center">
+                                        <h5>未完了件数</h5>
+                                        <h3>{{ pending_orders }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">発注履歴がありません</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 備考 -->
+            {% if supplier.notes %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-sticky-note"></i> 備考</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ supplier.notes|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 電話番号クリックで発信
+    const phoneElements = document.querySelectorAll('[data-phone]');
+    phoneElements.forEach(element => {
+        element.addEventListener('click', function() {
+            const phone = this.dataset.phone;
+            window.location.href = `tel:${phone}`;
+        });
+        element.style.cursor = 'pointer';
+    });
+});
+</script>
+{% endblock %}

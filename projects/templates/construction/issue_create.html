@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}課題登録{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-exclamation-circle"></i> 課題登録</h2>
+                <a href="{% url 'projects:construction_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> 戻る
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5>{{ project.site_name }} - 新規課題登録</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_title" class="form-label">課題タイトル <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="id_title" name="title" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_priority" class="form-label">優先度 <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="id_priority" name="priority" required>
+                                        <option value="">選択してください</option>
+                                        <option value="low">低</option>
+                                        <option value="medium">中</option>
+                                        <option value="high">高</option>
+                                        <option value="urgent">緊急</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_category" class="form-label">カテゴリー</label>
+                                    <select class="form-select" id="id_category" name="category">
+                                        <option value="">選択してください</option>
+                                        <option value="quality">品質</option>
+                                        <option value="safety">安全</option>
+                                        <option value="schedule">スケジュール</option>
+                                        <option value="cost">コスト</option>
+                                        <option value="material">資材</option>
+                                        <option value="other">その他</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_due_date" class="form-label">対応期限</label>
+                                    <input type="date" class="form-control" id="id_due_date" name="due_date">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_description" class="form-label">課題内容 <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="id_description" name="description" rows="4" required
+                                      placeholder="課題の詳細な内容を記載してください"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_impact" class="form-label">影響範囲</label>
+                            <textarea class="form-control" id="id_impact" name="impact" rows="3"
+                                      placeholder="この課題が工事に与える影響について記載してください"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_reporter" class="form-label">報告者</label>
+                                    <input type="text" class="form-control" id="id_reporter" name="reporter"
+                                           value="{{ user.get_full_name|default:user.username }}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_assignee" class="form-label">担当者</label>
+                                    <select class="form-select" id="id_assignee" name="assignee">
+                                        <option value="">選択してください</option>
+                                        {% for user in project_users %}
+                                        <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_attachments" class="form-label">添付ファイル</label>
+                            <input type="file" class="form-control" id="id_attachments" name="attachments" multiple
+                                   accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
+                            <div class="form-text">画像ファイル、PDF、Office文書が添付できます</div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'projects:construction_dashboard' %}" class="btn btn-secondary">
+                                キャンセル
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 登録
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 優先度による色分け
+    const prioritySelect = document.getElementById('id_priority');
+    prioritySelect.addEventListener('change', function() {
+        const priority = this.value;
+        this.className = 'form-select';
+        switch(priority) {
+            case 'urgent':
+                this.classList.add('border-danger');
+                break;
+            case 'high':
+                this.classList.add('border-warning');
+                break;
+            case 'medium':
+                this.classList.add('border-info');
+                break;
+            case 'low':
+                this.classList.add('border-success');
+                break;
+        }
+    });
+});
+</script>
+{% endblock %}

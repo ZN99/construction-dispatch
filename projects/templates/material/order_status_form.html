@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}発注ステータス更新{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-edit"></i> 発注ステータス更新</h2>
+                <a href="{% url 'projects:material_order_detail' order.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> 戻る
+                </a>
+            </div>
+
+            <!-- 発注情報概要 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>発注情報</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="30%">発注番号:</th>
+                                    <td>{{ order.order_number }}</td>
+                                </tr>
+                                <tr>
+                                    <th>案件名:</th>
+                                    <td>{{ order.project.site_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>供給業者:</th>
+                                    <td>{{ order.contractor.name }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="30%">発注日:</th>
+                                    <td>{{ order.order_date|date:"Y年m月d日" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>予定納期:</th>
+                                    <td>{{ order.delivery_date|date:"Y年m月d日"|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>発注金額:</th>
+                                    <td>¥{{ order.total_amount|floatformat:0 }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ステータス更新フォーム -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>ステータス更新</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_status" class="form-label">ステータス <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="id_status" name="status" required>
+                                        <option value="draft" {% if order.status == 'draft' %}selected{% endif %}>下書き</option>
+                                        <option value="ordered" {% if order.status == 'ordered' %}selected{% endif %}>発注済み</option>
+                                        <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>納品済み</option>
+                                        <option value="completed" {% if order.status == 'completed' %}selected{% endif %}>完了</option>
+                                        <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>キャンセル</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_actual_delivery_date" class="form-label">実際の納品日</label>
+                                    <input type="date" class="form-control" id="id_actual_delivery_date"
+                                           name="actual_delivery_date"
+                                           value="{{ order.actual_delivery_date|date:'Y-m-d' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_actual_amount" class="form-label">実際の金額</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">¥</span>
+                                        <input type="number" class="form-control" id="id_actual_amount"
+                                               name="actual_amount"
+                                               value="{{ order.actual_amount|default:order.total_amount }}"
+                                               min="0" step="1">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_tracking_number" class="form-label">追跡番号</label>
+                                    <input type="text" class="form-control" id="id_tracking_number"
+                                           name="tracking_number"
+                                           value="{{ order.tracking_number|default:'' }}"
+                                           placeholder="配送追跡番号">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_delivery_notes" class="form-label">配送・納品備考</label>
+                            <textarea class="form-control" id="id_delivery_notes" name="delivery_notes" rows="3"
+                                      placeholder="配送状況や納品時の特記事項があれば記入してください">{{ order.delivery_notes|default:'' }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_notes" class="form-label">備考</label>
+                            <textarea class="form-control" id="id_notes" name="notes" rows="3"
+                                      placeholder="その他の備考があれば記入してください">{{ order.notes|default:'' }}</textarea>
+                        </div>
+
+                        <!-- ステータス変更履歴 -->
+                        {% if order.status_history %}
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6>ステータス変更履歴</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="timeline">
+                                    {% for history in order.status_history %}
+                                    <div class="timeline-item">
+                                        <div class="timeline-marker bg-{{ history.color }}"></div>
+                                        <div class="timeline-content">
+                                            <h6>{{ history.status_display }}</h6>
+                                            <p class="text-muted mb-1">{{ history.changed_at|date:"Y/m/d H:i" }}</p>
+                                            {% if history.notes %}
+                                                <p class="mb-0">{{ history.notes }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- 添付ファイル -->
+                        <div class="mb-3">
+                            <label for="id_attachments" class="form-label">添付ファイル</label>
+                            <input type="file" class="form-control" id="id_attachments" name="attachments" multiple
+                                   accept="image/*,.pdf,.doc,.docx">
+                            <div class="form-text">納品書、請求書等の関連書類を添付できます</div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'projects:material_order_detail' order.id %}" class="btn btn-secondary">
+                                キャンセル
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 更新
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+}
+
+.timeline-content {
+    padding-left: 20px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusSelect = document.getElementById('id_status');
+    const actualDeliveryDate = document.getElementById('id_actual_delivery_date');
+    const actualAmount = document.getElementById('id_actual_amount');
+
+    // ステータスに応じて必須フィールドを制御
+    statusSelect.addEventListener('change', function() {
+        const status = this.value;
+
+        // ステータスによる色分け
+        this.className = 'form-select';
+        switch(status) {
+            case 'draft':
+                this.classList.add('border-secondary');
+                break;
+            case 'ordered':
+                this.classList.add('border-warning');
+                break;
+            case 'delivered':
+                this.classList.add('border-info');
+                break;
+            case 'completed':
+                this.classList.add('border-success');
+                break;
+            case 'cancelled':
+                this.classList.add('border-danger');
+                break;
+        }
+
+        // 納品済み・完了の場合は実際の納品日を必須に
+        if (status === 'delivered' || status === 'completed') {
+            actualDeliveryDate.required = true;
+            actualDeliveryDate.parentElement.querySelector('label').innerHTML =
+                '実際の納品日 <span class="text-danger">*</span>';
+        } else {
+            actualDeliveryDate.required = false;
+            actualDeliveryDate.parentElement.querySelector('label').innerHTML = '実際の納品日';
+        }
+    });
+
+    // 初期状態の設定
+    statusSelect.dispatchEvent(new Event('change'));
+});
+</script>
+{% endblock %}

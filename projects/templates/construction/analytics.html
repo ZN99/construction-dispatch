@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}工事進捗分析{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-chart-line"></i> 工事進捗分析</h2>
+                <div>
+                    <button class="btn btn-outline-primary" onclick="window.print()">
+                        <i class="fas fa-print"></i> 印刷
+                    </button>
+                </div>
+            </div>
+
+            <!-- 統計カード -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5>進行中案件</h5>
+                                    <h3>{{ active_projects|default:0 }}</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-hammer fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5>完了案件</h5>
+                                    <h3>{{ completed_projects|default:0 }}</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-check-circle fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5>遅延案件</h5>
+                                    <h3>{{ delayed_projects|default:0 }}</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5>平均進捗率</h5>
+                                    <h3>{{ avg_progress|default:0 }}%</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-percentage fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- チャートエリア -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>月別進捗推移</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="progressChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>工事種別別分析</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="categoryChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 詳細テーブル -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>案件別進捗一覧</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>案件名</th>
+                                    <th>工事種別</th>
+                                    <th>進捗率</th>
+                                    <th>開始日</th>
+                                    <th>完了予定日</th>
+                                    <th>ステータス</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in projects %}
+                                <tr>
+                                    <td>{{ project.site_name }}</td>
+                                    <td>{{ project.work_type|default:"-" }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar"
+                                                 style="width: {{ project.progress_percentage|default:0 }}%">
+                                                {{ project.progress_percentage|default:0 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ project.start_date|default:"-" }}</td>
+                                    <td>{{ project.scheduled_end_date|default:"-" }}</td>
+                                    <td>
+                                        {% if project.status == 'completed' %}
+                                            <span class="badge bg-success">完了</span>
+                                        {% elif project.status == 'in_progress' %}
+                                            <span class="badge bg-primary">進行中</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ project.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">データがありません</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// 進捗チャート
+const progressCtx = document.getElementById('progressChart').getContext('2d');
+new Chart(progressCtx, {
+    type: 'line',
+    data: {
+        labels: {{ progress_labels|safe|default:"[]" }},
+        datasets: [{
+            label: '進捗率(%)',
+            data: {{ progress_data|safe|default:"[]" }},
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100
+            }
+        }
+    }
+});
+
+// カテゴリーチャート
+const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+new Chart(categoryCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ category_labels|safe|default:"[]" }},
+        datasets: [{
+            data: {{ category_data|safe|default:"[]" }},
+            backgroundColor: [
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56',
+                '#4BC0C0',
+                '#9966FF'
+            ]
+        }]
+    },
+    options: {
+        responsive: true
+    }
+});
+</script>
+{% endblock %}

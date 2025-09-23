@@ -16,7 +16,7 @@ import random
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'construction_dispatch.settings')
 django.setup()
 
-from order_management.models import Project, Contractor
+from order_management.models import Project, Contractor, MaterialOrder, MaterialOrderItem
 
 def create_material_data():
     """資材発注データを作成"""
@@ -86,10 +86,10 @@ def create_material_data():
 
     # 発注ステータスのパターン
     status_patterns = [
-        ('draft', '見積依頼中'),
-        ('ordered', '発注済'),
-        ('partial', '一部納品'),
-        ('delivered', '納品完了'),
+        ('draft', '下書き'),
+        ('ordered', '発注済み'),
+        ('delivered', '納品済み'),
+        ('completed', '完了'),
         ('cancelled', 'キャンセル')
     ]
 
@@ -111,22 +111,30 @@ def create_material_data():
             # 希望納期を設定
             delivery_date = order_date + timedelta(days=random.randint(3, 14))
 
+            # 資材業者の契約者を取得または作成
+            contractor, _ = Contractor.objects.get_or_create(
+                name=supplier_name,
+                defaults={
+                    'contact_person': '営業部担当者',
+                    'phone': '03-0000-0000',
+                    'email': f'{supplier_name.replace("株式会社", "").replace(" ", "")}@example.com',
+                    'specialties': '資材供給',
+                    'is_active': True
+                }
+            )
+
             # 資材発注を作成
             material_order = MaterialOrder.objects.create(
                 project=project,
-                order_number=f'MO-{project.management_no}-{order_num+1:02d}',
-                supplier_name=supplier_name,
-                supplier_contact='担当: 営業部',
-                supplier_phone='03-0000-0000',
+                contractor=contractor,
                 order_date=order_date,
-                requested_delivery_date=delivery_date,
-                delivery_address=project.site_address,
+                delivery_date=delivery_date,
                 status=status[0],
                 notes=f'{project.site_name}用の資材発注'
             )
 
             # ステータスに応じて追加情報を設定
-            if status[0] in ['partial', 'delivered']:
+            if status[0] in ['delivered', 'completed']:
                 material_order.actual_delivery_date = delivery_date + timedelta(days=random.randint(-2, 2))
 
             # 発注明細を作成（3-8品目）
@@ -144,37 +152,25 @@ def create_material_data():
                 for item_name, unit, base_price in selected_items:
                     quantity = Decimal(random.randint(1, 20))
                     unit_price = Decimal(base_price) * Decimal(random.uniform(0.9, 1.1))
-                    unit_price = unit_price.quantize(Decimal('1'))
-                    amount = quantity * unit_price
+                    unit_price = unit_price.quantize(Decimal('0.01'))
+                    total_price = quantity * unit_price
 
                     MaterialOrderItem.objects.create(
-                        material_order=material_order,
-                        item_name=item_name,
-                        item_code=f'MAT-{random.randint(1000, 9999)}',
-                        category=category,
+                        order=material_order,
+                        material_name=item_name,
+                        specification=f'{category}用',
                         quantity=quantity,
                         unit=unit,
                         unit_price=unit_price,
-                        amount=amount,
-                        order=item_order,
+                        total_price=total_price,
                         notes=''
                     )
 
-                    total_amount += amount
+                    total_amount += total_price
                     item_order += 1
 
-            # 小計と税額を計算
-            material_order.subtotal = total_amount
-            material_order.tax_amount = (total_amount * Decimal('0.10')).quantize(Decimal('1'))
-            material_order.total_amount = material_order.subtotal + material_order.tax_amount
-
-            # 支払い条件を設定
-            material_order.payment_terms = random.choice([
-                '月末締め翌月末払い',
-                '納品後30日以内',
-                '請求書到着後14日以内'
-            ])
-
+            # 総額を設定
+            material_order.total_amount = total_amount.quantize(Decimal('1'))
             material_order.save()
 
             order_count += 1
@@ -182,8 +178,8 @@ def create_material_data():
             status_emoji = {
                 'draft': '📝',
                 'ordered': '📦',
-                'partial': '📤',
-                'delivered': '✅',
+                'delivered': '📤',
+                'completed': '✅',
                 'cancelled': '❌'
             }.get(status[0], '❓')
 
@@ -206,11 +202,13 @@ def create_material_data():
     # サプライヤー別の集計
     print(f"\n📦 サプライヤー別:")
     for supplier in suppliers:
-        orders = MaterialOrder.objects.filter(supplier_name=supplier)
-        count = orders.count()
-        if count > 0:
-            total = sum(order.total_amount or 0 for order in orders)
-            print(f"  {supplier}: {count}件 (¥{total:,})")
+        contractor = Contractor.objects.filter(name=supplier).first()
+        if contractor:
+            orders = MaterialOrder.objects.filter(contractor=contractor)
+            count = orders.count()
+            if count > 0:
+                total = sum(order.total_amount or 0 for order in orders)
+                print(f"  {supplier}: {count}件 (¥{total:,})")
 
     # 総額
     all_orders = MaterialOrder.objects.all()

@@ -35,6 +35,9 @@ python create_survey_test_data.py
 echo "Creating sample surveys..."
 python create_sample_surveys.py
 
+echo "Creating material data..."
+python create_material_data.py
+
 echo "Creating payment data..."
 python create_payment_data.py
 

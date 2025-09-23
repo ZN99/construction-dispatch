@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}調査員削除確認{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> 調査員削除確認</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>警告:</strong> この操作は取り消すことができません。
+                    </div>
+
+                    <p>以下の調査員を削除してもよろしいですか？</p>
+
+                    <!-- 削除対象の調査員情報 -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-4">
+                                    <i class="fas fa-user fa-4x text-muted"></i>
+                                </div>
+                                <div class="col-8">
+                                    <h6>{{ surveyor.name }}</h6>
+                                    <p class="text-muted mb-1">
+                                        <i class="fas fa-id-card"></i> {{ surveyor.employee_id|default:"-" }}
+                                    </p>
+                                    <p class="text-muted mb-1">
+                                        <i class="fas fa-phone"></i> {{ surveyor.phone|default:"-" }}
+                                    </p>
+                                    <p class="text-muted mb-1">
+                                        <i class="fas fa-envelope"></i> {{ surveyor.email|default:"-" }}
+                                    </p>
+                                    <p class="text-muted mb-0">
+                                        <i class="fas fa-briefcase"></i> {{ surveyor.specialization|default:"-" }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 影響する調査件数 -->
+                    {% if related_surveys_count > 0 %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>注意:</strong> この調査員に関連する調査が {{ related_surveys_count }} 件あります。
+                        削除後、これらの調査は担当者なしになります。
+                    </div>
+
+                    <!-- 関連調査の詳細 -->
+                    <div class="mb-3">
+                        <h6>関連する調査:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>調査ID</th>
+                                        <th>案件名</th>
+                                        <th>調査日</th>
+                                        <th>ステータス</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for survey in related_surveys|slice:":5" %}
+                                    <tr>
+                                        <td>{{ survey.id }}</td>
+                                        <td>{{ survey.project.site_name|truncatechars:20 }}</td>
+                                        <td>{{ survey.scheduled_date|date:"Y/m/d" }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ survey.get_status_color }} badge-sm">
+                                                {{ survey.get_status_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% if related_surveys_count > 5 %}
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">
+                                            ...他 {{ related_surveys_count|add:"-5" }} 件
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 削除オプション -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="delete_option" id="reassign_surveys" value="reassign" checked>
+                            <label class="form-check-label" for="reassign_surveys">
+                                関連する調査を他の調査員に再割り当てする
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="delete_option" id="unassign_surveys" value="unassign">
+                            <label class="form-check-label" for="unassign_surveys">
+                                関連する調査を未割り当てにする
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 再割り当て先調査員選択 -->
+                    <div id="reassign_section" class="mb-3">
+                        <label for="new_surveyor" class="form-label">再割り当て先調査員:</label>
+                        <select class="form-select" id="new_surveyor" name="new_surveyor">
+                            <option value="">選択してください</option>
+                            {% for other_surveyor in other_surveyors %}
+                            <option value="{{ other_surveyor.id }}">{{ other_surveyor.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <form method="post" id="deleteForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="delete_option" id="selected_delete_option" value="reassign">
+                        <input type="hidden" name="new_surveyor_id" id="selected_new_surveyor">
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'surveys:surveyor_detail' surveyor.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> キャンセル
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> 削除実行
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reassignRadio = document.getElementById('reassign_surveys');
+    const unassignRadio = document.getElementById('unassign_surveys');
+    const reassignSection = document.getElementById('reassign_section');
+    const newSurveyorSelect = document.getElementById('new_surveyor');
+    const deleteForm = document.getElementById('deleteForm');
+    const selectedDeleteOption = document.getElementById('selected_delete_option');
+    const selectedNewSurveyor = document.getElementById('selected_new_surveyor');
+
+    // ラジオボタンの変更処理
+    function toggleReassignSection() {
+        if (reassignRadio.checked) {
+            reassignSection.style.display = 'block';
+            newSurveyorSelect.required = true;
+        } else {
+            reassignSection.style.display = 'none';
+            newSurveyorSelect.required = false;
+            newSurveyorSelect.value = '';
+        }
+    }
+
+    reassignRadio.addEventListener('change', toggleReassignSection);
+    unassignRadio.addEventListener('change', toggleReassignSection);
+
+    // 初期状態の設定
+    toggleReassignSection();
+
+    // フォーム送信時の処理
+    deleteForm.addEventListener('submit', function(e) {
+        const deleteOption = document.querySelector('input[name="delete_option"]:checked').value;
+        selectedDeleteOption.value = deleteOption;
+
+        if (deleteOption === 'reassign') {
+            const newSurveyorId = newSurveyorSelect.value;
+            if (!newSurveyorId) {
+                e.preventDefault();
+                alert('再割り当て先の調査員を選択してください。');
+                return;
+            }
+            selectedNewSurveyor.value = newSurveyorId;
+        }
+
+        // 最終確認
+        const confirmMessage = deleteOption === 'reassign'
+            ? `調査員「{{ surveyor.name }}」を削除し、関連する調査を選択した調査員に再割り当てします。\n\nよろしいですか？`
+            : `調査員「{{ surveyor.name }}」を削除し、関連する調査を未割り当てにします。\n\nよろしいですか？`;
+
+        if (!confirm(confirmMessage)) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

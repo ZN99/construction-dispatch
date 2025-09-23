@@ -1,0 +1,864 @@
+{
+  "total_references": 130,
+  "total_existing": 127,
+  "total_missing": 9,
+  "missing_templates": [
+    {
+      "template": "construction/analytics.html",
+      "referenced_in": [
+        "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/construction_views.py"
+      ]
+    },
+    {
+      "template": "construction/issue_create.html",
+      "referenced_in": [
+        "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/construction_views.py"
+      ]
+    },
+    {
+      "template": "construction/issue_update.html",
+      "referenced_in": [
+        "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/construction_views.py"
+      ]
+    },
+    {
+      "template": "material/order_status_form.html",
+      "referenced_in": [
+        "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/material_views.py"
+      ]
+    },
+    {
+      "template": "material/supplier_detail.html",
+      "referenced_in": [
+        "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/material_views.py"
+      ]
+    },
+    {
+      "template": "order_management/unified_contractor_management.html",
+      "referenced_in": [
+        "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_contractor_unified.py"
+      ]
+    },
+    {
+      "template": "projects/survey_route_detail.html",
+      "referenced_in": [
+        "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_views.py"
+      ]
+    },
+    {
+      "template": "surveys/surveyor/confirm_delete.html",
+      "referenced_in": [
+        "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_surveyor_management.py"
+      ]
+    },
+    {
+      "template": "surveys/surveyor/detail.html",
+      "referenced_in": [
+        "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_surveyor_management.py"
+      ]
+    }
+  ],
+  "schedule_related_missing": [],
+  "by_app": {
+    "construction": [
+      "construction/issue_update.html",
+      "construction/issue_create.html",
+      "construction/analytics.html"
+    ],
+    "order_management": [
+      "order_management/unified_contractor_management.html"
+    ],
+    "projects": [
+      "projects/survey_route_detail.html"
+    ],
+    "material": [
+      "material/supplier_detail.html",
+      "material/order_status_form.html"
+    ],
+    "surveys": [
+      "surveys/surveyor/detail.html",
+      "surveys/surveyor/confirm_delete.html"
+    ]
+  },
+  "existing_templates": [
+    "components/workflow_progress.html",
+    "construction/completion_manage.html",
+    "construction/dashboard.html",
+    "construction/issues_list.html",
+    "construction/photo_gallery.html",
+    "construction/progress_create.html",
+    "construction/progress_search.html",
+    "construction/project_detail.html",
+    "craftsman/assignment_create.html",
+    "craftsman/assignment_detail.html",
+    "craftsman/assignment_list.html",
+    "craftsman/assignment_response.html",
+    "craftsman/craftsman_detail.html",
+    "craftsman/dashboard.html",
+    "craftsman/project_matching.html",
+    "craftsman/schedule_bulk_update.html",
+    "craftsman/schedule_calendar.html",
+    "craftsman/search.html",
+    "material/dashboard.html",
+    "material/order_detail.html",
+    "material/order_form.html",
+    "material/order_list.html",
+    "material/project_materials.html",
+    "material/supplier_create.html",
+    "material/supplier_form.html",
+    "material/supplier_list.html",
+    "order_management/accounting_dashboard.html",
+    "order_management/base.html",
+    "order_management/contractor_create.html",
+    "order_management/contractor_dashboard.html",
+    "order_management/contractor_dashboard_integrated.html",
+    "order_management/contractor_dashboard_redesigned.html",
+    "order_management/contractor_edit.html",
+    "order_management/contractor_projects.html",
+    "order_management/cost/cost_dashboard.html",
+    "order_management/cost/fixed_cost_confirm_delete.html",
+    "order_management/cost/fixed_cost_form.html",
+    "order_management/cost/fixed_cost_list.html",
+    "order_management/cost/variable_cost_confirm_delete.html",
+    "order_management/cost/variable_cost_form.html",
+    "order_management/cost/variable_cost_list.html",
+    "order_management/dashboard.html",
+    "order_management/external_contractor_management.html",
+    "order_management/includes/subcontract_modal.html",
+    "order_management/landing.html",
+    "order_management/login.html",
+    "order_management/material/material_order_detail.html",
+    "order_management/material/material_order_form.html",
+    "order_management/material/material_order_list.html",
+    "order_management/ordering_dashboard.html",
+    "order_management/partials/financial_detail.html",
+    "order_management/payment_dashboard.html",
+    "order_management/payment_dashboard_contractor_focused.html",
+    "order_management/payment_dashboard_improved.html",
+    "order_management/permission_denied.html",
+    "order_management/project_confirm_delete.html",
+    "order_management/project_detail.html",
+    "order_management/project_form.html",
+    "order_management/project_list.html",
+    "order_management/receipt_dashboard.html",
+    "order_management/supplier_management.html",
+    "order_management/ultimate_dashboard.html",
+    "pricing/cost_setup.html",
+    "pricing/dashboard.html",
+    "pricing/detail.html",
+    "pricing/pricing_setup.html",
+    "pricing/profitability_analysis.html",
+    "projects/base.html",
+    "projects/customer_create.html",
+    "projects/dashboard.html",
+    "projects/project_create_cleaning.html",
+    "projects/project_create_cross.html",
+    "projects/project_create_general.html",
+    "projects/project_create_select_type.html",
+    "projects/project_detail.html",
+    "projects/project_list.html",
+    "projects/project_update.html",
+    "projects/survey_assign.html",
+    "projects/survey_assign_enhanced.html",
+    "projects/survey_calendar.html",
+    "projects/survey_complete.html",
+    "projects/survey_dashboard.html",
+    "projects/survey_detail.html",
+    "projects/survey_list.html",
+    "projects/survey_reschedule.html",
+    "projects/survey_routes.html",
+    "subcontract_management/contractor_form.html",
+    "subcontract_management/contractor_list.html",
+    "subcontract_management/dashboard.html",
+    "subcontract_management/payment_tracking.html",
+    "subcontract_management/profit_analysis_list.html",
+    "subcontract_management/project_subcontract_list.html",
+    "subcontract_management/subcontract_form.html",
+    "surveys/base.html",
+    "surveys/cross_replacement_checklist.html",
+    "surveys/demo_survey_list.html",
+    "surveys/field/base.html",
+    "surveys/field/checklist.html",
+    "surveys/field/dashboard.html",
+    "surveys/field/login.html",
+    "surveys/field/profile.html",
+    "surveys/field/survey_list.html",
+    "surveys/mobile_elderly_checklist.html",
+    "surveys/mobile_survey_list.html",
+    "surveys/project_survey_create.html",
+    "surveys/project_survey_list.html",
+    "surveys/record_dashboard.html",
+    "surveys/report_detail.html",
+    "surveys/report_list.html",
+    "surveys/survey_complete.html",
+    "surveys/survey_complete.html",
+    "surveys/survey_create.html",
+    "surveys/survey_detail.html",
+    "surveys/survey_edit.html",
+    "surveys/survey_form.html",
+    "surveys/survey_list.html",
+    "surveys/survey_list_enhanced.html",
+    "surveys/survey_record_detail.html",
+    "surveys/survey_record_form.html",
+    "surveys/survey_report.html",
+    "surveys/survey_schedule.html",
+    "surveys/survey_start.html",
+    "surveys/survey_start.html",
+    "surveys/surveyor/dashboard.html",
+    "surveys/surveyor/form.html",
+    "surveys/surveyor/list.html",
+    "surveys/surveyor_base.html"
+  ],
+  "all_references": [
+    {
+      "template": "order_management/accounting_dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_accounting.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/receipt_dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_receipt.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/ultimate_dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_ultimate.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/permission_denied.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_permission.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/contractor_create.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_contractor_create.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/unified_contractor_management.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_contractor_unified.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/payment_dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_payment.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/material/material_order_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_material.py",
+      "type": "render"
+    },
+    {
+      "template": "order_management/material/material_order_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_material.py",
+      "type": "render"
+    },
+    {
+      "template": "order_management/material/material_order_detail.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_material.py",
+      "type": "render"
+    },
+    {
+      "template": "order_management/material/material_order_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_material.py",
+      "type": "render"
+    },
+    {
+      "template": "order_management/contractor_dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_contractor.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/contractor_projects.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_contractor.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/contractor_edit.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_contractor.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/login.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_auth.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/landing.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_landing.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/cost/fixed_cost_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_cost.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/cost/fixed_cost_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_cost.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/cost/fixed_cost_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_cost.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/cost/fixed_cost_confirm_delete.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_cost.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/cost/variable_cost_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_cost.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/cost/variable_cost_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_cost.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/cost/variable_cost_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_cost.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/cost/variable_cost_confirm_delete.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_cost.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/cost/cost_dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_cost.py",
+      "type": "render"
+    },
+    {
+      "template": "order_management/ordering_dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_ordering.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/external_contractor_management.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_ordering.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/supplier_management.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views_ordering.py",
+      "type": "template_name"
+    },
+    {
+      "template": "order_management/dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "order_management/project_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "order_management/project_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "order_management/project_detail.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "order_management/project_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "order_management/project_confirm_delete.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "order_management/ordering_dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "order_management/receipt_dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/order_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "material/dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/material_views.py",
+      "type": "render"
+    },
+    {
+      "template": "material/supplier_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/material_views.py",
+      "type": "render"
+    },
+    {
+      "template": "material/supplier_detail.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/material_views.py",
+      "type": "render"
+    },
+    {
+      "template": "material/supplier_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/material_views.py",
+      "type": "render"
+    },
+    {
+      "template": "material/supplier_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/material_views.py",
+      "type": "render"
+    },
+    {
+      "template": "material/order_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/material_views.py",
+      "type": "render"
+    },
+    {
+      "template": "material/order_detail.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/material_views.py",
+      "type": "render"
+    },
+    {
+      "template": "material/order_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/material_views.py",
+      "type": "render"
+    },
+    {
+      "template": "material/order_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/material_views.py",
+      "type": "render"
+    },
+    {
+      "template": "material/order_status_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/material_views.py",
+      "type": "render"
+    },
+    {
+      "template": "material/project_materials.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/material_views.py",
+      "type": "render"
+    },
+    {
+      "template": "construction/dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/construction_views.py",
+      "type": "render"
+    },
+    {
+      "template": "construction/project_detail.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/construction_views.py",
+      "type": "render"
+    },
+    {
+      "template": "construction/progress_create.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/construction_views.py",
+      "type": "render"
+    },
+    {
+      "template": "construction/issue_create.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/construction_views.py",
+      "type": "render"
+    },
+    {
+      "template": "construction/issue_update.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/construction_views.py",
+      "type": "render"
+    },
+    {
+      "template": "construction/issues_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/construction_views.py",
+      "type": "render"
+    },
+    {
+      "template": "construction/completion_manage.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/construction_views.py",
+      "type": "render"
+    },
+    {
+      "template": "construction/progress_search.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/construction_views.py",
+      "type": "render"
+    },
+    {
+      "template": "construction/analytics.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/construction_views.py",
+      "type": "render"
+    },
+    {
+      "template": "construction/photo_gallery.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/construction_views.py",
+      "type": "render"
+    },
+    {
+      "template": "projects/survey_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "projects/survey_detail.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "projects/survey_calendar.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_views.py",
+      "type": "render"
+    },
+    {
+      "template": "projects/survey_assign.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_views.py",
+      "type": "render"
+    },
+    {
+      "template": "projects/survey_complete.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_views.py",
+      "type": "render"
+    },
+    {
+      "template": "projects/survey_reschedule.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_views.py",
+      "type": "render"
+    },
+    {
+      "template": "projects/survey_route_detail.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_views.py",
+      "type": "render"
+    },
+    {
+      "template": "projects/survey_routes.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_views.py",
+      "type": "render"
+    },
+    {
+      "template": "projects/survey_dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_views.py",
+      "type": "render"
+    },
+    {
+      "template": "surveys/report_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_record_views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/report_detail.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_record_views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/record_dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_record_views.py",
+      "type": "render"
+    },
+    {
+      "template": "surveys/survey_start.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_record_views.py",
+      "type": "render"
+    },
+    {
+      "template": "surveys/survey_record_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_record_views.py",
+      "type": "render"
+    },
+    {
+      "template": "surveys/survey_complete.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_record_views.py",
+      "type": "render"
+    },
+    {
+      "template": "surveys/mobile_survey_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/survey_record_views.py",
+      "type": "render"
+    },
+    {
+      "template": "pricing/dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/pricing_views.py",
+      "type": "render"
+    },
+    {
+      "template": "pricing/cost_setup.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/pricing_views.py",
+      "type": "render"
+    },
+    {
+      "template": "pricing/pricing_setup.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/pricing_views.py",
+      "type": "render"
+    },
+    {
+      "template": "pricing/detail.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/pricing_views.py",
+      "type": "render"
+    },
+    {
+      "template": "pricing/profitability_analysis.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/pricing_views.py",
+      "type": "render"
+    },
+    {
+      "template": "craftsman/assignment_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/craftsman_views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "craftsman/craftsman_detail.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/craftsman_views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "craftsman/dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/craftsman_views.py",
+      "type": "render"
+    },
+    {
+      "template": "craftsman/search.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/craftsman_views.py",
+      "type": "render"
+    },
+    {
+      "template": "craftsman/project_matching.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/craftsman_views.py",
+      "type": "render"
+    },
+    {
+      "template": "craftsman/assignment_create.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/craftsman_views.py",
+      "type": "render"
+    },
+    {
+      "template": "craftsman/assignment_detail.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/craftsman_views.py",
+      "type": "render"
+    },
+    {
+      "template": "craftsman/assignment_response.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/craftsman_views.py",
+      "type": "render"
+    },
+    {
+      "template": "craftsman/schedule_calendar.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/craftsman_views.py",
+      "type": "render"
+    },
+    {
+      "template": "craftsman/schedule_bulk_update.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/craftsman_views.py",
+      "type": "render"
+    },
+    {
+      "template": "projects/project_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "projects/project_detail.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "projects/project_update.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "projects/customer_create.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "projects/project_create_select_type.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/views.py",
+      "type": "render"
+    },
+    {
+      "template": "projects/project_create_cross.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/views.py",
+      "type": "render"
+    },
+    {
+      "template": "projects/project_create_cleaning.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/views.py",
+      "type": "render"
+    },
+    {
+      "template": "projects/project_create_general.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/views.py",
+      "type": "render"
+    },
+    {
+      "template": "projects/dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/projects/views.py",
+      "type": "render"
+    },
+    {
+      "template": "subcontract_management/dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/subcontract_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "subcontract_management/project_subcontract_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/subcontract_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "subcontract_management/subcontract_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/subcontract_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "subcontract_management/subcontract_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/subcontract_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "subcontract_management/contractor_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/subcontract_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "subcontract_management/contractor_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/subcontract_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "subcontract_management/profit_analysis_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/subcontract_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "subcontract_management/payment_tracking.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/subcontract_management/views.py",
+      "type": "render"
+    },
+    {
+      "template": "surveys/field/login.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_field_auth.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/field/dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_field_auth.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/field/survey_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_field_auth.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/field/profile.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_field_auth.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/field/checklist.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_field_auth.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/survey_record_detail.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_ext.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/project_survey_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_ext.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/project_survey_create.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_ext.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/surveyor/list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_surveyor_management.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/surveyor/detail.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_surveyor_management.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/surveyor/form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_surveyor_management.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/surveyor/form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_surveyor_management.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/surveyor/confirm_delete.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_surveyor_management.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/surveyor/dashboard.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_surveyor_management.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/demo_survey_list.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_checklist.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/cross_replacement_checklist.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views_checklist.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/survey_list_enhanced.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/survey_detail.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/survey_create.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/survey_schedule.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/survey_form.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/survey_edit.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/survey_complete.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/survey_report.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views.py",
+      "type": "template_name"
+    },
+    {
+      "template": "surveys/survey_start.html",
+      "file": "/Users/zainkhalid/Dev/prototype-20250915/construction_dispatch/surveys/views.py",
+      "type": "render"
+    }
+  ]
+}

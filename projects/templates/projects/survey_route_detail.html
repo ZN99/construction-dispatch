@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}調査ルート詳細{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-route"></i> 調査ルート詳細</h2>
+                <div>
+                    <button class="btn btn-success" onclick="optimizeRoute()">
+                        <i class="fas fa-magic"></i> ルート最適化
+                    </button>
+                    <a href="{% url 'projects:survey_calendar' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> 戻る
+                    </a>
+                </div>
+            </div>
+
+            <!-- ルート概要 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> ルート概要</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <h4>{{ survey_count|default:0 }}</h4>
+                                    <p class="mb-0">調査件数</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h4>{{ total_distance|default:0 }}km</h4>
+                                    <p class="mb-0">総移動距離</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <h4>{{ estimated_time|default:0 }}分</h4>
+                                    <p class="mb-0">予想所要時間</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h4>{{ efficiency_score|default:0 }}%</h4>
+                                    <p class="mb-0">効率スコア</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 地図表示 -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-map"></i> ルートマップ</h5>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary" onclick="toggleTraffic()">
+                                    <i class="fas fa-car"></i> 交通情報
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="toggleSatellite()">
+                                    <i class="fas fa-satellite"></i> 衛星画像
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="map" style="height: 600px; width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 調査リスト -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-list"></i> 調査スケジュール</h5>
+                        </div>
+                        <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                            <div id="surveyList">
+                                {% for survey in surveys %}
+                                <div class="card mb-3 survey-item" data-survey-id="{{ survey.id }}" data-lat="{{ survey.project.latitude }}" data-lng="{{ survey.project.longitude }}">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1">{{ forloop.counter }}. {{ survey.project.site_name }}</h6>
+                                                <p class="text-muted small mb-1">
+                                                    <i class="fas fa-clock"></i> {{ survey.scheduled_start_time|time:"H:i" }}
+                                                    ({{ survey.estimated_duration }}分)
+                                                </p>
+                                                <p class="text-muted small mb-1">
+                                                    <i class="fas fa-map-marker-alt"></i> {{ survey.project.site_address|truncatechars:30 }}
+                                                </p>
+                                                <p class="text-muted small mb-0">
+                                                    <i class="fas fa-user"></i> {{ survey.surveyor.name }}
+                                                </p>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge bg-{{ survey.get_status_color }} mb-1">
+                                                    {{ survey.get_status_display }}
+                                                </span>
+                                                <br>
+                                                <button class="btn btn-sm btn-outline-primary" onclick="focusOnSurvey({{ survey.id }})">
+                                                    <i class="fas fa-crosshairs"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">調査がスケジュールされていません</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 最適化結果 -->
+            <div id="optimizationResults" class="card mt-4" style="display: none;">
+                <div class="card-header">
+                    <h5><i class="fas fa-magic"></i> 最適化結果</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>現在のルート</h6>
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>総距離</span>
+                                    <span id="currentDistance">{{ total_distance|default:0 }}km</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>所要時間</span>
+                                    <span id="currentTime">{{ estimated_time|default:0 }}分</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>最適化後</h6>
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>総距離</span>
+                                    <span id="optimizedDistance" class="text-success">-</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>所要時間</span>
+                                    <span id="optimizedTime" class="text-success">-</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mt-3 d-flex gap-2">
+                        <button class="btn btn-success" onclick="applyOptimization()">
+                            <i class="fas fa-check"></i> 最適化を適用
+                        </button>
+                        <button class="btn btn-secondary" onclick="cancelOptimization()">
+                            <i class="fas fa-times"></i> キャンセル
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=geometry,places"></script>
+<script>
+let map;
+let directionsService;
+let directionsRenderer;
+let markers = [];
+let optimizedRoute = null;
+
+function initMap() {
+    // 地図の初期化
+    map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 12,
+        center: {lat: 35.6762, lng: 139.6503}, // 東京駅を中心
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+    });
+
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({
+        draggable: true,
+        panel: null
+    });
+    directionsRenderer.setMap(map);
+
+    // 調査地点のマーカーを配置
+    {% for survey in surveys %}
+    {% if survey.project.latitude and survey.project.longitude %}
+    const marker{{ survey.id }} = new google.maps.Marker({
+        position: {lat: {{ survey.project.latitude }}, lng: {{ survey.project.longitude }}},
+        map: map,
+        title: '{{ survey.project.site_name }}',
+        label: '{{ forloop.counter }}',
+        icon: {
+            url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+            scaledSize: new google.maps.Size(32, 32)
+        }
+    });
+
+    const infoWindow{{ survey.id }} = new google.maps.InfoWindow({
+        content: `
+            <div>
+                <h6>{{ survey.project.site_name }}</h6>
+                <p><strong>時間:</strong> {{ survey.scheduled_start_time|time:"H:i" }}</p>
+                <p><strong>調査員:</strong> {{ survey.surveyor.name }}</p>
+                <p><strong>住所:</strong> {{ survey.project.site_address }}</p>
+            </div>
+        `
+    });
+
+    marker{{ survey.id }}.addListener('click', function() {
+        infoWindow{{ survey.id }}.open(map, marker{{ survey.id }});
+    });
+
+    markers.push(marker{{ survey.id }});
+    {% endif %}
+    {% endfor %}
+
+    // ルートを描画
+    calculateAndDisplayRoute();
+}
+
+function calculateAndDisplayRoute() {
+    const waypoints = [];
+    {% for survey in surveys %}
+    {% if survey.project.latitude and survey.project.longitude and not forloop.first and not forloop.last %}
+    waypoints.push({
+        location: {lat: {{ survey.project.latitude }}, lng: {{ survey.project.longitude }}},
+        stopover: true
+    });
+    {% endif %}
+    {% endfor %}
+
+    if (waypoints.length > 0) {
+        directionsService.route({
+            origin: {lat: {{ surveys.0.project.latitude }}, lng: {{ surveys.0.project.longitude }}},
+            destination: {lat: {{ surveys|last.project.latitude }}, lng: {{ surveys|last.project.longitude }}},
+            waypoints: waypoints,
+            optimizeWaypoints: false,
+            travelMode: google.maps.TravelMode.DRIVING
+        }, function(response, status) {
+            if (status === 'OK') {
+                directionsRenderer.setDirections(response);
+            }
+        });
+    }
+}
+
+function optimizeRoute() {
+    // ルート最適化のAPIコール
+    document.getElementById('optimizationResults').style.display = 'block';
+
+    // 仮の最適化結果
+    document.getElementById('optimizedDistance').textContent = '{{ total_distance|floatformat:1 }}km (-15%)';
+    document.getElementById('optimizedTime').textContent = '{{ estimated_time }}分 (-20%)';
+}
+
+function applyOptimization() {
+    alert('ルートの最適化を適用しました');
+    document.getElementById('optimizationResults').style.display = 'none';
+}
+
+function cancelOptimization() {
+    document.getElementById('optimizationResults').style.display = 'none';
+}
+
+function focusOnSurvey(surveyId) {
+    const surveyItems = document.querySelectorAll('.survey-item');
+    surveyItems.forEach(item => {
+        item.classList.remove('border-primary');
+    });
+
+    const targetItem = document.querySelector(`[data-survey-id="${surveyId}"]`);
+    if (targetItem) {
+        targetItem.classList.add('border-primary');
+        const lat = parseFloat(targetItem.dataset.lat);
+        const lng = parseFloat(targetItem.dataset.lng);
+        map.setCenter({lat: lat, lng: lng});
+        map.setZoom(16);
+    }
+}
+
+function toggleTraffic() {
+    // 交通情報の表示切替
+    const trafficLayer = new google.maps.TrafficLayer();
+    trafficLayer.setMap(trafficLayer.getMap() ? null : map);
+}
+
+function toggleSatellite() {
+    // 衛星画像の表示切替
+    const currentType = map.getMapTypeId();
+    map.setMapTypeId(currentType === 'satellite' ? 'roadmap' : 'satellite');
+}
+
+// 地図の初期化
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+});
+</script>
+{% endblock %}
