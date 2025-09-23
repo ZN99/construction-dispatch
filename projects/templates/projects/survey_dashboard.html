@@ -1,0 +1,193 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}調査ダッシュボード - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">調査ダッシュボード</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'survey_calendar' %}" class="btn btn-primary me-2">
+            <i class="fas fa-calendar me-1"></i>カレンダー
+        </a>
+        <a href="{% url 'auto_assign_surveys' %}" class="btn btn-success">
+            <i class="fas fa-magic me-1"></i>自動アサイン
+        </a>
+    </div>
+</div>
+
+<!-- 統計カード -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stat mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">本日の調査</h5>
+                        <span class="h2 font-weight-bold mb-0">{{ stats.today_surveys }}</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-primary text-white rounded-circle shadow">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stat mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">未アサイン</h5>
+                        <span class="h2 font-weight-bold mb-0 text-warning">{{ stats.pending_surveys }}</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-warning text-white rounded-circle shadow">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stat mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">本日完了</h5>
+                        <span class="h2 font-weight-bold mb-0 text-success">{{ stats.completed_today }}</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-success text-white rounded-circle shadow">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stat mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">遅延中</h5>
+                        <span class="h2 font-weight-bold mb-0 text-danger">{{ stats.overdue_surveys }}</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-danger text-white rounded-circle shadow">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 調査員稼働状況 -->
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">調査員稼働状況（本日）</h5>
+            </div>
+            <div class="card-body">
+                {% for item in surveyor_stats %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <strong>{{ item.surveyor.name }}</strong>
+                        <small class="text-muted d-block">{{ item.surveyor.base_location }}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-{% if item.usage_rate >= 100 %}danger{% elif item.usage_rate >= 80 %}warning{% else %}success{% endif %}">
+                            {{ item.daily_count }}/{{ item.capacity }}件 ({{ item.usage_rate }}%)
+                        </span>
+                    </div>
+                </div>
+                <div class="progress mb-3" style="height: 8px;">
+                    <div class="progress-bar bg-{% if item.usage_rate >= 100 %}danger{% elif item.usage_rate >= 80 %}warning{% else %}success{% endif %}"
+                         style="width: {{ item.usage_rate }}%"></div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 今週の調査予定 -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">今週の調査予定</h5>
+            </div>
+            <div class="card-body">
+                {% if weekly_surveys %}
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        {% for survey in weekly_surveys %}
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                            <div>
+                                <strong>{{ survey.project.title }}</strong>
+                                <small class="text-muted d-block">{{ survey.project.customer.name }}</small>
+                                <small class="text-info">{{ survey.surveyor.name|default:"未アサイン" }}</small>
+                            </div>
+                            <div class="text-end">
+                                <small class="d-block">{{ survey.scheduled_date|date:"m/d H:i" }}</small>
+                                <span class="badge bg-{% if survey.status == 'completed' %}success{% elif survey.status == 'in_progress' %}warning{% elif survey.status == 'cancelled' %}danger{% else %}primary{% endif %}">
+                                    {% if survey.status == 'scheduled' %}予定
+                                    {% elif survey.status == 'in_progress' %}調査中
+                                    {% elif survey.status == 'completed' %}完了
+                                    {% elif survey.status == 'cancelled' %}キャンセル
+                                    {% else %}{{ survey.get_status_display }}{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">今週の調査予定はありません</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- クイックアクション -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">クイックアクション</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{% url 'survey_list' %}" class="btn btn-outline-primary w-100 mb-2">
+                            <i class="fas fa-list me-1"></i>調査一覧
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'survey_calendar' %}" class="btn btn-outline-info w-100 mb-2">
+                            <i class="fas fa-calendar me-1"></i>カレンダー表示
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'survey_routes' %}" class="btn btn-outline-success w-100 mb-2">
+                            <i class="fas fa-route me-1"></i>ルート最適化
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'auto_assign_surveys' %}" class="btn btn-outline-warning w-100 mb-2">
+                            <i class="fas fa-magic me-1"></i>自動アサイン
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

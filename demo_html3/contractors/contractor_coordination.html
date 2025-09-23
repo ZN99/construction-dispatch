@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>協力会社連絡・調整 - 建築派遣SaaS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .task-card {
+            background: white;
+            border-radius: 12px;
+            margin: 15px 0;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+        }
+        .task-card.urgent {
+            border-left: 4px solid #dc3545;
+            background: #fff5f5;
+        }
+        .task-card.completed {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        .contractor-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .call-action {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .response-logging {
+            background: #f3e5f5;
+            border: 1px solid #9c27b0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .mobile-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .contact-button {
+            background: #28a745;
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(40,167,69,0.3);
+            transition: all 0.3s;
+        }
+        .contact-button:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(40,167,69,0.4);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .status-contacted { background-color: #cce5ff; color: #004085; }
+        .status-confirmed { background-color: #d4edda; color: #155724; }
+        .status-rejected { background-color: #f8d7da; color: #721c24; }
+
+        .work-details {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .responsibility-reminder {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+            padding: 12px;
+            margin: 15px 0;
+        }
+        .navigation-buttons {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px;
+            border-top: 1px solid #dee2e6;
+        }
+        @media (max-width: 768px) {
+            .task-card { margin: 10px; padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- モバイルヘッダー -->
+    <div class="mobile-header">
+        <h4><i class="fas fa-phone me-2"></i>協力会社連絡・調整</h4>
+        <small>STEP 2: 派遣スタッフの役割</small>
+    </div>
+
+    <div class="container-fluid px-3">
+        <!-- フロー説明 -->
+        <div class="alert alert-success mt-3">
+            <strong>STEP 2: 派遣スタッフの役割（連絡・調整・情報入力）</strong><br>
+            社員からの指示に基づき、協力会社の責任者に連絡し、調整結果をSaaSに記録してください。
+        </div>
+
+        <!-- 重要な注意事項 -->
+        <div class="responsibility-reminder">
+            <h6><i class="fas fa-exclamation-triangle me-2"></i>重要な注意事項</h6>
+            <ul class="mb-0">
+                <li><strong>連絡先は必ず会社の責任者</strong>（部長、工場長等）</li>
+                <li>職人個人への直接連絡は絶対に避けてください</li>
+                <li>調整結果は必ずSaaSに記録してください</li>
+            </ul>
+        </div>
+
+        <!-- 割り当てタスク一覧 -->
+        <div id="taskList">
+            <!-- タスク1: 大工工事 -->
+            <div class="task-card urgent" id="task-1">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5><i class="fas fa-hammer me-2"></i>大工工事手配</h5>
+                        <span class="status-badge status-pending">連絡待ち</span>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted">期限: 9/22 17:00</small><br>
+                        <span class="badge bg-danger">緊急</span>
+                    </div>
+                </div>
+
+                <div class="work-details">
+                    <h6>工事詳細</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>作業期間:</strong> 9/25〜9/26<br>
+                            <strong>必要人数:</strong> 2名
+                        </div>
+                        <div class="col-6">
+                            <strong>現場住所:</strong> 東京都港区鹔浜2-3-15<br>
+                            <strong>作業内容:</strong> 原状回復工事
+                        </div>
+                    </div>
+                </div>
+
+                <div class="contractor-info">
+                    <h6><i class="fas fa-building me-2"></i>連絡先（責任者のみ）</h6>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <strong>A建設株式会社</strong><br>
+                            <strong>責任者:</strong> 山田部長<br>
+                            <strong>電話:</strong> 03-1234-5678<br>
+                            <strong>メール:</strong> yamada@a-kensetsu.co.jp
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button class="btn btn-success contact-button" onclick="initiateContact('task-1', 'phone')">
+                                <i class="fas fa-phone me-2"></i>電話する
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="call-action" id="call-action-1" style="display: none;">
+                    <h6><i class="fas fa-phone-alt me-2"></i>通話中...</h6>
+                    <p>山田部長と以下の内容を確認してください:</p>
+                    <ul class="text-start">
+                        <li>9/25〜9/26の期間で大工2名の手配が可能か</li>
+                        <li>原状回復工事の経験があるか</li>
+                        <li>必要な工具・材料の準備は可能か</li>
+                        <li>緊急時の連絡先</li>
+                    </ul>
+                    <button class="btn btn-primary" onclick="showResponseForm('task-1')">
+                        <i class="fas fa-edit me-2"></i>回答を記録
+                    </button>
+                </div>
+
+                <div class="response-logging" id="response-form-1" style="display: none;">
+                    <h6><i class="fas fa-clipboard-list me-2"></i>調整結果の記録</h6>
+                    <div class="mb-3">
+                        <label class="form-label">回答内容</label>
+                        <select class="form-select" id="response-1">
+                            <option value="">選択してください</option>
+                            <option value="available">手配可能</option>
+                            <option value="unavailable">手配不可</option>
+                            <option value="conditional">条件付きで可能</option>
+                            <option value="pending">検討中</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">詳細コメント</label>
+                        <textarea class="form-control" rows="3" id="comment-1"
+                                  placeholder="例：A建設・山田部長より『手配可』との返答あり。大工2名（田中、佐藤）を9/25-26で確保済み。"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">連絡完了時刻</label>
+                        <input type="datetime-local" class="form-control" id="contact-time-1"
+                               value="2025-09-16T14:30">
+                    </div>
+                    <button class="btn btn-success w-100" onclick="submitResponse('task-1')">
+                        <i class="fas fa-paper-plane me-2"></i>調整結果を送信
+                    </button>
+                </div>
+            </div>
+
+            <!-- タスク2: 内装工事 -->
+            <div class="task-card" id="task-2">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5><i class="fas fa-paint-roller me-2"></i>内装工事手配</h5>
+                        <span class="status-badge status-pending">連絡待ち</span>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted">期限: 9/23 12:00</small><br>
+                        <span class="badge bg-warning">通常</span>
+                    </div>
+                </div>
+
+                <div class="work-details">
+                    <h6>工事詳細</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>作業期間:</strong> 9/27〜9/28<br>
+                            <strong>必要人数:</strong> 1名
+                        </div>
+                        <div class="col-6">
+                            <strong>現場住所:</strong> 東京都港区鹔浜2-3-15<br>
+                            <strong>作業内容:</strong> クロス張替え工事
+                        </div>
+                    </div>
+                </div>
+
+                <div class="contractor-info">
+                    <h6><i class="fas fa-building me-2"></i>連絡先（責任者のみ）</h6>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <strong>A建設株式会社</strong><br>
+                            <strong>責任者:</strong> 山田部長<br>
+                            <strong>電話:</strong> 03-1234-5678<br>
+                            <strong>メール:</strong> yamada@a-kensetsu.co.jp
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button class="btn btn-success contact-button" onclick="initiateContact('task-2', 'phone')">
+                                <i class="fas fa-phone me-2"></i>電話する
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="call-action" id="call-action-2" style="display: none;">
+                    <h6><i class="fas fa-phone-alt me-2"></i>通話中...</h6>
+                    <p>山田部長と以下の内容を確認してください:</p>
+                    <ul class="text-start">
+                        <li>9/27〜9/28の期間で内装工1名の手配が可能か</li>
+                        <li>クロス張替えの経験があるか</li>
+                        <li>必要な材料（クロス）の調達は可能か</li>
+                    </ul>
+                    <button class="btn btn-primary" onclick="showResponseForm('task-2')">
+                        <i class="fas fa-edit me-2"></i>回答を記録
+                    </button>
+                </div>
+
+                <div class="response-logging" id="response-form-2" style="display: none;">
+                    <h6><i class="fas fa-clipboard-list me-2"></i>調整結果の記録</h6>
+                    <div class="mb-3">
+                        <label class="form-label">回答内容</label>
+                        <select class="form-select" id="response-2">
+                            <option value="">選択してください</option>
+                            <option value="available">手配可能</option>
+                            <option value="unavailable">手配不可</option>
+                            <option value="conditional">条件付きで可能</option>
+                            <option value="pending">検討中</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">詳細コメント</label>
+                        <textarea class="form-control" rows="3" id="comment-2"
+                                  placeholder="例：A建設・山田部長より回答内容を詳細に記入"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">連絡完了時刻</label>
+                        <input type="datetime-local" class="form-control" id="contact-time-2">
+                    </div>
+                    <button class="btn btn-success w-100" onclick="submitResponse('task-2')">
+                        <i class="fas fa-paper-plane me-2"></i>調整結果を送信
+                    </button>
+                </div>
+            </div>
+
+            <!-- タスク3: クリーニング -->
+            <div class="task-card completed" id="task-3">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5><i class="fas fa-broom me-2"></i>クリーニング手配</h5>
+                        <span class="status-badge status-confirmed">手配確定</span>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-success">完了: 9/15 16:45</small><br>
+                        <span class="badge bg-success">完了</span>
+                    </div>
+                </div>
+
+                <div class="work-details">
+                    <h6>工事詳細</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>作業期間:</strong> 9/29<br>
+                            <strong>必要人数:</strong> 2名
+                        </div>
+                        <div class="col-6">
+                            <strong>現場住所:</strong> 東京都港区鹔浜2-3-15<br>
+                            <strong>作業内容:</strong> ハウスクリーニング
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-success">
+                    <strong>調整完了:</strong> Cクリーン・田中代表より『手配可』との返答あり。清掃スタッフ2名（鈴木、高橋）を9/29で確保済み。専用清掃用具も準備完了。
+                    <br><small class="text-muted">連絡完了: 2025-09-15 16:45</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 進捗サマリー -->
+        <div class="card mt-4 mb-5">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>進捗サマリー</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-3">
+                        <div class="h3 text-primary" id="total-tasks">3</div>
+                        <small>総タスク</small>
+                    </div>
+                    <div class="col-3">
+                        <div class="h3 text-success" id="completed-tasks">1</div>
+                        <small>完了</small>
+                    </div>
+                    <div class="col-3">
+                        <div class="h3 text-warning" id="pending-tasks">2</div>
+                        <small>連絡待ち</small>
+                    </div>
+                    <div class="col-3">
+                        <div class="h3 text-danger" id="urgent-tasks">1</div>
+                        <small>緊急</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ナビゲーションボタン -->
+    <div class="navigation-buttons">
+        <button class="btn btn-outline-secondary flex-fill me-2" onclick="goBack()">
+            <i class="fas fa-arrow-left me-2"></i>戻る
+        </button>
+        <button class="btn btn-primary flex-fill" onclick="refreshTasks()">
+            <i class="fas fa-sync me-2"></i>最新状況を確認
+        </button>
+    </div>
+
+    <!-- パディング（ナビゲーションボタン分） -->
+    <div style="height: 80px;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let tasks = {
+            'task-1': { status: 'pending', type: 'carpenter' },
+            'task-2': { status: 'pending', type: 'interior' },
+            'task-3': { status: 'completed', type: 'cleaning' }
+        };
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            updateProgressSummary();
+        });
+
+        // 現在日時の更新
+        function updateDateTime() {
+            const now = new Date();
+            const dateTimeInputs = document.querySelectorAll('input[type="datetime-local"]');
+
+            dateTimeInputs.forEach(input => {
+                if (!input.value) {
+                    input.value = now.toISOString().slice(0, 16);
+                }
+            });
+        }
+
+        // 連絡開始
+        function initiateContact(taskId, method) {
+            console.log(`${taskId} - ${method}での連絡を開始`);
+
+            // 連絡ボタンを無効化
+            const button = event.target;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>接続中...';
+
+            // 通話アクション表示
+            setTimeout(() => {
+                document.getElementById(`call-action-${taskId.split('-')[1]}`).style.display = 'block';
+                button.innerHTML = '<i class="fas fa-phone me-2"></i>通話中';
+                button.classList.remove('btn-success');
+                button.classList.add('btn-warning');
+
+                // タスクステータス更新
+                updateTaskStatus(taskId, 'contacted');
+            }, 2000);
+        }
+
+        // 回答フォーム表示
+        function showResponseForm(taskId) {
+            document.getElementById(`call-action-${taskId.split('-')[1]}`).style.display = 'none';
+            document.getElementById(`response-form-${taskId.split('-')[1]}`).style.display = 'block';
+        }
+
+        // 調整結果送信
+        function submitResponse(taskId) {
+            const taskNum = taskId.split('-')[1];
+            const response = document.getElementById(`response-${taskNum}`).value;
+            const comment = document.getElementById(`comment-${taskNum}`).value;
+            const contactTime = document.getElementById(`contact-time-${taskNum}`).value;
+
+            if (!response) {
+                alert('回答内容を選択してください');
+                return;
+            }
+
+            if (!comment.trim()) {
+                alert('詳細コメントを入力してください');
+                return;
+            }
+
+            // 調整結果データ
+            const responseData = {
+                taskId: taskId,
+                response: response,
+                comment: comment,
+                contactTime: contactTime,
+                submittedAt: new Date().toISOString(),
+                submittedBy: '派遣スタッフ'
+            };
+
+            console.log('調整結果送信:', responseData);
+
+            // STEP 3: 自動情報共有・通知をトリガー
+            triggerAutoNotification(responseData);
+
+            // タスクカードの更新
+            updateTaskAfterResponse(taskId, response, comment);
+
+            alert('調整結果を送信しました。\n担当社員に承認依頼の通知が送られます。');
+        }
+
+        // STEP 3: 自動情報共有・通知のトリガー
+        function triggerAutoNotification(responseData) {
+            console.log('STEP 3: 自動情報共有・通知を開始');
+
+            // 通知システムページが開いていれば直接呼び出し
+            if (window.opener && window.opener.triggerAutoNotification) {
+                window.opener.triggerAutoNotification(responseData);
+            }
+
+            // プロジェクト関係者への情報共有
+            const projectMembers = [
+                '担当社員',
+                'プロジェクトマネージャー',
+                '現場責任者'
+            ];
+
+            projectMembers.forEach(member => {
+                console.log(`${member}に情報共有: ${responseData.comment}`);
+            });
+
+            // 担当社員への承認依頼通知
+            setTimeout(() => {
+                console.log('担当社員への承認依頼通知を送信');
+                console.log('通知内容:', {
+                    title: '協力会社手配の承認依頼',
+                    message: `派遣スタッフから協力会社への連絡が完了しました。承認をお願いします。`,
+                    responseData: responseData
+                });
+
+                alert('自動情報共有完了\n\n' +
+                      '✓ プロジェクトメンバーへの情報共有\n' +
+                      '✓ 担当社員への承認依頼通知\n' +
+                      '✓ 工程表の自動更新\n' +
+                      '✓ 通知システムに反映済み');
+
+                // 通知システムページを別タブで開く
+                const notificationUrl = 'notification_system.html';
+                window.open(notificationUrl, '_blank');
+            }, 1000);
+        }
+
+        // 回答後のタスク更新
+        function updateTaskAfterResponse(taskId, response, comment) {
+            const taskCard = document.getElementById(taskId);
+            const statusBadge = taskCard.querySelector('.status-badge');
+            const responseForm = document.getElementById(`response-form-${taskId.split('-')[1]}`);
+
+            // ステータス更新
+            let newStatus = '';
+            let badgeClass = '';
+
+            switch(response) {
+                case 'available':
+                    newStatus = '手配可能';
+                    badgeClass = 'status-confirmed';
+                    tasks[taskId].status = 'confirmed';
+                    break;
+                case 'unavailable':
+                    newStatus = '手配不可';
+                    badgeClass = 'status-rejected';
+                    tasks[taskId].status = 'rejected';
+                    break;
+                case 'conditional':
+                    newStatus = '条件付き可能';
+                    badgeClass = 'status-contacted';
+                    tasks[taskId].status = 'conditional';
+                    break;
+                case 'pending':
+                    newStatus = '検討中';
+                    badgeClass = 'status-contacted';
+                    tasks[taskId].status = 'pending_response';
+                    break;
+            }
+
+            statusBadge.className = `status-badge ${badgeClass}`;
+            statusBadge.textContent = newStatus;
+
+            // 回答結果表示
+            responseForm.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>調整完了:</strong> ${comment}
+                    <br><small class="text-muted">送信済み: ${new Date().toLocaleString()}</small>
+                </div>
+            `;
+
+            updateProgressSummary();
+        }
+
+        // タスクステータス更新
+        function updateTaskStatus(taskId, status) {
+            tasks[taskId].status = status;
+            updateProgressSummary();
+        }
+
+        // 進捗サマリー更新
+        function updateProgressSummary() {
+            const taskValues = Object.values(tasks);
+            const completed = taskValues.filter(t => t.status === 'completed' || t.status === 'confirmed').length;
+            const pending = taskValues.filter(t => t.status === 'pending').length;
+            const urgent = taskValues.filter(t => t.status === 'pending' && t.type === 'carpenter').length;
+
+            document.getElementById('completed-tasks').textContent = completed;
+            document.getElementById('pending-tasks').textContent = pending;
+            document.getElementById('urgent-tasks').textContent = urgent;
+        }
+
+        // 最新状況確認
+        function refreshTasks() {
+            // 実際の実装では、サーバーから最新状況を取得
+            console.log('最新タスク状況を確認中...');
+
+            // ローディング表示
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>確認中...';
+            button.disabled = true;
+
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+                alert('最新状況を確認しました。新しいタスクの割り当てはありません。');
+            }, 2000);
+        }
+
+        // 戻るボタン
+        function goBack() {
+            window.location.href = '../index.html';
+        }
+    </script>
+</body>
+</html>

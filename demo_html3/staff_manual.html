@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建築派遣SaaS 社員向け操作マニュアル</title>
+    <link rel="stylesheet" href="css/simple_theme.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .manual-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+            background: white;
+        }
+
+        .manual-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 48px 32px;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 32px;
+        }
+
+        .section {
+            margin-bottom: 48px;
+            padding: 24px;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            background: #fafafa;
+        }
+
+        .section h2 {
+            color: #333;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 8px;
+            margin-bottom: 24px;
+            font-size: 24px;
+        }
+
+        .section h3 {
+            color: #555;
+            margin: 24px 0 16px 0;
+            font-size: 20px;
+        }
+
+        .screenshot {
+            border: 3px solid #007bff;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 24px 0;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .screenshot-title {
+            background: #007bff;
+            color: white;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 9px 9px 0 0;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .mockup-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 32px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .mockup-card {
+            background: white;
+            border: 2px solid #007bff;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .mockup-next-task {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 32px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 24px 0;
+        }
+
+        .task-section {
+            margin: 16px 0;
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .task-completed {
+            background: #e8f5e8;
+            border-left: 5px solid #28a745;
+        }
+
+        .task-current {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+        }
+
+        .task-later {
+            background: #d1ecf1;
+            border-left: 5px solid #17a2b8;
+        }
+
+        .action-buttons {
+            text-align: center;
+            margin: 24px 0;
+        }
+
+        .big-button {
+            background: #28a745;
+            color: white;
+            padding: 20px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .small-button {
+            background: white;
+            color: #007bff;
+            border: 2px solid #007bff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 18px;
+            margin: 8px;
+            cursor: pointer;
+        }
+
+        .instruction-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 16px 0;
+        }
+
+        .warning-box {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 16px 0;
+        }
+
+        .tip-box {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 16px 0;
+        }
+
+        .step-list {
+            counter-reset: step-counter;
+            list-style: none;
+            padding: 0;
+        }
+
+        .step-list li {
+            counter-increment: step-counter;
+            margin: 16px 0;
+            padding: 16px;
+            background: white;
+            border-left: 4px solid #007bff;
+            border-radius: 8px;
+            position: relative;
+            padding-left: 60px;
+        }
+
+        .step-list li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #007bff;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .checklist li {
+            margin: 8px 0;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            position: relative;
+            padding-left: 40px;
+        }
+
+        .checklist li::before {
+            content: "☐";
+            position: absolute;
+            left: 12px;
+            font-size: 18px;
+            color: #007bff;
+        }
+
+        @media print {
+            .manual-container {
+                max-width: none;
+                margin: 0;
+                padding: 16px;
+            }
+
+            .section {
+                break-inside: avoid;
+                margin-bottom: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="manual-container">
+        <!-- マニュアルヘッダー -->
+        <div class="manual-header">
+            <h1 style="font-size: 36px; margin-bottom: 16px;">📖 建築派遣SaaS</h1>
+            <h2 style="font-size: 28px; margin-bottom: 16px;">社員向け操作マニュアル</h2>
+            <p style="font-size: 18px; margin: 0;">ITツール初心者でも安心して使える完全ガイド</p>
+        </div>
+
+        <!-- はじめに -->
+        <div class="section">
+            <h2>📖 はじめに</h2>
+            <p style="font-size: 18px; line-height: 1.6;">
+                このマニュアルは、建築派遣SaaSシステムを使用する派遣社員の皆様向けの操作ガイドです。<br>
+                ITツールに慣れていない方でも安心して使えるよう、画面の見方から操作方法まで分かりやすく説明します。
+            </p>
+
+            <div class="tip-box">
+                <h4>💡 このマニュアルの使い方</h4>
+                <ul>
+                    <li>画面の写真を見ながら操作を覚えましょう</li>
+                    <li>分からない時はいつでも見返してください</li>
+                    <li>困った時は遠慮なく質問してください</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- システムアクセス方法 -->
+        <div class="section">
+            <h2>🖥️ システムへのアクセス方法</h2>
+
+            <h3>1. ログイン画面を開く</h3>
+            <ol class="step-list">
+                <li>パソコンまたはスマートフォンでブラウザ（インターネット）を開きます</li>
+                <li>会社から指定されたURLにアクセスします</li>
+                <li>IDとパスワードを入力してログインします</li>
+            </ol>
+
+            <h3>2. ダッシュボード画面が表示されます</h3>
+            <p>ログインすると、あなた専用の画面（ダッシュボード）が表示されます。</p>
+        </div>
+
+        <!-- 画面の見方 -->
+        <div class="section">
+            <h2>📱 画面の見方・使い方</h2>
+
+            <div class="screenshot">
+                <div class="screenshot-title">📱 メイン画面の全体像</div>
+
+                <!-- 挨拶エリアのモックアップ -->
+                <div class="mockup-header">
+                    <h1 style="font-size: 32px; margin-bottom: 16px;">👋 お疲れ様です！</h1>
+                    <h2 style="font-size: 24px; margin-bottom: 8px;">田中太郎さん</h2>
+                    <p style="font-size: 18px; margin: 0;">⏰ 現在時刻：14:25</p>
+                </div>
+
+                <!-- 次の作業エリア -->
+                <div class="mockup-next-task">
+                    <h2 style="font-size: 28px; margin-bottom: 16px;">
+                        <i class="fas fa-clock" style="margin-right: 12px;"></i>次の作業
+                    </h2>
+                    <h3 style="font-size: 24px; font-weight: bold; margin-bottom: 8px;">
+                        新宿1K物件の現地調査
+                    </h3>
+                    <p style="font-size: 20px; margin-bottom: 16px;">
+                        📍 東京都新宿区 | ⏰ 14:30開始予定
+                    </p>
+                    <div style="background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; display: inline-block;">
+                        💧 水道設備をチェックしてください
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 24px; margin-top: 24px;">
+                    <!-- 今日やることエリア -->
+                    <div style="flex: 2;">
+                        <div class="mockup-card">
+                            <h4 style="font-size: 22px; color: #333; margin-bottom: 16px; border-bottom: 3px solid #007bff; padding-bottom: 8px;">
+                                📝 今日やること
+                            </h4>
+
+                            <div class="task-completed">
+                                <h6 style="color: #155724; margin-bottom: 8px; font-size: 16px;">✅ 完了済み</h6>
+                                <p style="margin: 4px 0; font-size: 16px;">港区ワンルーム現地調査 → 11:30に完了</p>
+                                <p style="margin: 4px 0; font-size: 16px;">A建設への連絡 → 13:15に完了</p>
+                            </div>
+
+                            <div class="task-current">
+                                <h6 style="color: #856404; margin-bottom: 8px; font-size: 18px;">🔥 次にやること</h6>
+                                <p style="margin: 4px 0; font-size: 20px; font-weight: bold; color: #333;">新宿1K物件の現地調査</p>
+                                <p style="margin: 4px 0; font-size: 16px; color: #666;">14:30〜16:00 | 水道設備をチェック</p>
+                            </div>
+
+                            <div class="task-later">
+                                <h6 style="color: #0c5460; margin-bottom: 8px; font-size: 16px;">⏳ 後でやること</h6>
+                                <p style="margin: 4px 0; font-size: 16px;">B工務店へ連絡 → 17:00まで</p>
+                                <p style="margin: 4px 0; font-size: 16px;">品川案件の写真提出 → 今日中</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ボタンエリア -->
+                    <div style="flex: 1;">
+                        <div class="mockup-card" style="border: 3px solid #007bff;">
+                            <div style="background: #007bff; color: white; margin: -24px -24px 20px -24px; padding: 16px; border-radius: 9px 9px 0 0; text-align: center;">
+                                <h4 style="margin: 0; font-size: 20px;">🚀 ボタンを押してください</h4>
+                            </div>
+
+                            <div class="action-buttons">
+                                <button class="big-button" style="width: 100%; margin-bottom: 16px;">
+                                    📱 現地調査を始める
+                                </button>
+
+                                <div style="border-top: 2px solid #eee; margin: 24px 0; padding-top: 20px;">
+                                    <p style="margin-bottom: 16px; font-size: 16px; color: #666;">その他の作業</p>
+                                    <button class="small-button" style="width: 100%; margin-bottom: 8px;">
+                                        📷 写真を送る
+                                    </button>
+                                    <button class="small-button" style="width: 100%;">
+                                        ✅ 完了報告
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>画面の各エリアの説明</h3>
+
+            <div class="instruction-box">
+                <h4>1. 👋 挨拶エリア（画面上部・緑色）</h4>
+                <ul>
+                    <li>あなたの名前と現在時刻が表示されます</li>
+                    <li>温かい挨拶で1日を始めましょう</li>
+                </ul>
+            </div>
+
+            <div class="instruction-box">
+                <h4>2. ⏰ 次の作業エリア（大きな青い枠）</h4>
+                <ul>
+                    <li><strong>今すぐやるべき作業</strong>が大きく表示されます</li>
+                    <li>場所、時間、注意事項が分かりやすく書かれています</li>
+                    <li>これを最優先で確認してください</li>
+                </ul>
+            </div>
+
+            <div class="instruction-box">
+                <h4>3. 📝 今日やることリスト</h4>
+                <p>色分けされた3つのエリアがあります：</p>
+                <ul>
+                    <li><strong style="color: #28a745;">✅ 完了済み（緑色）</strong> - もう終わった作業</li>
+                    <li><strong style="color: #ffc107;">🔥 次にやること（黄色）</strong> - 最優先でやる作業</li>
+                    <li><strong style="color: #17a2b8;">⏳ 後でやること（青色）</strong> - 今日中にやる他の作業</li>
+                </ul>
+            </div>
+
+            <div class="instruction-box">
+                <h4>4. 🚀 操作ボタンエリア</h4>
+                <ul>
+                    <li><strong style="color: #28a745;">📱 現地調査を始める</strong> - 一番大きなボタン（最重要）</li>
+                    <li>📷 写真を送る - 撮った写真をアップロード</li>
+                    <li>✅ 完了報告 - 作業完了の報告</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 基本操作方法 -->
+        <div class="section">
+            <h2>🔧 基本操作方法</h2>
+
+            <h3>1. 📱 現地調査を始める時</h3>
+            <div class="screenshot">
+                <div class="screenshot-title">現地調査開始の手順</div>
+                <ol class="step-list">
+                    <li>上司からの指示をよく読みます</li>
+                    <li><strong>「📱 現地調査を始める」ボタン</strong>を押します</li>
+                    <li>調査用の画面が開きます</li>
+                    <li>画面の指示に従って入力していきます</li>
+                </ol>
+
+                <div class="tip-box">
+                    <h4>💡 ポイント</h4>
+                    <ul>
+                        <li>ボタンを押す前に、上司からの指示をよく読んでください</li>
+                        <li>分からないことがあれば、必ず確認してから始めましょう</li>
+                        <li>移動時間を考慮して早めに出発しましょう</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>2. 📷 写真を送る時</h3>
+            <div class="screenshot">
+                <div class="screenshot-title">写真送信の手順</div>
+                <ol class="step-list">
+                    <li><strong>「📷 写真を送る」ボタン</strong>を押します</li>
+                    <li>写真選択画面が開きます</li>
+                    <li>スマートフォンで撮った写真を選びます</li>
+                    <li>送信ボタンを押して完了</li>
+                </ol>
+
+                <div class="instruction-box">
+                    <h4>📷 写真撮影のコツ</h4>
+                    <ul>
+                        <li><strong>部屋全体</strong>が分かる写真</li>
+                        <li><strong>問題のある箇所</strong>のアップ写真</li>
+                        <li>明るさを確認して、見やすい写真を撮りましょう</li>
+                        <li>複数の角度から撮影することも大切です</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>3. ✅ 完了報告をする時</h3>
+            <div class="screenshot">
+                <div class="screenshot-title">完了報告の手順</div>
+                <ol class="step-list">
+                    <li><strong>「✅ 完了報告」ボタン</strong>を押します</li>
+                    <li>完了報告の画面が開きます</li>
+                    <li>必要事項を入力します</li>
+                    <li>送信して完了</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- 上司からの指示 -->
+        <div class="section">
+            <h2>📢 上司からの指示の見方</h2>
+
+            <div class="screenshot">
+                <div class="screenshot-title">指示エリアの見方</div>
+
+                <div style="background: #fffbf0; border: 3px solid #ffc107; border-radius: 12px; padding: 24px; margin: 16px 0;">
+                    <h4 style="font-size: 22px; color: #333; margin-bottom: 16px;">📢 上司からの大事な連絡</h4>
+
+                    <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+                        <h5 style="color: #856404; margin-bottom: 12px; font-size: 20px;">⚠️ 新宿案件で注意すること</h5>
+                        <div style="font-size: 18px; line-height: 1.6;">
+                            <p style="margin: 8px 0;"><strong>💧 水道設備をチェックする時：</strong></p>
+                            <div style="margin-left: 20px;">
+                                <p style="margin: 4px 0;">• 給水管から水漏れしていないか</p>
+                                <p style="margin: 4px 0;">• 排水がスムーズに流れるか</p>
+                                <p style="margin: 4px 0;">• 蛇口がちゃんと動くか</p>
+                            </div>
+                            <p style="margin: 12px 0 4px 0; font-size: 16px; color: #666;">📝 山田課長より（13:00の指示）</p>
+                        </div>
+                    </div>
+
+                    <div style="background: #d1ecf1; border: 2px solid #17a2b8; padding: 20px; border-radius: 12px;">
+                        <h5 style="color: #0c5460; margin-bottom: 12px; font-size: 20px;">📷 品川案件の写真について</h5>
+                        <p style="font-size: 18px; margin: 8px 0; line-height: 1.6;">
+                            <strong>部屋全体の写真</strong>と<strong>壊れている部分のアップ写真</strong>を必ず撮ってください。
+                        </p>
+                        <p style="margin: 12px 0 4px 0; font-size: 16px; color: #666;">📝 佐藤主任より（12:30の指示）</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <h4>⚠️ 重要な注意点</h4>
+                <ul>
+                    <li><strong>指示は必ず最後まで読んでください</strong></li>
+                    <li>分からない部分があれば、指示を出した人（課長・主任）に確認しましょう</li>
+                    <li>指示の時刻も確認して、新しい指示を見逃さないようにしましょう</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 時間管理 -->
+        <div class="section">
+            <h2>⏰ 時間管理のコツ</h2>
+
+            <h3>予定の確認方法</h3>
+            <ol class="step-list">
+                <li>「次の作業」エリアで今すぐやることを確認</li>
+                <li>「後でやること」で今日の残り作業を確認</li>
+                <li>時間に余裕を持って行動しましょう</li>
+            </ol>
+
+            <div class="tip-box">
+                <h4>💡 時間通りに作業を進めるために</h4>
+                <ul>
+                    <li>移動時間を考慮して早めに出発</li>
+                    <li>道に迷った時は、すぐに会社に連絡</li>
+                    <li>作業が予定より長くかかりそうな時も連絡</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- スマートフォン使用 -->
+        <div class="section">
+            <h2>📱 スマートフォンでの使い方</h2>
+
+            <h3>画面が小さい時</h3>
+            <ul>
+                <li>重要な部分は大きく表示されるので安心です</li>
+                <li>上から順番に見ていけば大丈夫です</li>
+                <li>ボタンも指で押しやすい大きさになっています</li>
+            </ul>
+
+            <div class="warning-box">
+                <h4>⚠️ 外出先での注意点</h4>
+                <ul>
+                    <li>電波状況を確認してから操作</li>
+                    <li>写真送信は電波の良い場所で</li>
+                    <li>バッテリー残量にも注意</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- よくある質問 -->
+        <div class="section">
+            <h2>❓ よくある質問・トラブル対処法</h2>
+
+            <div class="mockup-card">
+                <h4>Q1. ログインできない</h4>
+                <p><strong>A1.</strong></p>
+                <ul>
+                    <li>IDとパスワードが正しいか確認</li>
+                    <li>大文字・小文字の違いに注意</li>
+                    <li>それでもダメな時は会社に連絡</li>
+                </ul>
+            </div>
+
+            <div class="mockup-card">
+                <h4>Q2. ボタンを押しても反応しない</h4>
+                <p><strong>A2.</strong></p>
+                <ul>
+                    <li>少し待ってからもう一度押してみる</li>
+                    <li>電波状況を確認</li>
+                    <li>ページを再読み込み（更新）してみる</li>
+                </ul>
+            </div>
+
+            <div class="mockup-card">
+                <h4>Q3. 写真がアップロードできない</h4>
+                <p><strong>A3.</strong></p>
+                <ul>
+                    <li>写真のサイズが大きすぎる可能性</li>
+                    <li>電波状況を確認</li>
+                    <li>時間をおいてもう一度試す</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 作業完了チェックリスト -->
+        <div class="section">
+            <h2>✅ 作業完了時のチェックリスト</h2>
+
+            <p>作業を終える前に、以下を確認しましょう：</p>
+
+            <ul class="checklist">
+                <li>指示された内容をすべて実施した</li>
+                <li>必要な写真をすべて撮影・送信した</li>
+                <li>完了報告を正しく入力した</li>
+                <li>次の予定を確認した</li>
+                <li>忘れ物がないか確認した</li>
+            </ul>
+        </div>
+
+        <!-- システムを上手に使うコツ -->
+        <div class="section">
+            <h2>💡 システムを上手に使うコツ</h2>
+
+            <div class="tip-box">
+                <h4>1. 毎朝の確認習慣</h4>
+                <ul>
+                    <li>ログイン後、必ず「今日やること」を確認</li>
+                    <li>上司からの新しい指示がないかチェック</li>
+                    <li>1日のスケジュールを把握</li>
+                </ul>
+            </div>
+
+            <div class="tip-box">
+                <h4>2. こまめな報告</h4>
+                <ul>
+                    <li>作業完了したらすぐに報告</li>
+                    <li>問題があったらすぐに連絡</li>
+                    <li>予定が変わった時も必ず報告</li>
+                </ul>
+            </div>
+
+            <div class="tip-box">
+                <h4>3. 写真の管理</h4>
+                <ul>
+                    <li>撮影したらすぐにアップロード</li>
+                    <li>案件ごとに整理して撮影</li>
+                    <li>見やすい角度・明るさで撮影</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- セキュリティ -->
+        <div class="section">
+            <h2>🔒 セキュリティ・注意事項</h2>
+
+            <div class="warning-box">
+                <h4>⚠️ ログイン情報の管理</h4>
+                <ul>
+                    <li><strong>IDとパスワードは他人に教えない</strong></li>
+                    <li><strong>パスワードを紙に書いて持ち歩かない</strong></li>
+                    <li><strong>共用のパソコンでは必ずログアウト</strong></li>
+                </ul>
+            </div>
+
+            <div class="warning-box">
+                <h4>⚠️ 情報の取り扱い</h4>
+                <ul>
+                    <li><strong>お客様の情報は絶対に外部に漏らさない</strong></li>
+                    <li><strong>撮影した写真を個人的に使わない</strong></li>
+                    <li><strong>画面を他人に見られないよう注意</strong></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 緊急連絡先 -->
+        <div class="section">
+            <h2>📞 困った時の連絡先</h2>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div class="mockup-card" style="background: #e8f5e8; border-color: #28a745;">
+                    <h4 style="color: #155724;">システムに関する問題</h4>
+                    <ul>
+                        <li><strong>システム担当者：</strong>田中（内線123）</li>
+                        <li><strong>緊急時：</strong>090-1234-5678</li>
+                    </ul>
+                </div>
+
+                <div class="mockup-card" style="background: #fff3cd; border-color: #ffc107;">
+                    <h4 style="color: #856404;">作業内容に関する質問</h4>
+                    <ul>
+                        <li><strong>直属の上司</strong>または<strong>指示を出した課長・主任</strong>に連絡</li>
+                        <li>迷った時は必ず確認してから作業を進める</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <h4>🚨 緊急連絡</h4>
+                <ul>
+                    <li><strong>現場でのトラブル：</strong>すぐに会社に連絡</li>
+                    <li><strong>体調不良・事故：</strong>安全を最優先に行動</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- おわりに -->
+        <div class="section">
+            <h2>📚 おわりに</h2>
+
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 32px; border-radius: 12px; text-align: center;">
+                <h3 style="margin-bottom: 16px;">このマニュアルを読んでも分からないことがあれば</h3>
+                <h2 style="margin-bottom: 24px; font-size: 28px;">遠慮なく質問してください！</h2>
+
+                <p style="font-size: 18px; margin-bottom: 16px;">
+                    慣れるまでは大変かもしれませんが、このシステムを使うことで：
+                </p>
+                <ul style="text-align: left; display: inline-block; font-size: 18px;">
+                    <li>作業の指示が明確になります</li>
+                    <li>報告が簡単になります</li>
+                    <li>ミスや漏れが減ります</li>
+                </ul>
+
+                <p style="font-size: 20px; margin-top: 24px; font-weight: bold;">
+                    安全に、効率よく仕事を進めるために、<br>
+                    一緒にシステムを活用していきましょう！
+                </p>
+            </div>
+
+            <div style="text-align: center; margin-top: 32px; padding: 24px; background: #f8f9fa; border-radius: 12px;">
+                <h3 style="color: #dc3545; margin-bottom: 16px;">📞 困った時はすぐに連絡</h3>
+                <p style="font-size: 20px; margin: 8px 0;"><strong>システム担当：田中（内線123）</strong></p>
+                <p style="font-size: 20px; margin: 8px 0;"><strong>緊急時：090-1234-5678</strong></p>
+
+                <hr style="margin: 24px 0; border: 1px solid #dee2e6;">
+
+                <p style="margin: 8px 0; color: #666;">作成日：2024年12月19日</p>
+                <p style="margin: 8px 0; color: #666;">最終更新：2024年12月19日</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/simple_ui.js"></script>
+    <script>
+        // 印刷用の機能
+        function printManual() {
+            window.print();
+        }
+
+        // スムーズスクロール
+        document.addEventListener('DOMContentLoaded', function() {
+            const links = document.querySelectorAll('a[href^="#"]');
+            links.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

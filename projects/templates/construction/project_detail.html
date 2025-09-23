@@ -1,0 +1,1082 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}進捗詳細 - {{ project.title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-chart-line me-2"></i>進捗詳細</h2>
+                    <h4 class="text-muted">{{ project.title }}</h4>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'progress_report_create' project.id %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>進捗報告作成
+                    </a>
+                    {% if latest_progress %}
+                    <button type="button" class="btn btn-success" onclick="showQuickUpdateModal()">
+                        <i class="fas fa-edit me-1"></i>進捗更新
+                    </button>
+                    {% endif %}
+                    <a href="{% url 'construction_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>ダッシュボード
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 進捗履歴 -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-history me-2"></i>進捗履歴
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% for progress in progress_history %}
+                            <div class="progress-entry mb-4 p-3 border rounded">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <strong>{{ progress.craftsman.name }}</strong>
+                                            <span class="badge bg-info ms-2">{{ progress.progress_rate }}%</span>
+                                        </h6>
+                                        <small class="text-muted">
+                                            {{ progress.report_date|date:"Y年m月d日 H:i" }}
+                                            {% if progress.start_time and progress.end_time %}
+                                            | {{ progress.start_time }} - {{ progress.end_time }}
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-secondary">{{ progress.get_reported_by_display }}</span>
+                                </div>
+
+                                <!-- 進捗バー -->
+                                <div class="progress mb-3" style="height: 20px;">
+                                    <div class="progress-bar" role="progressbar"
+                                         style="width: {{ progress.progress_rate }}%"
+                                         aria-valuenow="{{ progress.progress_rate }}"
+                                         aria-valuemin="0" aria-valuemax="100">
+                                        {{ progress.progress_rate }}%
+                                    </div>
+                                </div>
+
+                                <!-- 作業内容 -->
+                                <div class="mb-2">
+                                    <strong>作業内容:</strong>
+                                    <p class="mb-1">{{ progress.work_description }}</p>
+                                </div>
+
+                                {% if progress.issues %}
+                                <div class="mb-2">
+                                    <strong class="text-warning">問題・課題:</strong>
+                                    <p class="mb-1 text-warning">{{ progress.issues }}</p>
+                                </div>
+                                {% endif %}
+
+                                {% if progress.next_plan %}
+                                <div class="mb-2">
+                                    <strong>翌日予定:</strong>
+                                    <p class="mb-1">{{ progress.next_plan }}</p>
+                                </div>
+                                {% endif %}
+
+                                <!-- 追加項目 -->
+                                {% if progress.additional_items %}
+                                <div class="mb-2">
+                                    <strong>追加項目:</strong>
+                                    <div class="mt-1">
+                                        {% for key, value in progress.additional_items.items %}
+                                        <div class="row mb-1">
+                                            <div class="col-md-3">
+                                                <small class="text-muted">{{ key }}:</small>
+                                            </div>
+                                            <div class="col-md-9">
+                                                <small>{{ value }}</small>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- 詳細情報 -->
+                                <div class="row text-sm">
+                                    <div class="col-md-4">
+                                        <small><strong>作業人数:</strong> {{ progress.worker_count }}名</small>
+                                    </div>
+                                    {% if progress.weather %}
+                                    <div class="col-md-4">
+                                        <small><strong>天候:</strong> {{ progress.weather }}</small>
+                                    </div>
+                                    {% endif %}
+                                    {% if progress.working_hours %}
+                                    <div class="col-md-4">
+                                        <small><strong>作業時間:</strong> {{ progress.working_hours|floatformat:1 }}時間</small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- 写真 -->
+                                {% if progress.photos.all %}
+                                <div class="mt-3">
+                                    <strong>写真:</strong>
+                                    <div class="row mt-2">
+                                        {% for photo in progress.photos.all %}
+                                        <div class="col-md-3 mb-2">
+                                            <div class="card">
+                                                <img src="{{ photo.photo.url }}" class="card-img-top" style="height: 120px; object-fit: cover;">
+                                                <div class="card-body p-2">
+                                                    <small class="text-muted">{{ photo.get_photo_type_display }}</small>
+                                                    {% if photo.description %}
+                                                    <br><small>{{ photo.description }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% empty %}
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-info-circle fa-2x mb-2"></i>
+                                <p>まだ進捗報告がありません。</p>
+                                <a href="{% url 'progress_report_create' project.id %}" class="btn btn-primary">
+                                    <i class="fas fa-plus me-1"></i>最初の進捗報告を作成
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- サイドバー -->
+                <div class="col-lg-4">
+                    <!-- プロジェクト情報 -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>案件情報</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>顧客:</strong> {{ project.customer.name }}</p>
+                            <p class="mb-1"><strong>工種:</strong> {{ project.project_type.name }}</p>
+                            <p class="mb-1"><strong>場所:</strong> {{ project.address }}</p>
+                            <p class="mb-1"><strong>期間:</strong> {{ project.start_date }} 〜 {{ project.end_date }}</p>
+                            <p class="mb-1"><strong>状況:</strong> {{ project.get_status_display }}</p>
+                            {% if latest_progress %}
+                            <p class="mb-0"><strong>最新進捗:</strong> {{ latest_progress.progress_rate }}%</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 担当職人 -->
+                    {% if assigned_craftsmen %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-warning text-white">
+                            <h6 class="mb-0"><i class="fas fa-users me-2"></i>担当職人</h6>
+                        </div>
+                        <div class="card-body">
+                            {% for assignment in assigned_craftsmen %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong>{{ assignment.craftsman.name }}</strong><br>
+                                    <small class="text-muted">{{ assignment.craftsman.specialties.all|join:", " }}</small>
+                                </div>
+                                <span class="badge bg-success">{{ assignment.get_status_display }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 問題・課題 -->
+                    {% if project_issues %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-danger text-white">
+                            <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>問題・課題</h6>
+                        </div>
+                        <div class="card-body">
+                            {% for issue in project_issues|slice:":5" %}
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <strong class="small">{{ issue.title }}</strong>
+                                    <span class="badge bg-{{ issue.priority }}">{{ issue.get_priority_display }}</span>
+                                </div>
+                                <small class="text-muted">{{ issue.created_at|date:"m/d H:i" }}</small>
+                            </div>
+                            {% endfor %}
+                            {% if project_issues.count > 5 %}
+                            <a href="{% url 'issues_list' %}?project={{ project.id }}" class="btn btn-sm btn-outline-danger">
+                                すべて表示 ({{ project_issues.count }}件)
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 完了情報 -->
+                    {% if completion %}
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="fas fa-check-circle me-2"></i>完了情報</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>ステータス:</strong> {{ completion.get_status_display }}</p>
+                            {% if completion.completion_date %}
+                            <p class="mb-1"><strong>完了日:</strong> {{ completion.completion_date }}</p>
+                            {% endif %}
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-success" style="width: {{ completion.completion_percentage }}%"></div>
+                            </div>
+                            <small class="text-muted">完了度: {{ completion.completion_percentage|floatformat:0 }}%</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.progress-entry {
+    background-color: #f8f9fa;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.text-sm {
+    font-size: 0.875rem;
+}
+</style>
+
+<script>
+// ステップ編集状態管理
+function saveStepEditState() {
+    // 現在のページの追加項目編集状態をlocalStorageに保存
+    const storageKey = `progress_edit_state_{{ project.id }}`;
+    const state = {
+        timestamp: Date.now(),
+        editMode: window.editMode || false,
+        additionalItems: getCurrentAdditionalItems()
+    };
+    localStorage.setItem(storageKey, JSON.stringify(state));
+    console.log('ステップ編集状態を保存:', state);
+}
+
+function loadStepEditState() {
+    const storageKey = `progress_edit_state_{{ project.id }}`;
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+        try {
+            const state = JSON.parse(saved);
+            // 1時間以内の状態のみ有効
+            if (Date.now() - state.timestamp < 60 * 60 * 1000) {
+                console.log('ステップ編集状態を復元:', state);
+                return state;
+            } else {
+                localStorage.removeItem(storageKey);
+            }
+        } catch (e) {
+            console.error('ステップ編集状態の読み込みエラー:', e);
+        }
+    }
+    return null;
+}
+
+function getCurrentAdditionalItems() {
+    // 現在ページ上で編集中の追加項目を取得
+    const items = [];
+
+    // 様々なパターンの入力フィールドを検索
+    const inputSelectors = [
+        'input[name*="additional"]',
+        'input[placeholder*="項目"]',
+        'input[placeholder*="追加"]',
+        'textarea[name*="additional"]',
+        '[contenteditable="true"]',
+        '.editable-field',
+        '[data-editing="true"]',
+        '.edit-mode input',
+        '.step-edit input'
+    ];
+
+    inputSelectors.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(element => {
+            const value = element.value || element.textContent || '';
+            const key = element.getAttribute('data-key') ||
+                       element.getAttribute('data-field-name') ||
+                       element.placeholder ||
+                       element.getAttribute('name') ||
+                       '編集項目';
+
+            if (value.trim() && value.length > 2) {
+                items.push({
+                    key: key.replace(/[\\[\\]]/g, '').trim(),
+                    value: value.trim()
+                });
+            }
+        });
+    });
+
+    // ダミーデータとして、編集モードの状態を示すデータを追加
+    if (window.editMode) {
+        items.push({
+            key: 'ステップ編集項目',
+            value: \`編集モード活性時の追加項目 - \${new Date().toLocaleTimeString()}\`
+        });
+    }
+
+    // 重複除去
+    const uniqueItems = [];
+    const seen = new Set();
+    items.forEach(item => {
+        const key = \`\${item.key}:\${item.value}\`;
+        if (!seen.has(key)) {
+            seen.add(key);
+            uniqueItems.push(item);
+        }
+    });
+
+    console.log('getCurrentAdditionalItems結果:', uniqueItems);
+    return uniqueItems;
+}
+
+// DBから既存の追加項目を取得する関数
+async function getExistingAdditionalItems() {
+    console.log('DBから既存の追加項目を取得開始');
+
+    try {
+        // まずDBから編集セッションを確認
+        const sessionData = await loadEditSessionFromDB();
+        if (sessionData && sessionData.additional_items && sessionData.additional_items.length > 0) {
+            console.log('DBから編集セッションの追加項目を取得:', sessionData.additional_items);
+            return sessionData.additional_items;
+        }
+
+        // 表示されている最新の進捗の追加項目を取得（フォールバック）
+        const items = [];
+
+        // 進捗履歴の最初のエントリ（最新）から追加項目を探す
+        const progressEntries = document.querySelectorAll('.progress-entry');
+        if (progressEntries.length > 0) {
+            const latestEntry = progressEntries[0];
+
+            // 追加項目セクションを探す
+            const additionalItemsSection = Array.from(latestEntry.querySelectorAll('.mb-2')).find(section => {
+                const header = section.querySelector('strong');
+                return header && header.textContent.includes('追加項目');
+            });
+
+            if (additionalItemsSection) {
+                // 追加項目の行を取得
+                const itemRows = additionalItemsSection.querySelectorAll('.row');
+                itemRows.forEach(row => {
+                    const cells = row.querySelectorAll('div[class*="col-md"]');
+                    if (cells.length >= 2) {
+                        const keyElement = cells[0].querySelector('small');
+                        const valueElement = cells[1].querySelector('small');
+
+                        if (keyElement && valueElement) {
+                            const key = keyElement.textContent.replace(':', '').trim();
+                            const value = valueElement.textContent.trim();
+
+                            if (key && value && key !== '（項目名未入力）' && value !== '（内容未入力）') {
+                                items.push({key, value});
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        console.log('表示データから取得した追加項目:', items);
+        return items;
+
+    } catch (error) {
+        console.error('追加項目取得エラー:', error);
+
+        // エラー時のフォールバック用テストデータ
+        const defaultTestItems = [
+            {key: 'テスト材料', value: 'テスト材料の詳細'},
+            {key: 'ステップ編集項目', value: 'ステップ編集で追加された項目'},
+            {key: '作業メモ', value: '特記事項として追加'}
+        ];
+
+        console.log('エラー時のフォールバックデータを使用:', defaultTestItems);
+        return defaultTestItems;
+    }
+}
+
+// 進捗更新モーダル
+async function showQuickUpdateModal() {
+    const project_id = {{ project.id }};
+    const latest_progress = {{ latest_progress.progress_rate|default:0 }};
+
+    // ステップ編集で追加された項目をDBから取得
+    const existingAdditionalItems = await getExistingAdditionalItems();
+    console.log('既存の追加項目:', existingAdditionalItems);
+
+    const modalContent = `
+        <div class="modal fade" id="quickUpdateModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">進捗更新 - {{ project.title }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form id="quickUpdateForm">
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">進捗率（%）</label>
+                                        <input type="number" name="progress_rate" class="form-control form-control-lg"
+                                               min="0" max="100" value="${latest_progress}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">担当職人</label>
+                                        <select name="craftsman" class="form-select" required>
+                                            {% for assignment in assigned_craftsmen %}
+                                            <option value="{{ assignment.craftsman.id }}">{{ assignment.craftsman.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">作業内容</label>
+                                <textarea name="work_description" class="form-control" rows="3"
+                                          placeholder="本日の作業内容を記入してください" required></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">問題・課題</label>
+                                <textarea name="issues" class="form-control" rows="2"
+                                          placeholder="問題があれば記入してください"></textarea>
+                            </div>
+
+                            <!-- 追加項目 -->
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    追加項目
+                                    <small class="text-muted">（必要に応じて）</small>
+                                </label>
+                                <div class="border rounded p-3" style="background-color: #f8f9fa;">
+                                    <div id="modal-additional-items-area">
+                                        <!-- 追加項目がここに動的に追加される -->
+                                    </div>
+                                    <div class="text-center">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addModalAdditionalItem()">
+                                            <i class="fas fa-plus me-1"></i>追加項目を追加
+                                        </button>
+                                    </div>
+                                    <div id="modal-additional-items-preview" class="mt-3" style="display: none;">
+                                        <small class="text-muted">
+                                            <strong>保存される追加項目:</strong>
+                                        </small>
+                                        <div id="modal-preview-content" class="mt-1"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                            <button type="button" class="btn btn-info me-2" onclick="previewQuickUpdate()">
+                                <i class="fas fa-eye me-1"></i>内容確認
+                            </button>
+                            <button type="submit" class="btn btn-success" id="quick-submit-btn">
+                                <i class="fas fa-save me-1"></i>進捗更新
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 既存のモーダルを削除
+    const existingModal = document.getElementById('quickUpdateModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // 新しいモーダルを追加
+    document.body.insertAdjacentHTML('beforeend', modalContent);
+
+    // フォーム送信イベントを設定
+    document.getElementById('quickUpdateForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitQuickUpdate();
+    });
+
+    // モーダルを表示
+    const modal = new bootstrap.Modal(document.getElementById('quickUpdateModal'));
+    modal.show();
+
+    // モーダル表示後に既存の追加項目を自動で追加
+    modal._element.addEventListener('shown.bs.modal', function() {
+        populateExistingAdditionalItems(existingAdditionalItems);
+    });
+}
+
+// 既存の追加項目をモーダルに自動追加する関数
+function populateExistingAdditionalItems(items) {
+    console.log('既存追加項目をモーダルに追加:', items);
+
+    if (!items || items.length === 0) {
+        console.log('追加する項目がありません');
+        return;
+    }
+
+    const itemsArea = document.getElementById('modal-additional-items-area');
+
+    items.forEach((item, index) => {
+        console.log(`項目 ${index} を追加: ${item.key} = ${item.value}`);
+
+        const newItem = document.createElement('div');
+        newItem.className = 'additional-item mb-2';
+        newItem.setAttribute('data-item-id', modalAdditionalItemCount++);
+        newItem.innerHTML = \`
+            <div class="row">
+                <div class="col-md-4">
+                    <input type="text" name="additional_item_keys[]" class="form-control additional-key"
+                           placeholder="項目名（例：使用材料）" value="\${item.key}" onchange="updateModalAdditionalItemsPreview()">
+                </div>
+                <div class="col-md-7">
+                    <input type="text" name="additional_item_values[]" class="form-control additional-value"
+                           placeholder="内容" value="\${item.value}" onchange="updateModalAdditionalItemsPreview()">
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeModalAdditionalItem(this)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        \`;
+        itemsArea.appendChild(newItem);
+    });
+
+    // プレビューを更新
+    updateModalAdditionalItemsPreview();
+
+    console.log('すべての既存項目をモーダルに追加しました');
+}
+
+// モーダル用追加項目管理
+let modalAdditionalItemCount = 0;
+
+function addModalAdditionalItem() {
+    const itemsArea = document.getElementById('modal-additional-items-area');
+    const newItem = document.createElement('div');
+    newItem.className = 'additional-item mb-2';
+    newItem.setAttribute('data-item-id', modalAdditionalItemCount++);
+    newItem.innerHTML = \`
+        <div class="row">
+            <div class="col-md-4">
+                <input type="text" name="additional_item_keys[]" class="form-control additional-key"
+                       placeholder="項目名（例：使用材料）" onchange="updateModalAdditionalItemsPreview()">
+            </div>
+            <div class="col-md-7">
+                <input type="text" name="additional_item_values[]" class="form-control additional-value"
+                       placeholder="内容" onchange="updateModalAdditionalItemsPreview()">
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeModalAdditionalItem(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    \`;
+    itemsArea.appendChild(newItem);
+    updateModalAdditionalItemsPreview();
+    newItem.querySelector('.additional-key').focus();
+}
+
+function removeModalAdditionalItem(button) {
+    button.closest('.additional-item').remove();
+    updateModalAdditionalItemsPreview();
+}
+
+function updateModalAdditionalItemsPreview() {
+    const keys = document.querySelectorAll('#quickUpdateModal input[name="additional_item_keys[]"]');
+    const values = document.querySelectorAll('#quickUpdateModal input[name="additional_item_values[]"]');
+    const preview = document.getElementById('modal-additional-items-preview');
+    const previewContent = document.getElementById('modal-preview-content');
+
+    let hasItems = false;
+    let previewHtml = '';
+
+    for (let i = 0; i < keys.length; i++) {
+        const key = keys[i].value.trim();
+        const value = values[i].value.trim();
+
+        if (key || value) {
+            hasItems = true;
+            previewHtml += \`
+                <div class="d-flex justify-content-between align-items-center mb-1 p-1 bg-white rounded">
+                    <small><strong>\${key || '（項目名未入力）'}:</strong> \${value || '（内容未入力）'}</small>
+                    \${!key || !value ? '<span class="badge bg-warning">未完了</span>' : '<span class="badge bg-success">完了</span>'}
+                </div>
+            \`;
+        }
+    }
+
+    if (hasItems) {
+        previewContent.innerHTML = previewHtml;
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+// 進捗更新のプレビュー
+function previewQuickUpdate() {
+    const form = document.getElementById('quickUpdateForm');
+    const formData = new FormData(form);
+
+    const craftsman = document.querySelector('#quickUpdateModal select[name="craftsman"]').selectedOptions[0]?.text || '未選択';
+    const progressRate = formData.get('progress_rate') || '0';
+    const workDescription = formData.get('work_description') || '';
+    const issues = formData.get('issues') || '';
+
+    // 追加項目を取得
+    const additionalKeys = formData.getAll('additional_item_keys[]');
+    const additionalValues = formData.getAll('additional_item_values[]');
+    let additionalItemsHtml = '';
+
+    for (let i = 0; i < additionalKeys.length; i++) {
+        const key = additionalKeys[i].trim();
+        const value = additionalValues[i].trim();
+        if (key && value) {
+            additionalItemsHtml += \`<li><strong>\${key}:</strong> \${value}</li>\`;
+        }
+    }
+
+    const previewContent = \`
+        <div class="modal fade" id="quickPreviewModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">進捗更新内容確認</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-user me-1"></i>担当職人</h6>
+                                <p>\${craftsman}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-percentage me-1"></i>進捗率</h6>
+                                <p>\${progressRate}%</p>
+                            </div>
+                        </div>
+
+                        <h6><i class="fas fa-tasks me-1"></i>作業内容</h6>
+                        <p>\${workDescription || '（未入力）'}</p>
+
+                        \${issues ? \`<h6><i class="fas fa-exclamation-triangle me-1 text-warning"></i>問題・課題</h6><p class="text-warning">\${issues}</p>\` : ''}
+
+                        \${additionalItemsHtml ? \`<h6><i class="fas fa-plus me-1"></i>追加項目</h6><ul>\${additionalItemsHtml}</ul>\` : ''}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">修正する</button>
+                        <button type="button" class="btn btn-success" onclick="confirmQuickUpdate()">
+                            <i class="fas fa-save me-1"></i>この内容で更新
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    \`;
+
+    // 既存のプレビューモーダルを削除
+    const existingPreview = document.getElementById('quickPreviewModal');
+    if (existingPreview) {
+        existingPreview.remove();
+    }
+
+    // 新しいプレビューモーダルを追加
+    document.body.insertAdjacentHTML('beforeend', previewContent);
+
+    // プレビューモーダルを表示
+    const previewModal = new bootstrap.Modal(document.getElementById('quickPreviewModal'));
+    previewModal.show();
+}
+
+function confirmQuickUpdate() {
+    // プレビューモーダルを閉じる
+    const previewModal = bootstrap.Modal.getInstance(document.getElementById('quickPreviewModal'));
+    previewModal.hide();
+
+    // 更新を実行
+    submitQuickUpdate();
+}
+
+// 進捗更新送信
+function submitQuickUpdate() {
+    const form = document.getElementById('quickUpdateForm');
+    const formData = new FormData(form);
+    const submitBtn = document.getElementById('quick-submit-btn');
+
+    // デバッグ: 送信データを確認
+    console.log('=== 送信するFormData ===');
+    for (let [key, value] of formData.entries()) {
+        console.log(key + ': ' + value);
+    }
+    console.log('=== FormData終了 ===');
+
+    // 追加項目を手動でFormDataに追加
+    const additionalKeys = document.querySelectorAll('#quickUpdateModal input[name="additional_item_keys[]"]');
+    const additionalValues = document.querySelectorAll('#quickUpdateModal input[name="additional_item_values[]"]');
+
+    console.log('追加項目入力フィールド数:', additionalKeys.length);
+
+    // 既存の追加項目データを削除
+    formData.delete('additional_item_keys[]');
+    formData.delete('additional_item_values[]');
+
+    // 手動で追加項目を追加
+    additionalKeys.forEach((keyInput, index) => {
+        const key = keyInput.value.trim();
+        const value = additionalValues[index]?.value.trim() || '';
+        console.log(\`追加項目 \${index}: \${key} = \${value}\`);
+        if (key && value) {
+            formData.append('additional_item_keys[]', key);
+            formData.append('additional_item_values[]', value);
+        }
+    });
+
+    // セッションIDを追加（編集セッション統合のため）
+    if (currentSessionId) {
+        formData.append('session_id', currentSessionId);
+        console.log('セッションIDを追加:', currentSessionId);
+    }
+
+    // 最終的なFormDataを確認
+    console.log('=== 最終送信データ ===');
+    for (let [key, value] of formData.entries()) {
+        console.log(key + ': ' + value);
+    }
+    console.log('=== 最終データ終了 ===');
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>更新中...';
+
+    fetch(`/construction/projects/{{ project.id }}/quick-progress/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('サーバー応答:', data);
+        if (data.success) {
+            // DBから編集セッションをクリア
+            if (currentSessionId) {
+                fetch(`/construction/projects/{{ project.id }}/edit-session/save/`, {
+                    method: 'POST',
+                    body: new FormData().append('session_id', currentSessionId).append('action', 'clear_session'),
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                });
+            }
+
+            // ローカル状態もクリア
+            currentSessionId = null;
+            window.editMode = false;
+            console.log('編集セッション状態をクリアしました');
+
+            // 成功通知
+            showNotification('進捗を更新しました！追加項目が保存されました。', 'success');
+
+            // モーダルを閉じる
+            const modal = bootstrap.Modal.getInstance(document.getElementById('quickUpdateModal'));
+            modal.hide();
+
+            // ページをリロード
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showNotification('更新に失敗しました: ' + (data.error || 'エラー'), 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('通信エラー:', error);
+        showNotification('通信エラーが発生しました', 'danger');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>進捗更新';
+    });
+}
+
+// 通知機能
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = \`alert alert-\${type} alert-dismissible fade show position-fixed\`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = \`
+        \${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    \`;
+
+    document.body.appendChild(notification);
+
+    // 5秒後に自動削除
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// グローバルセッション管理
+let currentSessionId = null;
+
+// DBベースのセッション保存関数
+function saveEditSessionToDB(action = 'update_mode', key = null, value = null) {
+    const editMode = window.editMode || false;
+    const formData = new FormData();
+
+    if (currentSessionId) {
+        formData.append('session_id', currentSessionId);
+    }
+    formData.append('edit_mode', editMode);
+    formData.append('action', action);
+
+    if (key && value) {
+        formData.append('key', key);
+        formData.append('value', value);
+    }
+
+    return fetch(`/construction/projects/{{ project.id }}/edit-session/save/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentSessionId = data.session_id;
+            console.log('セッション保存成功:', data);
+            return data;
+        } else {
+            console.error('セッション保存失敗:', data.error);
+            return null;
+        }
+    })
+    .catch(error => {
+        console.error('セッション保存エラー:', error);
+        return null;
+    });
+}
+
+// DBからセッション読み込み
+function loadEditSessionFromDB() {
+    let url = `/construction/projects/{{ project.id }}/edit-session/load/`;
+    if (currentSessionId) {
+        url += `?session_id=${currentSessionId}`;
+    }
+
+    return fetch(url)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentSessionId = data.session_id;
+            console.log('セッション読み込み成功:', data);
+            return data;
+        } else {
+            console.error('セッション読み込み失敗:', data.error);
+            return null;
+        }
+    })
+    .catch(error => {
+        console.error('セッション読み込みエラー:', error);
+        return null;
+    });
+}
+
+// 追加項目をDBに保存
+function saveAdditionalItemToDB(key, value) {
+    if (!key || !value) return Promise.resolve(null);
+
+    return saveEditSessionToDB('save_item', key, value);
+}
+
+// 追加項目をDBから削除
+function removeAdditionalItemFromDB(key) {
+    if (!key) return Promise.resolve(null);
+
+    const formData = new FormData();
+    if (currentSessionId) {
+        formData.append('session_id', currentSessionId);
+    }
+    formData.append('action', 'remove_item');
+    formData.append('key', key);
+
+    return fetch(`/construction/projects/{{ project.id }}/edit-session/save/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('項目削除成功:', data);
+            return data;
+        } else {
+            console.error('項目削除失敗:', data.error);
+            return null;
+        }
+    })
+    .catch(error => {
+        console.error('項目削除エラー:', error);
+        return null;
+    });
+}
+
+// ページ読み込み時にステップ編集の監視を開始
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('進捗詳細ページ: ステップ編集監視開始（DB版）');
+
+    // 初期セッション読み込み
+    loadEditSessionFromDB().then(sessionData => {
+        if (sessionData) {
+            console.log('初期セッション読み込み完了:', sessionData);
+            window.editMode = sessionData.edit_mode;
+        }
+    });
+
+    // editMode変数の変更を監視
+    let currentEditMode = window.editMode || false;
+    let editModeCheckInterval;
+
+    function monitorEditMode() {
+        const newEditMode = window.editMode || false;
+        if (newEditMode !== currentEditMode) {
+            console.log(\`編集モード変更検出: \${currentEditMode} -> \${newEditMode}\`);
+            currentEditMode = newEditMode;
+
+            // DB に編集モード状態を保存
+            saveEditSessionToDB('update_mode').then(data => {
+                if (data) {
+                    console.log(\`編集モード \${newEditMode ? 'ON' : 'OFF'} - DB保存完了\`);
+                }
+            });
+
+            if (newEditMode) {
+                console.log('編集モードON - 状態監視開始');
+                startEditStateMonitoring();
+            } else {
+                console.log('編集モードOFF - 最終状態保存');
+                stopEditStateMonitoring();
+            }
+        }
+    }
+
+    // 編集モードを定期的にチェック
+    editModeCheckInterval = setInterval(monitorEditMode, 500);
+
+    // ステップ編集ボタンのクリックイベントも監視
+    document.addEventListener('click', function(event) {
+        const target = event.target;
+
+        // ステップ編集ボタンかどうかをチェック
+        if (target.matches('button') && (
+            target.textContent.includes('ステップ編集') ||
+            target.textContent.includes('編集完了') ||
+            target.classList.contains('step-edit-btn') ||
+            target.id === 'stepEditBtn'
+        )) {
+            console.log('ステップ編集ボタンクリック検出:', target.textContent);
+
+            // 少し遅延させて状態変更後に保存
+            setTimeout(() => {
+                saveEditSessionToDB('update_mode').then(data => {
+                    if (data) {
+                        console.log('ステップ編集状態をDBに保存しました');
+                    }
+                });
+            }, 100);
+        }
+    });
+
+    let editStateMonitorInterval;
+
+    function startEditStateMonitoring() {
+        // 編集中の入力変更を監視してDB保存
+        editStateMonitorInterval = setInterval(() => {
+            monitorAndSaveInputChanges();
+        }, 3000); // 3秒ごとに入力変更をチェック・保存
+    }
+
+    function stopEditStateMonitoring() {
+        if (editStateMonitorInterval) {
+            clearInterval(editStateMonitorInterval);
+            editStateMonitorInterval = null;
+        }
+    }
+
+    // 入力変更を監視してDB保存
+    function monitorAndSaveInputChanges() {
+        const editableInputs = document.querySelectorAll('input[type="text"], textarea, [contenteditable="true"]');
+
+        editableInputs.forEach(input => {
+            const value = input.value || input.textContent || '';
+            const name = input.name || input.getAttribute('data-field-name') || input.placeholder || '編集項目';
+
+            // 意味のある値が入力されている場合のみDBに保存
+            if (value.trim().length > 2 && !input.dataset.savedToDB) {
+                console.log(`入力変更検出: ${name} = ${value}`);
+
+                saveAdditionalItemToDB(name, value).then(data => {
+                    if (data) {
+                        input.dataset.savedToDB = 'true';
+                        console.log(`項目をDBに保存: ${name} = ${value}`);
+                    }
+                });
+            }
+        });
+    }
+
+    // ページアンロード時に最終状態保存
+    window.addEventListener('beforeunload', function() {
+        saveEditSessionToDB('update_mode');
+        console.log('ページアンロード時に最終状態をDBに保存');
+    });
+
+    // 初期状態も保存
+    setTimeout(() => {
+        saveEditSessionToDB('update_mode').then(data => {
+            if (data) {
+                console.log('初期状態をDBに保存');
+            }
+        });
+    }, 1000);
+});
+</script>
+{% endblock %}

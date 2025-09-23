@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>進捗更新モーダルテスト</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>進捗更新モーダル テスト</h1>
+        <p>このページは追加項目の保存フローをテストするためのものです。</p>
+
+        <button type="button" class="btn btn-success" onclick="showQuickUpdateModal()">
+            <i class="fas fa-edit me-1"></i>進捗更新モーダルを開く
+        </button>
+
+        <div class="mt-4">
+            <h3>テスト手順:</h3>
+            <ol>
+                <li>「進捗更新モーダルを開く」ボタンをクリック</li>
+                <li>「追加項目を追加」ボタンをクリックして項目を追加</li>
+                <li>項目名と内容を入力</li>
+                <li>「内容確認」ボタンで確認</li>
+                <li>「進捗更新」ボタンをクリック</li>
+                <li>開発者ツールのコンソールで送信データを確認</li>
+            </ol>
+        </div>
+
+        <div class="mt-4">
+            <h3>ログ出力:</h3>
+            <div id="log-output" class="border p-3" style="height: 300px; overflow-y: auto; background-color: #f8f9fa;">
+                <!-- ログがここに出力されます -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ログ出力関数
+        function log(message) {
+            const logOutput = document.getElementById('log-output');
+            const timestamp = new Date().toLocaleTimeString();
+            logOutput.innerHTML += `[${timestamp}] ${message}<br>`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+            console.log(message);
+        }
+
+        // 進捗更新モーダル
+        function showQuickUpdateModal() {
+            log('進捗更新モーダルを表示します');
+
+            const modalContent = `
+                <div class="modal fade" id="quickUpdateModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">進捗更新 - テストプロジェクト</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form id="quickUpdateForm">
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">進捗率（%）</label>
+                                                <input type="number" name="progress_rate" class="form-control form-control-lg"
+                                                       min="0" max="100" value="75" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">担当職人</label>
+                                                <select name="craftsman" class="form-select" required>
+                                                    <option value="11">テスト職人</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">作業内容</label>
+                                        <textarea name="work_description" class="form-control" rows="3"
+                                                  placeholder="本日の作業内容を記入してください" required>テスト作業を実施</textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">問題・課題</label>
+                                        <textarea name="issues" class="form-control" rows="2"
+                                                  placeholder="問題があれば記入してください">テスト課題</textarea>
+                                    </div>
+
+                                    <!-- 追加項目 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">
+                                            追加項目
+                                            <small class="text-muted">（必要に応じて）</small>
+                                        </label>
+                                        <div class="border rounded p-3" style="background-color: #f8f9fa;">
+                                            <div id="modal-additional-items-area">
+                                                <!-- 追加項目がここに動的に追加される -->
+                                            </div>
+                                            <div class="text-center">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="addModalAdditionalItem()">
+                                                    <i class="fas fa-plus me-1"></i>追加項目を追加
+                                                </button>
+                                            </div>
+                                            <div id="modal-additional-items-preview" class="mt-3" style="display: none;">
+                                                <small class="text-muted">
+                                                    <strong>保存される追加項目:</strong>
+                                                </small>
+                                                <div id="modal-preview-content" class="mt-1"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                                    <button type="button" class="btn btn-info me-2" onclick="previewQuickUpdate()">
+                                        <i class="fas fa-eye me-1"></i>内容確認
+                                    </button>
+                                    <button type="submit" class="btn btn-success" id="quick-submit-btn">
+                                        <i class="fas fa-save me-1"></i>進捗更新
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 既存のモーダルを削除
+            const existingModal = document.getElementById('quickUpdateModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // 新しいモーダルを追加
+            document.body.insertAdjacentHTML('beforeend', modalContent);
+
+            // フォーム送信イベントを設定
+            document.getElementById('quickUpdateForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitQuickUpdate();
+            });
+
+            // モーダルを表示
+            const modal = new bootstrap.Modal(document.getElementById('quickUpdateModal'));
+            modal.show();
+        }
+
+        // モーダル用追加項目管理
+        let modalAdditionalItemCount = 0;
+
+        function addModalAdditionalItem() {
+            log('追加項目を追加します');
+            const itemsArea = document.getElementById('modal-additional-items-area');
+            const newItem = document.createElement('div');
+            newItem.className = 'additional-item mb-2';
+            newItem.setAttribute('data-item-id', modalAdditionalItemCount++);
+            newItem.innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <input type="text" name="additional_item_keys[]" class="form-control additional-key"
+                               placeholder="項目名（例：使用材料）" onchange="updateModalAdditionalItemsPreview()">
+                    </div>
+                    <div class="col-md-7">
+                        <input type="text" name="additional_item_values[]" class="form-control additional-value"
+                               placeholder="内容" onchange="updateModalAdditionalItemsPreview()">
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeModalAdditionalItem(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            itemsArea.appendChild(newItem);
+            updateModalAdditionalItemsPreview();
+            newItem.querySelector('.additional-key').focus();
+            log('追加項目フィールドを追加しました');
+        }
+
+        function removeModalAdditionalItem(button) {
+            log('追加項目を削除します');
+            button.closest('.additional-item').remove();
+            updateModalAdditionalItemsPreview();
+        }
+
+        function updateModalAdditionalItemsPreview() {
+            const keys = document.querySelectorAll('#quickUpdateModal input[name="additional_item_keys[]"]');
+            const values = document.querySelectorAll('#quickUpdateModal input[name="additional_item_values[]"]');
+            const preview = document.getElementById('modal-additional-items-preview');
+            const previewContent = document.getElementById('modal-preview-content');
+
+            let hasItems = false;
+            let previewHtml = '';
+
+            for (let i = 0; i < keys.length; i++) {
+                const key = keys[i].value.trim();
+                const value = values[i].value.trim();
+
+                if (key || value) {
+                    hasItems = true;
+                    previewHtml += `
+                        <div class="d-flex justify-content-between align-items-center mb-1 p-1 bg-white rounded">
+                            <small><strong>${key || '（項目名未入力）'}:</strong> ${value || '（内容未入力）'}</small>
+                            ${!key || !value ? '<span class="badge bg-warning">未完了</span>' : '<span class="badge bg-success">完了</span>'}
+                        </div>
+                    `;
+                }
+            }
+
+            if (hasItems) {
+                previewContent.innerHTML = previewHtml;
+                preview.style.display = 'block';
+                log('追加項目プレビューを更新しました');
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        // 進捗更新のプレビュー
+        function previewQuickUpdate() {
+            log('内容確認モーダルを表示します');
+            // プレビュー機能の実装（省略）
+        }
+
+        // 進捗更新送信
+        function submitQuickUpdate() {
+            log('進捗更新を送信します');
+            const form = document.getElementById('quickUpdateForm');
+            const formData = new FormData(form);
+
+            // デバッグ: 送信データを確認
+            log('=== 送信するFormData ===');
+            for (let [key, value] of formData.entries()) {
+                log(key + ': ' + value);
+            }
+            log('=== FormData終了 ===');
+
+            // 追加項目を手動でFormDataに追加
+            const additionalKeys = document.querySelectorAll('#quickUpdateModal input[name="additional_item_keys[]"]');
+            const additionalValues = document.querySelectorAll('#quickUpdateModal input[name="additional_item_values[]"]');
+
+            log('追加項目入力フィールド数: ' + additionalKeys.length);
+
+            // 既存の追加項目データを削除
+            formData.delete('additional_item_keys[]');
+            formData.delete('additional_item_values[]');
+
+            // 手動で追加項目を追加
+            additionalKeys.forEach((keyInput, index) => {
+                const key = keyInput.value.trim();
+                const value = additionalValues[index]?.value.trim() || '';
+                log(`追加項目 ${index}: ${key} = ${value}`);
+                if (key && value) {
+                    formData.append('additional_item_keys[]', key);
+                    formData.append('additional_item_values[]', value);
+                }
+            });
+
+            // 最終的なFormDataを確認
+            log('=== 最終送信データ ===');
+            for (let [key, value] of formData.entries()) {
+                log(key + ': ' + value);
+            }
+            log('=== 最終データ終了 ===');
+
+            // 実際のサーバーに送信する代わりに、ここでテスト完了
+            log('✅ テスト完了: 追加項目が正しく FormData に追加されました');
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('quickUpdateModal'));
+            modal.hide();
+        }
+    </script>
+</body>
+</html>

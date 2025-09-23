@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>見積承認センター - 社員専用</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/role-separation.css" rel="stylesheet">
+    <style>
+        .approval-urgent-section {
+            background: linear-gradient(135deg, #dc3545, #ff6b6b);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            animation: pulse-urgent 2s infinite;
+        }
+
+        @keyframes pulse-urgent {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+
+        .approval-card {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .approval-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .approval-card.urgent {
+            border-left: 5px solid #dc3545;
+        }
+
+        .approval-card.high {
+            border-left: 5px solid #ffc107;
+        }
+
+        .approval-card.normal {
+            border-left: 5px solid #28a745;
+        }
+
+        .price-highlight {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #28a745;
+            margin: 10px 0;
+        }
+
+        .deadline {
+            font-weight: bold;
+            color: #dc3545;
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .stat-card.red {
+            border-top: 4px solid #dc3545;
+        }
+
+        .stat-card.orange {
+            border-top: 4px solid #fd7e14;
+        }
+
+        .stat-card.green {
+            border-top: 4px solid #28a745;
+        }
+
+        .stat-card.blue {
+            border-top: 4px solid #007bff;
+        }
+
+        .stat-card h3 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .approval-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .approval-item:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .approval-item.urgent {
+            border-left: 5px solid #dc3545;
+            background: linear-gradient(135deg, #fff5f5, #ffffff);
+        }
+
+        .approval-item.high {
+            border-left: 5px solid #ffc107;
+            background: linear-gradient(135deg, #fffdf0, #ffffff);
+        }
+
+        .approval-item.normal {
+            border-left: 5px solid #28a745;
+            background: linear-gradient(135deg, #f8fff8, #ffffff);
+        }
+
+        .item-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+
+        .priority {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .priority.urgent {
+            background: #dc3545;
+            color: white;
+        }
+
+        .priority.high {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .priority.normal {
+            background: #28a745;
+            color: white;
+        }
+
+        .case-id {
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .customer {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .filter-buttons {
+            margin-bottom: 30px;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            margin-right: 10px;
+            border: 2px solid #007bff;
+            background: white;
+            color: #007bff;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn.active,
+        .filter-btn:hover {
+            background: #007bff;
+            color: white;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-xl {
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .quick-info {
+            display: flex;
+            gap: 20px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .quick-info span {
+            background: #f8f9fa;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+
+        .profit-rate {
+            color: #28a745;
+            font-weight: bold;
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body data-user-role="employee">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="../index_manager.html">
+                <i class="fas fa-check-circle me-2"></i>見積承認センター
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link text-white" href="approval_urgent.html">
+                    <i class="fas fa-exclamation-triangle me-1"></i>緊急承認
+                    <span class="badge bg-danger ms-1">2</span>
+                </a>
+                <a class="nav-link text-white" href="approval_history.html">
+                    <i class="fas fa-history me-1"></i>承認履歴
+                </a>
+                <a href="../index_manager.html" class="btn btn-outline-light btn-sm ms-3">
+                    <i class="fas fa-home me-1"></i>ダッシュボード
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- 緊急承認エリア -->
+        <div class="approval-urgent-section">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4><i class="fas fa-exclamation-triangle me-2"></i>緊急承認待ち (2件)</h4>
+                <div>
+                    <span class="badge bg-light text-danger fs-6">期限迫る</span>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="approval-card urgent">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">案件#001 - 田中様邸</h6>
+                            <span class="badge bg-danger">緊急</span>
+                        </div>
+                        <div class="price-highlight">¥280,000</div>
+                        <div class="profit-rate">利益率: 23%</div>
+                        <div class="deadline">期限: 今日 17:00 (残り3時間)</div>
+                        <div class="mb-3">
+                            <small>1K原状回復 • クリーニング・壁紙張替 • 工期3日</small>
+                        </div>
+                        <button class="btn btn-danger btn-lg w-100" onclick="quickApprove('001')">
+                            <i class="fas fa-check me-1"></i>今すぐ承認
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="approval-card urgent">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">案件#003 - 佐藤アパート</h6>
+                            <span class="badge bg-danger">緊急</span>
+                        </div>
+                        <div class="price-highlight">¥380,000</div>
+                        <div class="profit-rate">利益率: 28%</div>
+                        <div class="deadline">期限: 明日 10:00</div>
+                        <div class="mb-3">
+                            <small>1DK水道設備工事 • 配管修理・洗面台交換 • 工期2日</small>
+                        </div>
+                        <button class="btn btn-danger btn-lg w-100" onclick="quickApprove('003')">
+                            <i class="fas fa-check me-1"></i>今すぐ承認
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 承認統計ダッシュボード -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card red">
+                    <h3>5</h3>
+                    <p class="mb-0">承認待ち</p>
+                    <small class="text-muted">2件緊急</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card orange">
+                    <h3>2</h3>
+                    <p class="mb-0">修正要求中</p>
+                    <small class="text-muted">回答待ち</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card green">
+                    <h3>12</h3>
+                    <p class="mb-0">今月承認済</p>
+                    <small class="text-muted">前月比+20%</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card blue">
+                    <h3>¥2,400万</h3>
+                    <p class="mb-0">今月承認総額</p>
+                    <small class="text-muted">平均利益率 25%</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 承認待ち一覧 -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>承認待ち一覧</h5>
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" onclick="filterApprovals('all')">全て (5)</button>
+                        <button class="filter-btn" onclick="filterApprovals('urgent')">緊急 (2)</button>
+                        <button class="filter-btn" onclick="filterApprovals('high')">高額 (1)</button>
+                        <button class="filter-btn" onclick="filterApprovals('normal')">通常 (2)</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="approval-items" id="approvalItems">
+                    <!-- 緊急案件 -->
+                    <div class="approval-item urgent" data-priority="urgent">
+                        <div class="item-header">
+                            <span class="priority urgent">緊急</span>
+                            <span class="case-id">#001</span>
+                            <span class="customer">田中様1K賃貸</span>
+                            <span class="deadline ms-auto">期限: 今日 17:00</span>
+                        </div>
+                        <div class="item-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="price-section">
+                                    <span class="price-highlight">¥850,000</span>
+                                    <span class="profit-rate">利益率: 23%</span>
+                                </div>
+                                <div class="text-end">
+                                    <div class="text-muted">顧客ランク: A</div>
+                                    <div class="text-muted">前回取引: 6ヶ月前</div>
+                                </div>
+                            </div>
+                            <div class="quick-info">
+                                <span><i class="fas fa-home me-1"></i>原状回復（クリーニング・壁紙）</span>
+                                <span><i class="fas fa-ruler me-1"></i>面積: 25㎡（1K）</span>
+                                <span><i class="fas fa-clock me-1"></i>工期: 3日</span>
+                                <span><i class="fas fa-users me-1"></i>職人: 2名</span>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-success btn-xl" onclick="approveProject('001')">
+                                <i class="fas fa-check me-1"></i>承認する
+                            </button>
+                            <button class="btn btn-info" onclick="viewDetail('001')">
+                                <i class="fas fa-eye me-1"></i>詳細確認
+                            </button>
+                            <button class="btn btn-warning" onclick="requestRevision('001')">
+                                <i class="fas fa-edit me-1"></i>修正要求
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="addNote('001')">
+                                <i class="fas fa-comment me-1"></i>メモ
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 高額案件 -->
+                    <div class="approval-item high" data-priority="high">
+                        <div class="item-header">
+                            <span class="priority high">高額</span>
+                            <span class="case-id">#002</span>
+                            <span class="customer">山田コーポレーション</span>
+                            <span class="deadline ms-auto">期限: 12/25 15:00</span>
+                        </div>
+                        <div class="item-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="price-section">
+                                    <span class="price-highlight">¥2,800,000</span>
+                                    <span class="profit-rate">利益率: 31%</span>
+                                </div>
+                                <div class="text-end">
+                                    <div class="text-muted">顧客ランク: S</div>
+                                    <div class="text-muted">取引回数: 15回</div>
+                                </div>
+                            </div>
+                            <div class="quick-info">
+                                <span><i class="fas fa-wrench me-1"></i>水道設備工事</span>
+                                <span><i class="fas fa-ruler me-1"></i>面積: 35㎡（1DK）</span>
+                                <span><i class="fas fa-clock me-1"></i>工期: 2日</span>
+                                <span><i class="fas fa-users me-1"></i>職人: 2名</span>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-success btn-xl" onclick="approveProject('002')">
+                                <i class="fas fa-check me-1"></i>承認する
+                            </button>
+                            <button class="btn btn-info" onclick="viewDetail('002')">
+                                <i class="fas fa-eye me-1"></i>詳細確認
+                            </button>
+                            <button class="btn btn-warning" onclick="requestRevision('002')">
+                                <i class="fas fa-edit me-1"></i>修正要求
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="addNote('002')">
+                                <i class="fas fa-comment me-1"></i>メモ
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 通常案件 -->
+                    <div class="approval-item normal" data-priority="normal">
+                        <div class="item-header">
+                            <span class="priority normal">通常</span>
+                            <span class="case-id">#004</span>
+                            <span class="customer">鈴木様邸</span>
+                            <span class="deadline ms-auto">期限: 12/28 12:00</span>
+                        </div>
+                        <div class="item-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="price-section">
+                                    <span class="price-highlight">¥450,000</span>
+                                    <span class="profit-rate">利益率: 20%</span>
+                                </div>
+                                <div class="text-end">
+                                    <div class="text-muted">顧客ランク: B</div>
+                                    <div class="text-muted">新規顧客</div>
+                                </div>
+                            </div>
+                            <div class="quick-info">
+                                <span><i class="fas fa-broom me-1"></i>1DK原状回復</span>
+                                <span><i class="fas fa-ruler me-1"></i>面積: 40㎡</span>
+                                <span><i class="fas fa-clock me-1"></i>工期: 4日</span>
+                                <span><i class="fas fa-users me-1"></i>職人: 2名</span>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-success btn-xl" onclick="approveProject('004')">
+                                <i class="fas fa-check me-1"></i>承認する
+                            </button>
+                            <button class="btn btn-info" onclick="viewDetail('004')">
+                                <i class="fas fa-eye me-1"></i>詳細確認
+                            </button>
+                            <button class="btn btn-warning" onclick="requestRevision('004')">
+                                <i class="fas fa-edit me-1"></i>修正要求
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="addNote('004')">
+                                <i class="fas fa-comment me-1"></i>メモ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 承認確認モーダル -->
+    <div class="modal fade" id="approvalModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">見積承認の確認</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="approval-summary" id="approvalSummary">
+                        <!-- 動的コンテンツ -->
+                    </div>
+                    <div class="approval-comment mt-3">
+                        <label class="form-label">承認コメント（任意）</label>
+                        <textarea class="form-control" id="approvalComment" placeholder="承認理由や特記事項があれば入力してください"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-success btn-lg" onclick="executeApproval()">
+                        <i class="fas fa-check me-1"></i>承認実行
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        let currentApprovalId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // 役割制御の強制実行
+            if (typeof window.roleManager !== 'undefined') {
+                window.roleManager.enforceRoleSeparation();
+                window.roleManager.hideFinancialInfo();
+            }
+
+            // 法令遵守のための監査ログ記録
+            logAuditEvent('APPROVAL_CENTER_ACCESS', 'approval_center.html', 'APPROVAL_MANAGEMENT');
+
+            // 定期的な承認チェック
+            checkPendingApprovals();
+            setInterval(checkPendingApprovals, 60000); // 1分毎
+
+            // 緊急承認のアラート
+            showUrgentApprovalAlert();
+        });
+
+        function quickApprove(projectId) {
+            currentApprovalId = projectId;
+            showApprovalModal(projectId);
+            logAuditEvent('QUICK_APPROVAL_INITIATED', `Project ID: ${projectId}`, 'APPROVAL_ACTION');
+        }
+
+        function approveProject(projectId) {
+            currentApprovalId = projectId;
+            showApprovalModal(projectId);
+            logAuditEvent('APPROVAL_INITIATED', `Project ID: ${projectId}`, 'APPROVAL_ACTION');
+        }
+
+        function showApprovalModal(projectId) {
+            const projectData = {
+                '001': { name: '田中様1K 原状回復', amount: '¥280,000', profit: '23%' },
+                '002': { name: '山田マンション 水道設備工事', amount: '¥420,000', profit: '31%' },
+                '003': { name: '佐藤アパート1DK 水道設備工事', amount: '¥380,000', profit: '28%' },
+                '004': { name: '鈴木ハイツ1DK 原状回復', amount: '¥320,000', profit: '20%' }
+            };
+
+            const project = projectData[projectId];
+            if (project) {
+                const summaryHTML = `
+                    <h6>承認内容</h6>
+                    <table class="table">
+                        <tr><td>案件</td><td>${project.name}</td></tr>
+                        <tr><td>見積金額</td><td class="text-success fw-bold">${project.amount}</td></tr>
+                        <tr><td>利益率</td><td>${project.profit}</td></tr>
+                        <tr><td>承認者</td><td>山田部長</td></tr>
+                        <tr><td>承認日時</td><td>${new Date().toLocaleString('ja-JP')}</td></tr>
+                    </table>
+                `;
+
+                document.getElementById('approvalSummary').innerHTML = summaryHTML;
+                new bootstrap.Modal(document.getElementById('approvalModal')).show();
+            }
+        }
+
+        function executeApproval() {
+            if (!currentApprovalId) return;
+
+            const comment = document.getElementById('approvalComment').value;
+
+            // 承認実行処理
+            logAuditEvent('APPROVAL_EXECUTED', `Project ID: ${currentApprovalId}, Comment: ${comment}`, 'APPROVAL_COMPLETED');
+
+            // 承認完了通知
+            showSuccessMessage(`案件#${currentApprovalId}の見積が承認されました。`);
+
+            // モーダルを閉じる
+            bootstrap.Modal.getInstance(document.getElementById('approvalModal')).hide();
+
+            // 画面を更新（実際の実装では、該当アイテムを削除または更新）
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        }
+
+        function viewDetail(projectId) {
+            logAuditEvent('APPROVAL_DETAIL_VIEWED', `Project ID: ${projectId}`, 'APPROVAL_REVIEW');
+            window.location.href = `approval_detail.html?id=${projectId}`;
+        }
+
+        function requestRevision(projectId) {
+            logAuditEvent('REVISION_REQUESTED', `Project ID: ${projectId}`, 'APPROVAL_REVISION');
+            alert(`案件#${projectId}に修正要求を送信します。修正理由を入力してください。`);
+        }
+
+        function addNote(projectId) {
+            logAuditEvent('APPROVAL_NOTE_ADDED', `Project ID: ${projectId}`, 'APPROVAL_ANNOTATION');
+            const note = prompt('メモを入力してください:');
+            if (note) {
+                alert(`案件#${projectId}にメモを追加しました: ${note}`);
+            }
+        }
+
+        function filterApprovals(type) {
+            const items = document.querySelectorAll('.approval-item');
+            const buttons = document.querySelectorAll('.filter-btn');
+
+            // ボタンのアクティブ状態を更新
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // アイテムの表示を制御
+            items.forEach(item => {
+                if (type === 'all') {
+                    item.style.display = 'block';
+                } else {
+                    const priority = item.dataset.priority;
+                    item.style.display = priority === type ? 'block' : 'none';
+                }
+            });
+
+            logAuditEvent('APPROVAL_FILTER_APPLIED', `Filter type: ${type}`, 'APPROVAL_MANAGEMENT');
+        }
+
+        function checkPendingApprovals() {
+            // 実際の実装では、サーバーから承認待ち件数を取得
+            const pendingCount = 5;
+            const urgentCount = 2;
+
+            if (urgentCount > 0) {
+                showApprovalNotification(urgentCount);
+            }
+
+            logAuditEvent('PENDING_APPROVALS_CHECKED', `Pending: ${pendingCount}, Urgent: ${urgentCount}`, 'SYSTEM_CHECK');
+        }
+
+        function showApprovalNotification(count) {
+            // ブラウザ通知の表示
+            if (Notification.permission === 'granted') {
+                new Notification('緊急承認が必要です', {
+                    body: `${count}件の緊急見積承認が待機中です`,
+                    icon: '/favicon.ico'
+                });
+            }
+        }
+
+        function showUrgentApprovalAlert() {
+            // 緊急承認がある場合のアラート表示
+            const urgentItems = document.querySelectorAll('.approval-item.urgent');
+            if (urgentItems.length > 0) {
+                setTimeout(() => {
+                    if (confirm('緊急承認待ちの案件があります。今すぐ確認しますか？')) {
+                        document.querySelector('.approval-urgent-section').scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                }, 2000);
+            }
+        }
+
+        function showSuccessMessage(message) {
+            // 成功メッセージの表示
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+
+        function logAuditEvent(action, details, category) {
+            const auditLog = {
+                timestamp: new Date().toISOString(),
+                action: action,
+                details: details,
+                category: category,
+                userId: 'current_user',
+                userRole: 'employee',
+                module: 'approval_center'
+            };
+
+            console.log('承認センター監査ログ:', auditLog);
+        }
+
+        // ブラウザ通知の許可を要求
+        if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>

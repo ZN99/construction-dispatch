@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>港区ワンルーム原状回復 - 案件詳細 - 建築派遣SaaS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        .phase-indicator {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .task-assignment-banner {
+            background: linear-gradient(135deg, #ff9800 0%, #ff5722 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .employee-section {
+            background: #f8f9fa;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .temporary-section {
+            background: #fff8e1;
+            border: 2px solid #ff9800;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .checklist-container {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .checklist-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0;
+        }
+        .status-approval {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .cost-calculation {
+            background: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .restricted-info {
+            background: #ffebee;
+            border: 2px solid #f44336;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        .workflow-step {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 6px;
+        }
+        .workflow-step.active {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        .workflow-step.completed {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+        @media (max-width: 768px) {
+            .task-assignment-banner {
+                padding: 15px;
+                margin: 15px 0;
+            }
+            .employee-section, .temporary-section {
+                padding: 15px;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <h5 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span id="sidebarTitle">メインメニュー</span>
+                    </h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="../index.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item" id="navProjectManagement">
+                            <a class="nav-link active" href="project_list.html">
+                                <i class="fas fa-project-diagram me-2"></i>案件管理
+                            </a>
+                        </li>
+                        <li class="nav-item" id="navSurveyManagement">
+                            <a class="nav-link" href="../surveys/survey_list.html">
+                                <i class="fas fa-clipboard-list me-2"></i>調査管理
+                            </a>
+                        </li>
+                        <li class="nav-item" id="navCraftsmanManagement">
+                            <a class="nav-link" href="../craftsman/craftsman_list.html">
+                                <i class="fas fa-users me-2"></i>職人管理
+                            </a>
+                        </li>
+                        <li class="nav-item" id="navMaterialManagement">
+                            <a class="nav-link" href="../material/supplier_list.html">
+                                <i class="fas fa-building me-2"></i>資材業者
+                            </a>
+                        </li>
+                        <li class="nav-item" id="navPricingManagement">
+                            <a class="nav-link" href="../pricing/pricing_list.html">
+                                <i class="fas fa-yen-sign me-2"></i>見積管理
+                            </a>
+                        </li>
+                        <li class="nav-item" id="navTaskManagement" style="display: none;">
+                            <a class="nav-link" href="../task_management.html">
+                                <i class="fas fa-tasks me-2"></i>タスク管理
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Header -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <div>
+                        <h1 class="h2">港区ワンルーム原状回復</h1>
+                        <div class="mb-2">
+                            <small class="text-muted me-3">役職: <span id="currentRole" class="fw-bold text-primary">社員</span></small>
+                            <button class="btn btn-sm btn-outline-primary" onclick="toggleRole()">
+                                <i class="fas fa-user-tag me-1"></i>役職切替
+                            </button>
+                        </div>
+                    </div>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.history.back()">
+                            <i class="fas fa-arrow-left me-1"></i>戻る
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Phase Indicator -->
+                <div class="phase-indicator">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h4 class="mb-1" id="currentPhaseTitle">フェーズ1: 現地調査指示～調査報告</h4>
+                            <p class="mb-0" id="currentPhaseDescription">派遣スタッフによる現地調査と社員による確認・承認</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <span class="badge bg-warning fs-6" id="phaseStatus">調査実施中</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workflow Progress -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tasks me-2"></i>ワークフロー進捗
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="workflow-step completed">
+                            <i class="fas fa-check-circle text-success me-3"></i>
+                            <div>
+                                <strong>1. 案件登録</strong>
+                                <small class="text-muted d-block">完了: 2025年1月15日 10:30</small>
+                            </div>
+                        </div>
+                        <div class="workflow-step completed">
+                            <i class="fas fa-check-circle text-success me-3"></i>
+                            <div>
+                                <strong>2. 調査チェックリスト作成</strong>
+                                <small class="text-muted d-block">完了: 2025年1月15日 14:20</small>
+                            </div>
+                        </div>
+                        <div class="workflow-step active">
+                            <i class="fas fa-clock text-warning me-3"></i>
+                            <div>
+                                <strong>3. 現地調査実施</strong>
+                                <small class="text-warning d-block">実行中: 田中太郎</small>
+                            </div>
+                        </div>
+                        <div class="workflow-step">
+                            <i class="fas fa-circle text-muted me-3"></i>
+                            <div>
+                                <strong>4. 調査結果確認・承認</strong>
+                                <small class="text-muted d-block">待機中</small>
+                            </div>
+                        </div>
+                        <div class="workflow-step">
+                            <i class="fas fa-circle text-muted me-3"></i>
+                            <div>
+                                <strong>5. 見積作成・施工計画</strong>
+                                <small class="text-muted d-block">待機中</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 派遣スタッフ用画面 -->
+                <div id="temporaryStaffView" style="display: none;">
+                    <!-- タスク表示バナー -->
+                    <div class="task-assignment-banner">
+                        <h3 class="mb-2">
+                            <i class="fas fa-clipboard-list me-2"></i>タスク：現地調査
+                        </h3>
+                        <p class="mb-3">社員から指示された調査チェックリストに従って現地調査を実施してください</p>
+                        <div class="d-flex justify-content-center gap-3">
+                            <div class="text-center">
+                                <div class="h5 mb-0">10:00-12:00</div>
+                                <small>調査時間</small>
+                            </div>
+                            <div class="text-center">
+                                <div class="h5 mb-0">田中太郎</div>
+                                <small>担当者</small>
+                            </div>
+                            <div class="text-center">
+                                <div class="h5 mb-0">3項目</div>
+                                <small>チェックリスト</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 基本情報（派遣用） -->
+                    <div class="temporary-section">
+                        <h5 class="mb-3">
+                            <i class="fas fa-map-marker-alt me-2"></i>調査先情報
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>お客様名:</strong> 港区賃貸管理株式会社</p>
+                                <p><strong>物件住所:</strong> 東京都港区○○1-2-3</p>
+                                <p><strong>物件種別:</strong> ワンルーム（1R）</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>調査目的:</strong> 原状回復工事の見積準備</p>
+                                <p><strong>重点確認項目:</strong> 壁面・水道設備</p>
+                                <p><strong>注意事項:</strong> 入居者立会いあり</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 調査チェックリスト -->
+                    <div class="checklist-container">
+                        <h5 class="mb-3">
+                            <i class="fas fa-tasks me-2"></i>調査チェックリスト（社員作成）
+                            <span class="badge bg-warning ms-2">編集不可</span>
+                        </h5>
+
+                        <div class="checklist-item">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="checkItem1" onchange="updateProgress()">
+                                <label class="form-check-label fw-bold" for="checkItem1">
+                                    リビング壁（幅）<span class="text-danger">*必須</span>
+                                </label>
+                            </div>
+                            <div class="mt-2">
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="wallWidth" placeholder="幅を入力" min="1000" max="10000">
+                                    <span class="input-group-text">mm</span>
+                                </div>
+                                <small class="text-muted">正確に測定してください（誤差±10mm以内）</small>
+                            </div>
+                        </div>
+
+                        <div class="checklist-item">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="checkItem2" onchange="updateProgress()">
+                                <label class="form-check-label fw-bold" for="checkItem2">
+                                    リビング壁（高さ）<span class="text-danger">*必須</span>
+                                </label>
+                            </div>
+                            <div class="mt-2">
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="wallHeight" placeholder="高さを入力" min="2000" max="4000">
+                                    <span class="input-group-text">mm</span>
+                                </div>
+                                <small class="text-muted">天井まで正確に測定してください</small>
+                            </div>
+                        </div>
+
+                        <div class="checklist-item">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="checkItem3" onchange="updateProgress()">
+                                <label class="form-check-label fw-bold" for="checkItem3">
+                                    水道設備現状写真<span class="text-danger">*必須</span>
+                                </label>
+                            </div>
+                            <div class="mt-2">
+                                <input type="file" class="form-control" id="waterPhoto" accept="image/*" onchange="handlePhotoUpload(this)">
+                                <small class="text-muted">蛇口・配管・排水の状態が分かる写真を撮影</small>
+                                <div id="photoPreview" class="mt-2"></div>
+                            </div>
+                        </div>
+
+                        <!-- 進捗表示 -->
+                        <div class="mt-3 p-3 bg-light rounded">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>調査進捗</span>
+                                <span id="progressText">0/3 完了</span>
+                            </div>
+                            <div class="progress mt-2">
+                                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 完了報告ボタン -->
+                    <div class="text-center mt-4">
+                        <button class="btn btn-success btn-lg" id="completeReportBtn" onclick="completeReport()" disabled>
+                            <i class="fas fa-check me-2"></i>調査完了を報告する
+                        </button>
+                        <div class="mt-2">
+                            <small class="text-muted">すべてのチェックリスト項目を完了後に報告可能</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 社員用画面 -->
+                <div id="employeeView">
+                    <!-- フェーズ1: 現地調査段階 -->
+                    <div id="phase1Content">
+                        <!-- 基本情報（社員用） -->
+                        <div class="employee-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-info-circle me-2"></i>案件基本情報
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>顧客名:</strong> 港区賃貸管理株式会社</p>
+                                    <p><strong>担当者:</strong> 山田部長 (03-1234-5678)</p>
+                                    <p><strong>物件住所:</strong> 東京都港区○○1-2-3</p>
+                                    <p><strong>物件種別:</strong> ワンルーム（1R）</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>予算:</strong> ¥200,000</p>
+                                    <p><strong>希望工期:</strong> 3日以内</p>
+                                    <p><strong>担当社員:</strong> 佐藤課長</p>
+                                    <p><strong>割当派遣:</strong> 田中太郎</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 調査チェックリスト編集 -->
+                        <div class="employee-section">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-edit me-2"></i>調査チェックリスト編集
+                                </h5>
+                                <button class="btn btn-outline-primary btn-sm" onclick="editChecklist()">
+                                    <i class="fas fa-edit me-1"></i>編集
+                                </button>
+                            </div>
+                            <div class="alert alert-info">
+                                <small>派遣スタッフ「田中太郎」に送信済みの調査指示内容</small>
+                            </div>
+                            <div class="checklist-container">
+                                <div class="checklist-item">
+                                    <strong>1. リビング壁（幅）測定</strong>
+                                    <p class="mb-1 text-muted">数値入力: 1000-10000mm範囲</p>
+                                    <small class="text-primary">重要度: 高 | 見積算出に直結</small>
+                                </div>
+                                <div class="checklist-item">
+                                    <strong>2. リビング壁（高さ）測定</strong>
+                                    <p class="mb-1 text-muted">数値入力: 2000-4000mm範囲</p>
+                                    <small class="text-primary">重要度: 高 | クロス面積計算用</small>
+                                </div>
+                                <div class="checklist-item">
+                                    <strong>3. 水道設備現状写真</strong>
+                                    <p class="mb-1 text-muted">写真アップロード: 蛇口・配管・排水</p>
+                                    <small class="text-primary">重要度: 中 | 修理範囲確定用</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 派遣スタッフへの指示追記 -->
+                        <div class="employee-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-comments me-2"></i>派遣スタッフへの追加指示
+                            </h5>
+                            <textarea class="form-control" rows="3" placeholder="追加の指示事項があれば記入してください...">入居者立会いのため、作業は丁寧に行ってください。
+水道設備で異常を発見した場合は、写真を多めに撮影してください。
+測定は2回行い、平均値を記録してください。</textarea>
+                            <div class="text-end mt-2">
+                                <button class="btn btn-outline-primary btn-sm" onclick="sendAdditionalInstructions()">
+                                    <i class="fas fa-paper-plane me-1"></i>指示送信
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 調査状況監視 -->
+                        <div class="employee-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-eye me-2"></i>調査状況リアルタイム監視
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-body text-center">
+                                            <h3 class="text-warning" id="liveProgress">1/3</h3>
+                                            <small class="text-muted">完了項目</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-body text-center">
+                                            <h3 class="text-info" id="liveStatus">実施中</h3>
+                                            <small class="text-muted">現在のステータス</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="alert alert-warning" id="reportNotification" style="display: none;">
+                                    <strong><i class="fas fa-bell me-2"></i>報告受信</strong>
+                                    田中太郎から調査完了報告が届きました。確認・承認を行ってください。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- フェーズ2: 施工計画・見積作成段階 (初期は非表示) -->
+                    <div id="phase2Content" style="display: none;">
+                        <!-- 調査結果表示 -->
+                        <div class="employee-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-clipboard-check me-2"></i>調査結果確認
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-body text-center">
+                                            <h4 class="text-primary">3,600mm</h4>
+                                            <small>リビング壁（幅）</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-body text-center">
+                                            <h4 class="text-primary">2,400mm</h4>
+                                            <small>リビング壁（高さ）</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-body text-center">
+                                            <h4 class="text-success">完了</h4>
+                                            <small>写真撮影</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 施工計画・見積作成専用エリア -->
+                        <div class="employee-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-calculator me-2"></i>施工計画・見積作成
+                            </h5>
+
+                            <!-- 材料マスタ連携 -->
+                            <div class="cost-calculation">
+                                <h6 class="mb-3">自動計算結果</h6>
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>項目</th>
+                                            <th>数量</th>
+                                            <th>単価</th>
+                                            <th>原価</th>
+                                            <th>売価</th>
+                                            <th>利益</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>クロス貼り替え</td>
+                                            <td>8.64㎡</td>
+                                            <td>¥2,500/㎡</td>
+                                            <td>¥21,600</td>
+                                            <td>¥30,000</td>
+                                            <td class="text-success">¥8,400</td>
+                                        </tr>
+                                        <tr>
+                                            <td>水道設備修理</td>
+                                            <td>1式</td>
+                                            <td>¥25,000</td>
+                                            <td>¥25,000</td>
+                                            <td>¥35,000</td>
+                                            <td class="text-success">¥10,000</td>
+                                        </tr>
+                                        <tr>
+                                            <td>諸経費・人件費</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>¥45,000</td>
+                                            <td>¥65,000</td>
+                                            <td class="text-success">¥20,000</td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-warning">
+                                            <th>合計</th>
+                                            <th>-</th>
+                                            <th>-</th>
+                                            <th>¥91,600</th>
+                                            <th>¥130,000</th>
+                                            <th class="text-success fw-bold">¥38,400 (29.5%)</th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                            <!-- 協力会社アサイン -->
+                            <div class="mt-4">
+                                <h6 class="mb-3">協力会社アサイン</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <strong>クロス工事</strong>
+                                            </div>
+                                            <div class="card-body">
+                                                <select class="form-select">
+                                                    <option selected>東京クロス工業 (実績15件)</option>
+                                                    <option>新宿内装サービス (実績8件)</option>
+                                                    <option>港区建装 (実績12件)</option>
+                                                </select>
+                                                <small class="text-muted">評価: ★★★★☆ 4.5</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <strong>水道工事</strong>
+                                            </div>
+                                            <div class="card-body">
+                                                <select class="form-select">
+                                                    <option selected>港区水道サービス (実績20件)</option>
+                                                    <option>東京配管工業 (実績15件)</option>
+                                                    <option>新宿水道設備 (実績10件)</option>
+                                                </select>
+                                                <small class="text-muted">評価: ★★★★★ 4.8</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 完了ボタン -->
+                            <div class="text-center mt-4">
+                                <button class="btn btn-success btn-lg" onclick="completeEstimation()">
+                                    <i class="fas fa-check me-2"></i>見積作成完了・計画承認
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 派遣タスク自動生成 -->
+                        <div class="status-approval" id="taskGeneration" style="display: none;">
+                            <h6 class="mb-2">
+                                <i class="fas fa-magic me-2"></i>派遣タスク自動生成完了
+                            </h6>
+                            <p class="mb-2">以下のタスクが田中太郎に自動送信されました:</p>
+                            <ul class="mb-0">
+                                <li>東京クロス工業への見積依頼連絡</li>
+                                <li>港区水道サービスへの工期調整</li>
+                                <li>顧客への工程確認連絡</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 役割管理とフェーズ管理
+        let currentRole = localStorage.getItem('userRole') || 'employee';
+        let currentPhase = 1; // 1: 調査段階, 2: 施工計画段階
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateRoleDisplay();
+            updatePhaseDisplay();
+        });
+
+        // 役割切替
+        function toggleRole() {
+            currentRole = currentRole === 'employee' ? 'temporary' : 'employee';
+            localStorage.setItem('userRole', currentRole);
+            updateRoleDisplay();
+        }
+
+        // 役割表示更新
+        function updateRoleDisplay() {
+            const roleElement = document.getElementById('currentRole');
+            const sidebarTitle = document.getElementById('sidebarTitle');
+            const employeeView = document.getElementById('employeeView');
+            const temporaryView = document.getElementById('temporaryStaffView');
+
+            // ナビゲーション要素
+            const navElements = {
+                project: document.getElementById('navProjectManagement'),
+                survey: document.getElementById('navSurveyManagement'),
+                craftsman: document.getElementById('navCraftsmanManagement'),
+                material: document.getElementById('navMaterialManagement'),
+                pricing: document.getElementById('navPricingManagement'),
+                task: document.getElementById('navTaskManagement')
+            };
+
+            if (currentRole === 'employee') {
+                // 社員表示
+                roleElement.textContent = '社員';
+                roleElement.className = 'fw-bold text-primary';
+                sidebarTitle.textContent = 'メインメニュー';
+                employeeView.style.display = 'block';
+                temporaryView.style.display = 'none';
+
+                // 全メニュー表示
+                Object.values(navElements).forEach(el => {
+                    if (el && el.id !== 'navTaskManagement') el.style.display = 'block';
+                });
+                navElements.task.style.display = 'none';
+            } else {
+                // 派遣スタッフ表示
+                roleElement.textContent = '派遣スタッフ';
+                roleElement.className = 'fw-bold text-success';
+                sidebarTitle.textContent = '派遣スタッフメニュー';
+                employeeView.style.display = 'none';
+                temporaryView.style.display = 'block';
+
+                // 限定メニューのみ表示
+                navElements.project.style.display = 'none';
+                navElements.survey.style.display = 'block';
+                navElements.craftsman.style.display = 'none';
+                navElements.material.style.display = 'none';
+                navElements.pricing.style.display = 'none';
+                navElements.task.style.display = 'block';
+            }
+        }
+
+        // フェーズ表示更新
+        function updatePhaseDisplay() {
+            const phaseTitle = document.getElementById('currentPhaseTitle');
+            const phaseDescription = document.getElementById('currentPhaseDescription');
+            const phaseStatus = document.getElementById('phaseStatus');
+
+            if (currentPhase === 1) {
+                phaseTitle.textContent = 'フェーズ1: 現地調査指示～調査報告';
+                phaseDescription.textContent = '派遣スタッフによる現地調査と社員による確認・承認';
+                phaseStatus.textContent = '調査実施中';
+                phaseStatus.className = 'badge bg-warning fs-6';
+            } else {
+                phaseTitle.textContent = 'フェーズ2: 施工計画・見積作成～各種手配';
+                phaseDescription.textContent = '社員による施工計画・見積作成と派遣スタッフへのタスク発行';
+                phaseStatus.textContent = '計画作成中';
+                phaseStatus.className = 'badge bg-info fs-6';
+            }
+        }
+
+        // 派遣スタッフ用機能
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('#temporaryStaffView input[type="checkbox"]');
+            const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const total = checkboxes.length;
+
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const completeBtn = document.getElementById('completeReportBtn');
+
+            const percentage = (checked / total) * 100;
+            progressBar.style.width = percentage + '%';
+            progressText.textContent = `${checked}/${total} 完了`;
+
+            // 全項目完了で報告ボタン有効化
+            completeBtn.disabled = checked !== total;
+
+            // 社員側のリアルタイム更新
+            document.getElementById('liveProgress').textContent = `${checked}/${total}`;
+        }
+
+        function handlePhotoUpload(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('photoPreview');
+                    preview.innerHTML = `<img src="${e.target.result}" class="img-thumbnail" style="max-width: 200px;">`;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function completeReport() {
+            const requiredInputs = ['wallWidth', 'wallHeight', 'waterPhoto'];
+            const incomplete = requiredInputs.filter(id => {
+                const element = document.getElementById(id);
+                return !element.value || element.value === '';
+            });
+
+            if (incomplete.length > 0) {
+                alert('すべての必須項目を入力してください。');
+                return;
+            }
+
+            if (confirm('調査を完了し、社員に報告しますか？')) {
+                // 報告処理
+                alert('調査完了報告を送信しました。\n社員による確認・承認をお待ちください。');
+
+                // 社員側に通知表示
+                document.getElementById('reportNotification').style.display = 'block';
+                document.getElementById('liveStatus').textContent = '報告済み';
+
+                // フェーズ2への移行準備
+                setTimeout(() => {
+                    if (confirm('社員による承認が完了しました。フェーズ2に移行しますか？')) {
+                        moveToPhase2();
+                    }
+                }, 3000);
+            }
+        }
+
+        // 社員用機能
+        function editChecklist() {
+            alert('調査チェックリスト編集画面を開きます。\n（実装：surveys/survey_checklist_create.html）');
+        }
+
+        function sendAdditionalInstructions() {
+            alert('追加指示を田中太郎に送信しました。');
+        }
+
+        function moveToPhase2() {
+            currentPhase = 2;
+            document.getElementById('phase1Content').style.display = 'none';
+            document.getElementById('phase2Content').style.display = 'block';
+            updatePhaseDisplay();
+
+            // ワークフロー更新
+            const workflowSteps = document.querySelectorAll('.workflow-step');
+            workflowSteps[2].className = 'workflow-step completed';
+            workflowSteps[2].querySelector('i').className = 'fas fa-check-circle text-success me-3';
+            workflowSteps[3].className = 'workflow-step completed';
+            workflowSteps[3].querySelector('i').className = 'fas fa-check-circle text-success me-3';
+            workflowSteps[4].className = 'workflow-step active';
+            workflowSteps[4].querySelector('i').className = 'fas fa-clock text-warning me-3';
+        }
+
+        function completeEstimation() {
+            if (confirm('見積作成を完了し、派遣スタッフにタスクを発行しますか？')) {
+                alert('見積作成が完了しました。\n派遣スタッフ「田中太郎」に協力会社連絡タスクを自動発行します。');
+
+                // タスク生成表示
+                document.getElementById('taskGeneration').style.display = 'block';
+
+                // 最終段階への移行
+                setTimeout(() => {
+                    alert('すべての工程が完了しました。\n協力会社管理5ステップフローに移行します。');
+                    window.location.href = '../contractors/project_schedule_create.html';
+                }, 2000);
+            }
+        }
+
+        // グローバル関数として公開
+        window.toggleRole = toggleRole;
+    </script>
+</body>
+</html>

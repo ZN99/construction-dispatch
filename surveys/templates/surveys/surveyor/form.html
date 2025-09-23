@@ -1,0 +1,338 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if object %}調査員編集{% else %}調査員登録{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.form-help {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.tag-input {
+    background: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    min-height: 38px;
+}
+
+.tag {
+    background: #0d6efd;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    margin: 0.125rem;
+    display: inline-block;
+}
+
+.tag .remove {
+    margin-left: 0.5rem;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.tag .remove:hover {
+    opacity: 1;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-user-plus text-primary"></i>
+                    {% if object %}調査員編集{% else %}調査員登録{% endif %}
+                </h2>
+                <a href="{% url 'surveys:surveyor_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> 一覧に戻る
+                </a>
+            </div>
+
+            <form method="post" id="surveyorForm">
+                {% csrf_token %}
+
+                <!-- 基本情報 -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-user"></i> 基本情報
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_name" class="form-label">調査員名 <span class="text-danger">*</span></label>
+                                <input type="text" name="name" class="form-control" id="id_name"
+                                       value="{{ form.name.value|default:'' }}" required>
+                                <div class="form-help">フルネームで入力してください</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_employee_id" class="form-label">社員番号 <span class="text-danger">*</span></label>
+                                <input type="text" name="employee_id" class="form-control" id="id_employee_id"
+                                       value="{{ form.employee_id.value|default:'' }}" required>
+                                <div class="form-help">例: EMP001, S2024001など</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_email" class="form-label">メールアドレス</label>
+                                <input type="email" name="email" class="form-control" id="id_email"
+                                       value="{{ form.email.value|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_phone" class="form-label">電話番号</label>
+                                <input type="tel" name="phone" class="form-control" id="id_phone"
+                                       value="{{ form.phone.value|default:'' }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_department" class="form-label">所属部署</label>
+                                <input type="text" name="department" class="form-control" id="id_department"
+                                       value="{{ form.department.value|default:'' }}">
+                                <div class="form-help">例: 建築部、土木部、設備部など</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_experience_years" class="form-label">調査経験年数</label>
+                                <input type="number" name="experience_years" class="form-control" id="id_experience_years"
+                                       value="{{ form.experience_years.value|default:'0' }}" min="0" max="50">
+                                <div class="form-help">年単位で入力</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if object %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" name="is_active" class="form-check-input" id="id_is_active"
+                                           {% if form.is_active.value %}checked{% endif %}>
+                                    <label for="id_is_active" class="form-check-label">稼働中</label>
+                                </div>
+                                <div class="form-help">チェックを外すと休止中になります</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_hire_date" class="form-label">入社日</label>
+                                <input type="date" name="hire_date" class="form-control" id="id_hire_date"
+                                       value="{{ form.hire_date.value|date:'Y-m-d'|default:'' }}">
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_hire_date" class="form-label">入社日</label>
+                                <input type="date" name="hire_date" class="form-control" id="id_hire_date"
+                                       value="{{ form.hire_date.value|date:'Y-m-d'|default:'' }}">
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- 専門性・スキル -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-tools"></i> 専門性・スキル
+                    </h5>
+                    <div class="mb-3">
+                        <label for="id_specialties" class="form-label">専門分野</label>
+                        <div class="tag-input" id="specialties-container">
+                            <input type="text" id="specialties-input" placeholder="専門分野を入力してEnterキーを押してください">
+                        </div>
+                        <textarea name="specialties" id="id_specialties" class="d-none">{{ form.specialties.value|default:'' }}</textarea>
+                        <div class="form-help">例: 建築調査、設備点検、耐震診断など（Enterキーで追加）</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_certifications" class="form-label">保有資格</label>
+                        <div class="tag-input" id="certifications-container">
+                            <input type="text" id="certifications-input" placeholder="資格名を入力してEnterキーを押してください">
+                        </div>
+                        <textarea name="certifications" id="id_certifications" class="d-none">{{ form.certifications.value|default:'' }}</textarea>
+                        <div class="form-help">例: 建築士、施工管理技士、調査診断士など（Enterキーで追加）</div>
+                    </div>
+                </div>
+
+                <!-- システム連携 -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-link"></i> システム連携
+                    </h5>
+                    <div class="mb-3">
+                        <label for="id_user" class="form-label">ユーザーアカウント</label>
+                        <select name="user" class="form-select" id="id_user">
+                            <option value="">選択してください</option>
+                            {% for user in form.user.field.queryset %}
+                            <option value="{{ user.pk }}"
+                                    {% if form.user.value == user.pk %}selected{% endif %}>
+                                {{ user.username }} - {{ user.get_full_name|default:user.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-help">ログイン可能なユーザーと関連付けます（オプション）</div>
+                    </div>
+                </div>
+
+                <!-- 備考 -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-sticky-note"></i> 備考
+                    </h5>
+                    <div class="mb-3">
+                        <label for="id_notes" class="form-label">備考</label>
+                        <textarea name="notes" class="form-control" id="id_notes" rows="4"
+                                  placeholder="その他の情報や特記事項があれば記入してください">{{ form.notes.value|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- 送信ボタン -->
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'surveys:surveyor_list' %}" class="btn btn-outline-secondary me-md-2">
+                        <i class="fas fa-times"></i> キャンセル
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        {% if object %}更新{% else %}登録{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // タグ入力機能
+    setupTagInput('specialties');
+    setupTagInput('certifications');
+});
+
+function setupTagInput(fieldName) {
+    const container = document.getElementById(`${fieldName}-container`);
+    const input = document.getElementById(`${fieldName}-input`);
+    const hiddenField = document.getElementById(`id_${fieldName}`);
+
+    // 既存の値を表示
+    const initialValue = hiddenField.value;
+    if (initialValue) {
+        const tags = initialValue.split(',').map(tag => tag.trim()).filter(tag => tag);
+        tags.forEach(tag => addTag(container, input, tag));
+    }
+
+    // Enterキーでタグ追加
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const value = input.value.trim();
+            if (value) {
+                addTag(container, input, value);
+                input.value = '';
+                updateHiddenField(container, hiddenField);
+            }
+        }
+    });
+
+    // フォーカスアウト時もタグ追加
+    input.addEventListener('blur', function() {
+        const value = input.value.trim();
+        if (value) {
+            addTag(container, input, value);
+            input.value = '';
+            updateHiddenField(container, hiddenField);
+        }
+    });
+}
+
+function addTag(container, input, value) {
+    // 重複チェック
+    const existingTags = Array.from(container.querySelectorAll('.tag')).map(tag =>
+        tag.textContent.replace('×', '').trim()
+    );
+    if (existingTags.includes(value)) {
+        return;
+    }
+
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.innerHTML = `${value} <span class="remove" onclick="removeTag(this)">×</span>`;
+
+    container.insertBefore(tag, input);
+}
+
+function removeTag(element) {
+    const tag = element.parentElement;
+    const container = tag.parentElement;
+    const fieldName = container.id.replace('-container', '').replace('id_', '');
+    const hiddenField = document.getElementById(`id_${fieldName}`);
+
+    tag.remove();
+    updateHiddenField(container, hiddenField);
+}
+
+function updateHiddenField(container, hiddenField) {
+    const tags = Array.from(container.querySelectorAll('.tag')).map(tag =>
+        tag.textContent.replace('×', '').trim()
+    );
+    hiddenField.value = tags.join(', ');
+}
+
+// フォーム送信前の検証
+document.getElementById('surveyorForm').addEventListener('submit', function(e) {
+    const name = document.getElementById('id_name').value.trim();
+    const employeeId = document.getElementById('id_employee_id').value.trim();
+
+    if (!name) {
+        e.preventDefault();
+        alert('調査員名を入力してください。');
+        document.getElementById('id_name').focus();
+        return;
+    }
+
+    if (!employeeId) {
+        e.preventDefault();
+        alert('社員番号を入力してください。');
+        document.getElementById('id_employee_id').focus();
+        return;
+    }
+});
+</script>
+{% endblock %}

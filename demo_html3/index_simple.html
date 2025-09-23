@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <!-- 基本メタ情報 -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- ページタイトル: SEO・ブックマーク用 -->
+    <title>建築派遣SaaS - シンプルダッシュボード</title>
+
+    <!-- シンプルUIテーマ: カスタムスタイル（最優先読み込み） -->
+    <link rel="stylesheet" href="css/simple_theme.css">
+
+    <!-- Font Awesome: アイコンライブラリ（軽量化のためCDN使用） -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- シンプルナビゲーション: 最大5項目の統一メニュー -->
+    <nav class="nav">
+        <div class="nav-container">
+            <!-- ブランドロゴ: ホームページへのリンク -->
+            <a href="index_simple.html" class="nav-brand">
+                <i class="fas fa-building"></i> <!-- 建築業界を表すアイコン -->
+                建築派遣SaaS
+            </a>
+
+            <!-- メインナビゲーション: シンプル化指示に従い4項目に制限 -->
+            <ul class="nav-list">
+                <!-- ダッシュボード: 現在のページ（アクティブ状態） -->
+                <li class="nav-item">
+                    <a href="index_simple.html" class="nav-link active">
+                        <i class="fas fa-home"></i>
+                        <span>ダッシュボード</span>
+                    </a>
+                </li>
+
+                <!-- 調査機能: STEP1の現地調査へのアクセス -->
+                <li class="nav-item">
+                    <a href="surveys/construction_type_survey.html" class="nav-link">
+                        <i class="fas fa-search"></i>
+                        <span>調査</span>
+                    </a>
+                </li>
+
+                <!-- 案件一覧: STEP2の物件管理画面 -->
+                <li class="nav-item">
+                    <a href="pricing/surveyed_projects_list.html" class="nav-link">
+                        <i class="fas fa-list-alt"></i>
+                        <span>案件一覧</span>
+                    </a>
+                </li>
+
+                <!-- 分析機能: 利益率分析画面 -->
+                <li class="nav-item">
+                    <a href="analytics/profit_analysis.html" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>分析</span>
+                    </a>
+                </li>
+            </ul>
+
+            <!-- ユーザー情報表示: ログイン状態の確認用 -->
+            <div class="nav-user">
+                <span class="text-gray">ログイン中: <strong id="currentUserName">管理者</strong></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- メインコンテンツ: シンプル化されたダッシュボード -->
+    <main class="dashboard">
+        <div class="container">
+            <!-- ダッシュボードヘッダー: システム概要の表示 -->
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">建築派遣SaaS</h1>
+                <p class="dashboard-subtitle">シンプルで使いやすい見積作成システム</p>
+            </div>
+
+            <!-- メインダッシュボードカード: 情報を3つに集約（シンプル化指示に従う） -->
+            <div class="dashboard-grid">
+                <!-- 本日のタスクカード: 最重要情報を大きく表示 -->
+                <div class="dashboard-card primary">
+                    <!-- タスクアイコン: 視覚的な認識向上 -->
+                    <i class="fas fa-tasks" style="font-size: 48px; color: var(--color-primary); margin-bottom: 16px;"></i>
+                    <h2>本日のタスク</h2>
+                    <!-- 大きな数値表示: 48pxで視認性向上 -->
+                    <div class="dashboard-count">3</div>
+                    <p class="dashboard-subtitle-card">未完了のタスクがあります</p>
+                    <!-- プライマリアクション: 最も重要な操作 -->
+                    <a href="surveys/construction_type_survey.html" class="btn btn-primary btn-lg">
+                        <i class="fas fa-arrow-right"></i>
+                        調査を開始する
+                    </a>
+                </div>
+
+                <!-- 進行中案件カード: 現在の作業状況 -->
+                <div class="dashboard-card success">
+                    <!-- プロジェクトアイコン: 案件管理を表す -->
+                    <i class="fas fa-project-diagram" style="font-size: 48px; color: var(--color-success); margin-bottom: 16px;"></i>
+                    <h2>進行中案件</h2>
+                    <!-- 成功カラーで進行状況を表現 -->
+                    <div class="dashboard-count success">5</div>
+                    <p class="dashboard-subtitle-card">アクティブな案件があります</p>
+                    <!-- セカンダリアクション: 詳細確認用 -->
+                    <a href="pricing/surveyed_projects_list.html" class="btn btn-success btn-lg">
+                        <i class="fas fa-list"></i>
+                        案件一覧を見る
+                    </a>
+                </div>
+
+                <!-- 承認待ちカード: 緊急対応が必要な項目 -->
+                <div class="dashboard-card danger">
+                    <!-- 警告アイコン: 注意喚起 -->
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: var(--color-danger); margin-bottom: 16px;"></i>
+                    <h2>承認待ち</h2>
+                    <!-- 危険カラーで緊急性を表現 -->
+                    <div class="dashboard-count danger">2</div>
+                    <p class="dashboard-subtitle-card">緊急対応が必要です</p>
+                    <!-- 緊急アクション: 即座の対応を促す -->
+                    <a href="pricing/quotation_adjustment.html" class="btn btn-danger btn-lg">
+                        <i class="fas fa-check-circle"></i>
+                        今すぐ承認
+                    </a>
+                </div>
+            </div>
+
+            <!-- メインアクション: 最重要な操作のみ -->
+            <div style="text-align: center; margin: 48px 0;">
+                <a href="surveys/construction_type_survey.html" class="btn btn-primary btn-lg" style="font-size: 18px; padding: 16px 32px;">
+                    <i class="fas fa-search" style="margin-right: 12px;"></i>
+                    新しい調査を開始
+                </a>
+            </div>
+
+            <!-- 最近の活動: 最重要な2件のみ表示 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-clock"></i>
+                        最近の活動
+                    </h3>
+                </div>
+
+                <div class="list">
+                    <div class="list-item">
+                        <div class="list-item-main">
+                            <h4 class="list-item-title">田中様邸 - キッチンリフォーム</h4>
+                            <p class="list-item-subtitle">見積調整が完了しました</p>
+                        </div>
+                        <div class="list-item-meta">
+                            <span class="badge badge-success">完了</span>
+                            <span class="text-sm text-gray">2時間前</span>
+                        </div>
+                    </div>
+
+                    <div class="list-item">
+                        <div class="list-item-main">
+                            <h4 class="list-item-title">佐藤様邸 - バスルーム改修</h4>
+                            <p class="list-item-subtitle">現地調査を実施</p>
+                        </div>
+                        <div class="list-item-meta">
+                            <span class="badge badge-primary">進行中</span>
+                            <span class="text-sm text-gray">4時間前</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+
+    <script src="js/simple_ui.js"></script>
+
+    <!-- カスタムスタイル -->
+    <style>
+        .nav-user {
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-user {
+                display: none;
+            }
+        }
+
+        /* シンプルなフォーカス可視化のみ */
+        *:focus {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+    </style>
+
+    <!-- 初期化スクリプト -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ユーザー名表示
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{"name": "管理者", "role": "社員"}');
+            document.getElementById('currentUserName').textContent = currentUser.name;
+
+
+        });
+    </script>
+</body>
+</html>

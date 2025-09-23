@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工事種別別現地調査 - 建築派遣SaaS</title>
+    <link rel="stylesheet" href="../css/simple_theme.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- 既存スタイル互換性のため一部保持 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+            padding-bottom: 120px;
+        }
+        .survey-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        .construction-type-selector {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+        }
+        .type-card {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        .type-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+        .type-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        .dynamic-form-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .measurement-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .measurement-input {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+        .measurement-input:focus-within {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .photo-upload-zone {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: rgba(102, 126, 234, 0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .photo-upload-zone:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: #764ba2;
+        }
+        .photo-preview {
+            display: inline-block;
+            margin: 10px;
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .photo-preview img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+        }
+        .photo-delete {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .work-scope-checklist {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .scope-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .scope-item:last-child {
+            border-bottom: none;
+        }
+        .submit-section {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+        .progress-indicator {
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="survey-header">
+        <div class="container">
+            <h2><i class="bi bi-tools"></i> 工事種別別現地調査</h2>
+            <p class="mb-0">工事種別に応じた詳細調査を実施</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Progress Indicator -->
+        <div class="progress-indicator">
+            <div class="workflow-progress">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="text-white mb-0">調査進捗</h6>
+                    <span class="badge bg-light text-dark" id="progressPercent">0%</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar" role="progressbar" style="width: 0%" id="progressBar"></div>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <small class="text-white-50">工事種別</small>
+                    <small class="text-white-50">測定</small>
+                    <small class="text-white-50">写真</small>
+                    <small class="text-white-50">範囲確認</small>
+                    <small class="text-white-50">完了</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Construction Type Selection -->
+        <div class="construction-type-selector">
+            <h5><i class="bi bi-list-ul"></i> 工事種別選択</h5>
+            <p class="text-muted">実施する工事の種別を選択してください</p>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="type-card" data-type="kitchen" onclick="selectConstructionType('kitchen')">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-house-door fs-2 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">キッチンリフォーム</h6>
+                                <small>システムキッチン交換・改修</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="type-card" data-type="bathroom" onclick="selectConstructionType('bathroom')">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-droplet fs-2 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">バスルーム改修</h6>
+                                <small>ユニットバス・浴室改修</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="type-card" data-type="flooring" onclick="selectConstructionType('flooring')">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-grid-3x3 fs-2 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">フローリング張替え</h6>
+                                <small>床材交換・補修</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="type-card" data-type="wallpaper" onclick="selectConstructionType('wallpaper')">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-palette fs-2 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">壁紙貼替え</h6>
+                                <small>クロス張替え・内装</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="type-card" data-type="electrical" onclick="selectConstructionType('electrical')">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-lightning fs-2 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">電気工事</h6>
+                                <small>配線・照明・コンセント工事</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="type-card" data-type="plumbing" onclick="selectConstructionType('plumbing')">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-wrench fs-2 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">配管工事</h6>
+                                <small>給排水・ガス配管工事</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="type-card" data-type="custom" onclick="selectConstructionType('custom')">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-tools fs-2 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">その他カスタム工事</h6>
+                                <small>上記以外の専門工事</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dynamic Form Sections -->
+
+        <!-- Kitchen Form -->
+        <div class="dynamic-form-section" id="kitchenForm">
+            <h5><i class="bi bi-house-door"></i> キッチンリフォーム調査</h5>
+
+            <div class="measurement-grid">
+                <div class="measurement-input">
+                    <label class="form-label">キッチン幅 (mm)</label>
+                    <input type="number" class="form-control" id="kitchen_width" placeholder="2550">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">キッチン奥行き (mm)</label>
+                    <input type="number" class="form-control" id="kitchen_depth" placeholder="650">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">天井高 (mm)</label>
+                    <input type="number" class="form-control" id="kitchen_height" placeholder="2400">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">換気扇サイズ</label>
+                    <select class="form-control" id="kitchen_ventilation">
+                        <option value="">選択してください</option>
+                        <option value="60cm">60cm</option>
+                        <option value="75cm">75cm</option>
+                        <option value="90cm">90cm</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="work-scope-checklist">
+                <h6>キッチン工事範囲</h6>
+                <div class="scope-item">
+                    <input type="checkbox" id="kitchen_cabinet" class="form-check-input me-3">
+                    <label for="kitchen_cabinet">システムキッチン本体交換</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="kitchen_sink" class="form-check-input me-3">
+                    <label for="kitchen_sink">シンク・水栓交換</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="kitchen_gas" class="form-check-input me-3">
+                    <label for="kitchen_gas">ガスコンロ・IH交換</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="kitchen_wall" class="form-check-input me-3">
+                    <label for="kitchen_wall">キッチンパネル・タイル工事</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="kitchen_floor" class="form-check-input me-3">
+                    <label for="kitchen_floor">床材張替え</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bathroom Form -->
+        <div class="dynamic-form-section" id="bathroomForm">
+            <h5><i class="bi bi-droplet"></i> バスルーム改修調査</h5>
+
+            <div class="measurement-grid">
+                <div class="measurement-input">
+                    <label class="form-label">浴室幅 (mm)</label>
+                    <input type="number" class="form-control" id="bathroom_width" placeholder="1600">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">浴室奥行き (mm)</label>
+                    <input type="number" class="form-control" id="bathroom_depth" placeholder="1600">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">浴室高さ (mm)</label>
+                    <input type="number" class="form-control" id="bathroom_height" placeholder="2200">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">ユニットバスサイズ</label>
+                    <select class="form-control" id="bathroom_unit_size">
+                        <option value="">選択してください</option>
+                        <option value="1216">1216 (0.75坪)</option>
+                        <option value="1317">1317 (1坪)</option>
+                        <option value="1418">1418 (1.25坪)</option>
+                        <option value="1620">1620 (1.5坪)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="work-scope-checklist">
+                <h6>バスルーム工事範囲</h6>
+                <div class="scope-item">
+                    <input type="checkbox" id="bathroom_unit" class="form-check-input me-3">
+                    <label for="bathroom_unit">ユニットバス交換</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="bathroom_plumbing" class="form-check-input me-3">
+                    <label for="bathroom_plumbing">給排水配管工事</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="bathroom_electrical" class="form-check-input me-3">
+                    <label for="bathroom_electrical">電気工事（照明・換気扇）</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="bathroom_door" class="form-check-input me-3">
+                    <label for="bathroom_door">ドア・窓交換</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="bathroom_tile" class="form-check-input me-3">
+                    <label for="bathroom_tile">タイル・防水工事</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flooring Form -->
+        <div class="dynamic-form-section" id="flooringForm">
+            <h5><i class="bi bi-grid-3x3"></i> フローリング張替え調査</h5>
+
+            <div class="measurement-grid">
+                <div class="measurement-input">
+                    <label class="form-label">部屋幅 (mm)</label>
+                    <input type="number" class="form-control" id="flooring_width" placeholder="3600">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">部屋奥行き (mm)</label>
+                    <input type="number" class="form-control" id="flooring_depth" placeholder="5400">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">施工面積 (㎡)</label>
+                    <input type="number" class="form-control" id="flooring_area" placeholder="19.44" step="0.01">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">床材種別</label>
+                    <select class="form-control" id="flooring_type">
+                        <option value="">選択してください</option>
+                        <option value="合板フローリング">合板フローリング</option>
+                        <option value="無垢フローリング">無垢フローリング</option>
+                        <option value="フロアタイル">フロアタイル</option>
+                        <option value="カーペット">カーペット</option>
+                        <option value="畳">畳</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="work-scope-checklist">
+                <h6>フローリング工事範囲</h6>
+                <div class="scope-item">
+                    <input type="checkbox" id="flooring_removal" class="form-check-input me-3">
+                    <label for="flooring_removal">既存床材撤去</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="flooring_subfloor" class="form-check-input me-3">
+                    <label for="flooring_subfloor">下地調整・補修</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="flooring_installation" class="form-check-input me-3">
+                    <label for="flooring_installation">新規床材施工</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="flooring_trim" class="form-check-input me-3">
+                    <label for="flooring_trim">巾木・見切り材設置</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="flooring_finish" class="form-check-input me-3">
+                    <label for="flooring_finish">仕上げ・クリーニング</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wallpaper Form -->
+        <div class="dynamic-form-section" id="wallpaperForm">
+            <h5><i class="bi bi-palette"></i> 壁紙貼替え調査</h5>
+
+            <div class="measurement-grid">
+                <div class="measurement-input">
+                    <label class="form-label">部屋幅 (mm)</label>
+                    <input type="number" class="form-control" id="wallpaper_width" placeholder="3600">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">部屋奥行き (mm)</label>
+                    <input type="number" class="form-control" id="wallpaper_depth" placeholder="5400">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">天井高 (mm)</label>
+                    <input type="number" class="form-control" id="wallpaper_height" placeholder="2400">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">壁面積 (㎡)</label>
+                    <input type="number" class="form-control" id="wallpaper_area" placeholder="43.2" step="0.1">
+                </div>
+            </div>
+
+            <div class="work-scope-checklist">
+                <h6>壁紙工事範囲</h6>
+                <div class="scope-item">
+                    <input type="checkbox" id="wallpaper_removal" class="form-check-input me-3">
+                    <label for="wallpaper_removal">既存壁紙剥がし</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="wallpaper_prep" class="form-check-input me-3">
+                    <label for="wallpaper_prep">下地処理・パテ埋め</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="wallpaper_walls" class="form-check-input me-3">
+                    <label for="wallpaper_walls">壁面クロス貼り</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="wallpaper_ceiling" class="form-check-input me-3">
+                    <label for="wallpaper_ceiling">天井クロス貼り</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="wallpaper_cleanup" class="form-check-input me-3">
+                    <label for="wallpaper_cleanup">清掃・仕上げ</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Electrical Form -->
+        <div class="dynamic-form-section" id="electricalForm">
+            <h5><i class="bi bi-lightning"></i> 電気工事調査</h5>
+
+            <div class="measurement-grid">
+                <div class="measurement-input">
+                    <label class="form-label">施工部屋数</label>
+                    <input type="number" class="form-control" id="electrical_rooms" placeholder="3">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">コンセント数</label>
+                    <input type="number" class="form-control" id="electrical_outlets" placeholder="8">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">照明器具数</label>
+                    <input type="number" class="form-control" id="electrical_lights" placeholder="5">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">分電盤工事</label>
+                    <select class="form-control" id="electrical_panel">
+                        <option value="">選択してください</option>
+                        <option value="不要">工事不要</option>
+                        <option value="増設">ブレーカー増設</option>
+                        <option value="交換">分電盤交換</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="work-scope-checklist">
+                <h6>電気工事範囲</h6>
+                <div class="scope-item">
+                    <input type="checkbox" id="electrical_wiring" class="form-check-input me-3">
+                    <label for="electrical_wiring">配線工事</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="electrical_outlet_install" class="form-check-input me-3">
+                    <label for="electrical_outlet_install">コンセント設置・交換</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="electrical_lighting" class="form-check-input me-3">
+                    <label for="electrical_lighting">照明器具設置</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="electrical_switch" class="form-check-input me-3">
+                    <label for="electrical_switch">スイッチ設置・交換</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="electrical_safety" class="form-check-input me-3">
+                    <label for="electrical_safety">安全確認・検査</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plumbing Form -->
+        <div class="dynamic-form-section" id="plumbingForm">
+            <h5><i class="bi bi-wrench"></i> 配管工事調査</h5>
+
+            <div class="measurement-grid">
+                <div class="measurement-input">
+                    <label class="form-label">給水管延長 (m)</label>
+                    <input type="number" class="form-control" id="plumbing_water_length" placeholder="15" step="0.1">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">排水管延長 (m)</label>
+                    <input type="number" class="form-control" id="plumbing_drain_length" placeholder="12" step="0.1">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">ガス管延長 (m)</label>
+                    <input type="number" class="form-control" id="plumbing_gas_length" placeholder="8" step="0.1">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">配管種別</label>
+                    <select class="form-control" id="plumbing_type">
+                        <option value="">選択してください</option>
+                        <option value="銅管">銅管</option>
+                        <option value="架橋ポリエチレン管">架橋ポリエチレン管</option>
+                        <option value="塩ビ管">塩ビ管</option>
+                        <option value="鋼管">鋼管</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="work-scope-checklist">
+                <h6>配管工事範囲</h6>
+                <div class="scope-item">
+                    <input type="checkbox" id="plumbing_water_main" class="form-check-input me-3">
+                    <label for="plumbing_water_main">給水管工事</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="plumbing_drain_main" class="form-check-input me-3">
+                    <label for="plumbing_drain_main">排水管工事</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="plumbing_gas_main" class="form-check-input me-3">
+                    <label for="plumbing_gas_main">ガス管工事</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="plumbing_fixtures" class="form-check-input me-3">
+                    <label for="plumbing_fixtures">器具取付け</label>
+                </div>
+                <div class="scope-item">
+                    <input type="checkbox" id="plumbing_test" class="form-check-input me-3">
+                    <label for="plumbing_test">水圧テスト・検査</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Form -->
+        <div class="dynamic-form-section" id="customForm">
+            <h5><i class="bi bi-tools"></i> その他カスタム工事調査</h5>
+
+            <div class="mb-3">
+                <label class="form-label">工事内容詳細</label>
+                <textarea class="form-control" id="custom_description" rows="4" placeholder="実施する工事の詳細を記載してください"></textarea>
+            </div>
+
+            <div class="measurement-grid">
+                <div class="measurement-input">
+                    <label class="form-label">施工面積/範囲</label>
+                    <input type="text" class="form-control" id="custom_scope" placeholder="例: 10㎡、3部屋、一式">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">特殊材料・工法</label>
+                    <input type="text" class="form-control" id="custom_materials" placeholder="例: 特殊塗料、防音材">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">工期予定</label>
+                    <input type="text" class="form-control" id="custom_duration" placeholder="例: 5日間、2週間">
+                </div>
+                <div class="measurement-input">
+                    <label class="form-label">注意事項</label>
+                    <input type="text" class="form-control" id="custom_notes" placeholder="例: 近隣への配慮、特殊条件">
+                </div>
+            </div>
+        </div>
+
+        <!-- Photo Upload Section -->
+        <div class="dynamic-form-section" id="photoSection">
+            <h5><i class="bi bi-camera"></i> 現場写真撮影</h5>
+            <p class="text-muted">工事対象箇所の写真を撮影してください（最低3枚以上）</p>
+
+            <div class="photo-upload-zone" onclick="document.getElementById('photoInput').click()">
+                <i class="bi bi-camera fs-1 text-primary"></i>
+                <p class="mt-3 mb-0">タップして写真を撮影・選択</p>
+                <small class="text-muted">複数枚の選択が可能です</small>
+            </div>
+            <input type="file" id="photoInput" accept="image/*" multiple capture="environment" style="display: none;">
+            <div id="photoPreview" class="mt-3"></div>
+        </div>
+
+        <!-- Additional Notes -->
+        <div class="dynamic-form-section" id="notesSection">
+            <h5><i class="bi bi-journal-text"></i> 特記事項・補足情報</h5>
+
+            <div class="mb-3">
+                <label class="form-label">現場状況・特記事項</label>
+                <textarea class="form-control" id="additional_notes" rows="4" placeholder="現場の特殊事情、注意点、顧客要望など"></textarea>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">緊急度</label>
+                    <select class="form-control" id="urgency_level">
+                        <option value="通常">通常</option>
+                        <option value="やや急ぎ">やや急ぎ</option>
+                        <option value="緊急">緊急</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">希望工期</label>
+                    <input type="date" class="form-control" id="desired_completion">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Section -->
+    <div class="submit-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-outline-secondary w-100" onclick="saveDraft()">
+                        <i class="bi bi-save"></i> 下書き保存
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-warning w-100" onclick="previewData()">
+                        <i class="bi bi-eye"></i> 入力確認
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-primary w-100" id="submitSurvey" disabled>
+                        <i class="bi bi-send"></i> 調査完了
+                    </button>
+                </div>
+            </div>
+            <div class="text-center mt-2">
+                <small class="text-muted">調査完了後、材料発注・見積作成工程に進みます</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="modal fade" id="previewModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-eye"></i> 調査データ確認</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="previewContent">
+                    <!-- Preview content will be inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">修正する</button>
+                    <button type="button" class="btn btn-primary" onclick="submitFromPreview()">調査データ送信</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-check-circle"></i> 調査完了</h5>
+                </div>
+                <div class="modal-body">
+                    <p>現地調査が正常に完了しました。</p>
+                    <p>次のステップ「材料発注・原材料費入力」に進んでください。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="goToMaterialProcurement()">材料発注へ進む</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="goToProjectsList()">調査済み一覧へ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/simple_ui.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/quotation_workflow.js"></script>
+    <script>
+        class ConstructionTypeSurvey {
+            constructor() {
+                this.selectedType = null;
+                this.photos = [];
+                this.surveyData = {};
+                this.workflow = new QuotationWorkflow();
+                this.initializeApp();
+            }
+
+            initializeApp() {
+                this.validateAccess();
+                this.setupEventListeners();
+                this.loadSavedData();
+                this.updateProgress();
+            }
+
+            validateAccess() {
+                const userRole = this.workflow.getUserRole();
+                if (userRole !== 'temporary') {
+                    alert('この画面は派遣スタッフ専用です。');
+                    window.location.href = '../index_manager.html';
+                    return;
+                }
+            }
+
+            setupEventListeners() {
+                // Photo upload
+                document.getElementById('photoInput').addEventListener('change', (e) => {
+                    this.handlePhotoUpload(e);
+                });
+
+                // Submit button
+                document.getElementById('submitSurvey').addEventListener('click', () => {
+                    this.showPreview();
+                });
+
+                // Form inputs change detection
+                document.addEventListener('input', () => {
+                    this.updateProgress();
+                    this.autoSave();
+                });
+
+                document.addEventListener('change', () => {
+                    this.updateProgress();
+                    this.autoSave();
+                });
+
+                // Auto-save every 30 seconds
+                setInterval(() => {
+                    this.autoSave();
+                }, 30000);
+            }
+
+            selectConstructionType(type) {
+                // Remove previous selection
+                document.querySelectorAll('.type-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+
+                // Hide all forms
+                document.querySelectorAll('.dynamic-form-section').forEach(section => {
+                    section.style.display = 'none';
+                });
+
+                // Select new type
+                this.selectedType = type;
+                document.querySelector(`[data-type="${type}"]`).classList.add('selected');
+
+                // Show relevant form and common sections
+                document.getElementById(`${type}Form`).style.display = 'block';
+                document.getElementById('photoSection').style.display = 'block';
+                document.getElementById('notesSection').style.display = 'block';
+
+                this.updateProgress();
+                this.autoSave();
+            }
+
+            handlePhotoUpload(event) {
+                const files = Array.from(event.target.files);
+
+                files.forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            this.photos.push({
+                                file: file,
+                                dataUrl: e.target.result,
+                                timestamp: new Date().toISOString()
+                            });
+                            this.updatePhotoPreview();
+                            this.updateProgress();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            updatePhotoPreview() {
+                const preview = document.getElementById('photoPreview');
+                preview.innerHTML = this.photos.map((photo, index) => `
+                    <div class="photo-preview">
+                        <img src="${photo.dataUrl}" alt="現場写真${index + 1}">
+                        <button class="photo-delete" onclick="app.removePhoto(${index})">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            removePhoto(index) {
+                this.photos.splice(index, 1);
+                this.updatePhotoPreview();
+                this.updateProgress();
+            }
+
+            updateProgress() {
+                let completedSteps = 0;
+                let totalSteps = 5;
+
+                // Step 1: Construction type selected
+                if (this.selectedType) completedSteps++;
+
+                // Step 2: Measurements entered
+                if (this.selectedType && this.getMeasurementCompleteness() > 0.5) completedSteps++;
+
+                // Step 3: Photos uploaded
+                if (this.photos.length >= 3) completedSteps++;
+
+                // Step 4: Work scope checked
+                if (this.selectedType && this.getScopeCompleteness() > 0.3) completedSteps++;
+
+                // Step 5: Additional info
+                if (document.getElementById('additional_notes').value.trim()) completedSteps++;
+
+                const progress = Math.round((completedSteps / totalSteps) * 100);
+                document.getElementById('progressBar').style.width = `${progress}%`;
+                document.getElementById('progressPercent').textContent = `${progress}%`;
+
+                // Enable submit button when all steps completed
+                document.getElementById('submitSurvey').disabled = completedSteps < 4;
+
+                return progress;
+            }
+
+            getMeasurementCompleteness() {
+                if (!this.selectedType) return 0;
+
+                const formId = `${this.selectedType}Form`;
+                const inputs = document.querySelectorAll(`#${formId} input, #${formId} select`);
+                const filledInputs = Array.from(inputs).filter(input => input.value.trim() !== '');
+
+                return inputs.length > 0 ? filledInputs.length / inputs.length : 0;
+            }
+
+            getScopeCompleteness() {
+                if (!this.selectedType) return 0;
+
+                const checkboxes = document.querySelectorAll(`#${this.selectedType}Form .form-check-input`);
+                const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
+
+                return checkboxes.length > 0 ? checkedBoxes.length / checkboxes.length : 0;
+            }
+
+            collectSurveyData() {
+                const data = {
+                    surveyId: `survey_${Date.now()}`,
+                    constructionType: this.selectedType,
+                    constructionTypeName: this.getConstructionTypeName(this.selectedType),
+                    measurements: this.collectMeasurements(),
+                    workScope: this.collectWorkScope(),
+                    photos: this.photos.map(photo => ({
+                        dataUrl: photo.dataUrl,
+                        timestamp: photo.timestamp
+                    })),
+                    additionalInfo: {
+                        notes: document.getElementById('additional_notes').value,
+                        urgency: document.getElementById('urgency_level').value,
+                        desiredCompletion: document.getElementById('desired_completion').value
+                    },
+                    surveyor: this.workflow.getCurrentUser().name || '派遣スタッフ',
+                    surveyorId: this.workflow.getCurrentUser().id,
+                    completedAt: new Date().toISOString(),
+                    status: 'completed'
+                };
+
+                return data;
+            }
+
+            getConstructionTypeName(type) {
+                const names = {
+                    kitchen: 'キッチンリフォーム',
+                    bathroom: 'バスルーム改修',
+                    flooring: 'フローリング張替え',
+                    wallpaper: '壁紙貼替え',
+                    electrical: '電気工事',
+                    plumbing: '配管工事',
+                    custom: 'その他カスタム工事'
+                };
+                return names[type] || type;
+            }
+
+            collectMeasurements() {
+                const measurements = {};
+                const inputs = document.querySelectorAll(`#${this.selectedType}Form input, #${this.selectedType}Form select, #${this.selectedType}Form textarea`);
+
+                inputs.forEach(input => {
+                    if (input.value.trim()) {
+                        measurements[input.id] = input.value;
+                    }
+                });
+
+                return measurements;
+            }
+
+            collectWorkScope() {
+                const scope = [];
+                const checkboxes = document.querySelectorAll(`#${this.selectedType}Form .form-check-input:checked`);
+
+                checkboxes.forEach(checkbox => {
+                    const label = document.querySelector(`label[for="${checkbox.id}"]`);
+                    scope.push({
+                        id: checkbox.id,
+                        name: label ? label.textContent : checkbox.id
+                    });
+                });
+
+                return scope;
+            }
+
+            showPreview() {
+                const data = this.collectSurveyData();
+                const previewContent = this.generatePreviewContent(data);
+                document.getElementById('previewContent').innerHTML = previewContent;
+
+                const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+                modal.show();
+            }
+
+            generatePreviewContent(data) {
+                return `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>工事種別</h6>
+                            <p>${data.constructionTypeName}</p>
+
+                            <h6>測定値・詳細</h6>
+                            <ul>
+                                ${Object.entries(data.measurements).map(([key, value]) =>
+                                    `<li>${key}: ${value}</li>`
+                                ).join('')}
+                            </ul>
+
+                            <h6>工事範囲</h6>
+                            <ul>
+                                ${data.workScope.map(scope =>
+                                    `<li>${scope.name}</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>現場写真 (${data.photos.length}枚)</h6>
+                            <div class="row">
+                                ${data.photos.map((photo, index) =>
+                                    `<div class="col-4 mb-2">
+                                        <img src="${photo.dataUrl}" class="img-fluid rounded" alt="写真${index + 1}">
+                                    </div>`
+                                ).join('')}
+                            </div>
+
+                            <h6>特記事項</h6>
+                            <p>${data.additionalInfo.notes || '特になし'}</p>
+
+                            <h6>緊急度</h6>
+                            <p>${data.additionalInfo.urgency}</p>
+
+                            ${data.additionalInfo.desiredCompletion ?
+                                `<h6>希望工期</h6><p>${data.additionalInfo.desiredCompletion}</p>` : ''
+                            }
+                        </div>
+                    </div>
+                `;
+            }
+
+            autoSave() {
+                if (this.selectedType) {
+                    const data = this.collectSurveyData();
+                    localStorage.setItem('constructionSurveyDraft', JSON.stringify(data));
+                }
+            }
+
+            loadSavedData() {
+                const saved = localStorage.getItem('constructionSurveyDraft');
+                if (saved) {
+                    try {
+                        const data = JSON.parse(saved);
+
+                        if (data.constructionType) {
+                            this.selectConstructionType(data.constructionType);
+                        }
+
+                        // Restore measurements
+                        Object.entries(data.measurements || {}).forEach(([key, value]) => {
+                            const input = document.getElementById(key);
+                            if (input) input.value = value;
+                        });
+
+                        // Restore work scope
+                        (data.workScope || []).forEach(scope => {
+                            const checkbox = document.getElementById(scope.id);
+                            if (checkbox) checkbox.checked = true;
+                        });
+
+                        // Restore additional info
+                        if (data.additionalInfo) {
+                            Object.entries(data.additionalInfo).forEach(([key, value]) => {
+                                const input = document.getElementById(`additional_${key}`) ||
+                                             document.getElementById(`${key}_level`) ||
+                                             document.getElementById(`desired_${key}`);
+                                if (input) input.value = value;
+                            });
+                        }
+
+                        this.updateProgress();
+                    } catch (e) {
+                        console.error('Failed to load saved data:', e);
+                    }
+                }
+            }
+
+            async submitSurvey() {
+                try {
+                    const surveyData = this.collectSurveyData();
+
+                    // Submit to workflow system
+                    await this.workflow.submitConstructionSurvey(surveyData);
+
+                    // Save to localStorage for persistence
+                    const existingSurveys = JSON.parse(localStorage.getItem('completedConstructionSurveys') || '[]');
+                    existingSurveys.push(surveyData);
+                    localStorage.setItem('completedConstructionSurveys', JSON.stringify(existingSurveys));
+
+                    // Clear draft
+                    localStorage.removeItem('constructionSurveyDraft');
+
+                    // Log activity
+                    this.workflow.logActivity('construction_survey_completed', {
+                        surveyId: surveyData.surveyId,
+                        constructionType: surveyData.constructionType,
+                        measurementCount: Object.keys(surveyData.measurements).length,
+                        photoCount: surveyData.photos.length
+                    });
+
+                    // Show success modal
+                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    successModal.show();
+
+                } catch (error) {
+                    alert('調査データの送信に失敗しました。ネットワーク接続を確認してください。');
+                    console.error('Survey submission failed:', error);
+                }
+            }
+        }
+
+        // Global functions
+        function selectConstructionType(type) {
+            app.selectConstructionType(type);
+        }
+
+        function saveDraft() {
+            app.autoSave();
+            alert('下書きを保存しました。');
+        }
+
+        function previewData() {
+            app.showPreview();
+        }
+
+        function submitFromPreview() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
+            modal.hide();
+            app.submitSurvey();
+        }
+
+        function goToMaterialProcurement() {
+            window.location.href = '../pricing/material_procurement.html';
+        }
+
+        function goToProjectsList() {
+            window.location.href = '../pricing/surveyed_projects_list.html';
+        }
+
+        // Initialize app
+        let app;
+        document.addEventListener('DOMContentLoaded', () => {
+            app = new ConstructionTypeSurvey();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>進捗更新モーダルテスト（DB保存版）</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>進捗更新モーダル テスト（DB保存版）</h1>
+        <p>このページはリアルタイムDB保存の追加項目機能をテストするためのものです。</p>
+
+        <div class="row">
+            <div class="col-md-6">
+                <h3>ステップ1: 編集セッション作成</h3>
+                <button type="button" class="btn btn-primary" onclick="createEditSession()">
+                    <i class="fas fa-plus me-1"></i>編集セッション開始
+                </button>
+                <div id="session-info" class="mt-3"></div>
+            </div>
+            <div class="col-md-6">
+                <h3>ステップ2: 追加項目の保存</h3>
+                <div class="mb-3">
+                    <input type="text" id="test-key" class="form-control" placeholder="項目名（例：使用材料）">
+                </div>
+                <div class="mb-3">
+                    <input type="text" id="test-value" class="form-control" placeholder="内容">
+                </div>
+                <button type="button" class="btn btn-success" onclick="saveAdditionalItem()">
+                    <i class="fas fa-save me-1"></i>項目をDBに保存
+                </button>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h3>ステップ3: 進捗更新テスト</h3>
+                <button type="button" class="btn btn-warning" onclick="testProgressUpdate()">
+                    <i class="fas fa-edit me-1"></i>進捗更新をテスト
+                </button>
+            </div>
+            <div class="col-md-6">
+                <h3>ステップ4: セッション確認</h3>
+                <button type="button" class="btn btn-info" onclick="loadEditSession()">
+                    <i class="fas fa-search me-1"></i>セッション読み込み
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <h3>ログ出力:</h3>
+            <div id="log-output" class="border p-3" style="height: 400px; overflow-y: auto; background-color: #f8f9fa;">
+                <!-- ログがここに出力されます -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // テスト用のプロジェクトID
+        const TEST_PROJECT_ID = 1;
+        let currentSessionId = null;
+
+        // CSRFトークンを取得（本来はページから取得）
+        function getCSRFToken() {
+            return 'test-csrf-token'; // 実際のテストではページから取得
+        }
+
+        // ログ出力関数
+        function log(message) {
+            const logOutput = document.getElementById('log-output');
+            const timestamp = new Date().toLocaleTimeString();
+            logOutput.innerHTML += `[${timestamp}] ${message}<br>`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+            console.log(message);
+        }
+
+        // 編集セッション作成
+        function createEditSession() {
+            log('編集セッションを作成します...');
+
+            const formData = new FormData();
+            formData.append('edit_mode', 'true');
+            formData.append('action', 'update_mode');
+
+            fetch(`http://localhost:8001/construction/projects/${TEST_PROJECT_ID}/edit-session/save/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentSessionId = data.session_id;
+                    log(`✅ セッション作成成功: ${currentSessionId}`);
+                    document.getElementById('session-info').innerHTML =
+                        `<div class="alert alert-success">セッションID: ${currentSessionId}</div>`;
+                } else {
+                    log(`❌ セッション作成失敗: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                log(`❌ エラー: ${error}`);
+            });
+        }
+
+        // 追加項目を保存
+        function saveAdditionalItem() {
+            if (!currentSessionId) {
+                log('❌ 先に編集セッションを作成してください');
+                return;
+            }
+
+            const key = document.getElementById('test-key').value.trim();
+            const value = document.getElementById('test-value').value.trim();
+
+            if (!key || !value) {
+                log('❌ 項目名と内容を入力してください');
+                return;
+            }
+
+            log(`追加項目を保存します: ${key} = ${value}`);
+
+            const formData = new FormData();
+            formData.append('session_id', currentSessionId);
+            formData.append('action', 'save_item');
+            formData.append('key', key);
+            formData.append('value', value);
+
+            fetch(`http://localhost:8001/construction/projects/${TEST_PROJECT_ID}/edit-session/save/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    log(`✅ 追加項目保存成功: ${key} = ${value}`);
+                    log(`📦 保存されている項目: ${JSON.stringify(data.additional_items)}`);
+
+                    // フィールドをクリア
+                    document.getElementById('test-key').value = '';
+                    document.getElementById('test-value').value = '';
+                } else {
+                    log(`❌ 追加項目保存失敗: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                log(`❌ エラー: ${error}`);
+            });
+        }
+
+        // 進捗更新をテスト
+        function testProgressUpdate() {
+            if (!currentSessionId) {
+                log('❌ 先に編集セッションを作成してください');
+                return;
+            }
+
+            log('進捗更新をテストします...');
+
+            const formData = new FormData();
+            formData.append('progress_rate', '75');
+            formData.append('work_description', 'テスト作業内容');
+            formData.append('issues', 'テスト課題');
+            formData.append('craftsman', '1'); // 最初の職人を使用
+            formData.append('session_id', currentSessionId);
+
+            // 追加の項目をテスト
+            formData.append('additional_item_keys[]', 'フォーム項目');
+            formData.append('additional_item_values[]', 'フォームから送信されたテスト値');
+
+            fetch(`http://localhost:8001/construction/projects/${TEST_PROJECT_ID}/quick-progress/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    log(`✅ 進捗更新成功: 進捗ID ${data.progress_id}, 進捗率 ${data.progress_rate}%`);
+                    log('🔄 セッションがクリアされました');
+                    currentSessionId = null;
+                    document.getElementById('session-info').innerHTML =
+                        '<div class="alert alert-info">セッションはクリアされました</div>';
+                } else {
+                    log(`❌ 進捗更新失敗: ${data.error || JSON.stringify(data.errors)}`);
+                }
+            })
+            .catch(error => {
+                log(`❌ エラー: ${error}`);
+            });
+        }
+
+        // セッション読み込み
+        function loadEditSession() {
+            log('編集セッションを読み込みます...');
+
+            let url = `http://localhost:8001/construction/projects/${TEST_PROJECT_ID}/edit-session/load/`;
+            if (currentSessionId) {
+                url += `?session_id=${currentSessionId}`;
+            }
+
+            fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    log(`✅ セッション読み込み成功`);
+                    log(`📝 編集モード: ${data.edit_mode}`);
+                    log(`📦 追加項目: ${JSON.stringify(data.additional_items)}`);
+                    if (data.session_id) {
+                        currentSessionId = data.session_id;
+                        document.getElementById('session-info').innerHTML =
+                            `<div class="alert alert-success">セッションID: ${currentSessionId}</div>`;
+                    }
+                } else {
+                    log(`❌ セッション読み込み失敗: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                log(`❌ エラー: ${error}`);
+            });
+        }
+
+        // 初期ログ
+        document.addEventListener('DOMContentLoaded', function() {
+            log('📋 DB保存版追加項目テストページが読み込まれました');
+            log('💡 手順: 1) 編集セッション開始 → 2) 項目追加 → 3) 進捗更新テスト');
+        });
+    </script>
+</body>
+</html>

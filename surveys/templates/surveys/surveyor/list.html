@@ -1,0 +1,393 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}調査員管理{% endblock %}
+
+{% block extra_css %}
+<style>
+.surveyor-card {
+    border-left: 4px solid #17a2b8;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.surveyor-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.surveyor-card.inactive {
+    border-left-color: #6c757d;
+    opacity: 0.7;
+}
+
+.experience-badge {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.experience-senior { background-color: #28a745; color: white; }
+.experience-mid { background-color: #17a2b8; color: white; }
+.experience-junior { background-color: #ffc107; color: black; }
+.experience-new { background-color: #6c757d; color: white; }
+
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+}
+
+.filter-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.surveyor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.survey-count {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-users text-info"></i>
+            調査員管理
+        </h2>
+        <div class="btn-group">
+            <a href="{% url 'surveys:surveyor_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> 調査員登録
+            </a>
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#importModal">
+                <i class="fas fa-upload"></i> インポート
+            </button>
+        </div>
+    </div>
+
+    <!-- 統計カード -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">総調査員数</h6>
+                            <h3 class="mb-0">{{ total_surveyors }}</h3>
+                        </div>
+                        <i class="fas fa-users fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">稼働中</h6>
+                            <h3 class="mb-0">{{ active_surveyors }}</h3>
+                        </div>
+                        <i class="fas fa-user-check fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">休止中</h6>
+                            <h3 class="mb-0">{{ inactive_surveyors }}</h3>
+                        </div>
+                        <i class="fas fa-user-slash fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">調査中</h6>
+                            <h3 class="mb-0">
+                                {% for surveyor in surveyors %}
+                                    {% if surveyor.current_surveys > 0 %}{{ surveyor.current_surveys|add:0 }}{% endif %}
+                                {% endfor %}
+                            </h3>
+                        </div>
+                        <i class="fas fa-search fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- フィルター -->
+    <div class="filter-section">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">ステータス</label>
+                <select name="status" class="form-select">
+                    <option value="">すべて</option>
+                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>稼働中</option>
+                    <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>休止中</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">部署</label>
+                <select name="department" class="form-select">
+                    <option value="">すべて</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept }}" {% if request.GET.department == dept %}selected{% endif %}>{{ dept }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">検索</label>
+                <input type="text" name="search" class="form-control"
+                       placeholder="名前・社員番号・部署で検索"
+                       value="{{ request.GET.search }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="fas fa-search"></i> 検索
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- 調査員一覧 -->
+    <div class="surveyor-grid">
+        {% for surveyor in surveyors %}
+        <div class="card surveyor-card {% if not surveyor.is_active %}inactive{% endif %}"
+             onclick="showSurveyorDetail({{ surveyor.id }})">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="card-title mb-1">{{ surveyor.name }}</h6>
+                    <span class="experience-badge experience-{{ surveyor.get_experience_level|lower }}">
+                        {{ surveyor.get_experience_level }}
+                    </span>
+                </div>
+
+                <div class="row text-muted small mb-2">
+                    <div class="col-6">
+                        <i class="fas fa-id-badge"></i> {{ surveyor.employee_id }}
+                    </div>
+                    <div class="col-6">
+                        <i class="fas fa-building"></i> {{ surveyor.department|default:"未設定" }}
+                    </div>
+                </div>
+
+                {% if surveyor.specialties %}
+                <div class="mb-2">
+                    <small class="text-muted">専門:</small>
+                    <small>{{ surveyor.specialties|truncatechars:30 }}</small>
+                </div>
+                {% endif %}
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="btn-group btn-group-sm">
+                        {% if surveyor.current_surveys > 0 %}
+                        <span class="survey-count">
+                            <i class="fas fa-clock"></i> {{ surveyor.current_surveys }}件進行中
+                        </span>
+                        {% endif %}
+                        {% if surveyor.completed_surveys > 0 %}
+                        <span class="survey-count bg-success">
+                            <i class="fas fa-check"></i> {{ surveyor.completed_surveys }}件完了
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="btn-group btn-group-sm">
+                        <a href="{% url 'surveys:surveyor_update' surveyor.pk %}"
+                           class="btn btn-outline-primary btn-sm"
+                           onclick="event.stopPropagation()">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        {% if not surveyor.assigned_surveys.exists %}
+                        <a href="{% url 'surveys:surveyor_delete' surveyor.pk %}"
+                           class="btn btn-outline-danger btn-sm"
+                           onclick="event.stopPropagation()">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if not surveyor.is_active %}
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="fas fa-pause-circle"></i> 休止中
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-users fa-3x mb-3"></i>
+                <h5>調査員が登録されていません</h5>
+                <p>右上の「調査員登録」ボタンから新しい調査員を登録してください。</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- ページネーション -->
+    {% if is_paginated %}
+    <nav aria-label="調査員一覧ページネーション" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">前へ</a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">次へ</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- 調査員詳細モーダル -->
+<div class="modal fade" id="surveyorDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">調査員詳細</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="surveyorDetailContent">
+                <!-- 動的に読み込まれる内容 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- インポートモーダル -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">調査員データインポート</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>CSVファイルまたはExcelファイルから調査員データをインポートできます。</p>
+                <div class="mb-3">
+                    <label for="importFile" class="form-label">ファイル選択</label>
+                    <input type="file" class="form-control" id="importFile" accept=".csv,.xlsx">
+                </div>
+                <div class="alert alert-info">
+                    <small>
+                        <strong>必要な列:</strong> 名前, 社員番号, メールアドレス, 電話番号, 部署, 経験年数
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary">インポート実行</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showSurveyorDetail(surveyorId) {
+    fetch(`/surveys/surveyors/${surveyorId}/detail-ajax/`)
+        .then(response => response.json())
+        .then(data => {
+            const content = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>基本情報</h6>
+                        <table class="table table-sm">
+                            <tr><td>名前</td><td>${data.name}</td></tr>
+                            <tr><td>社員番号</td><td>${data.employee_id}</td></tr>
+                            <tr><td>メール</td><td>${data.email || '未設定'}</td></tr>
+                            <tr><td>電話</td><td>${data.phone || '未設定'}</td></tr>
+                            <tr><td>部署</td><td>${data.department || '未設定'}</td></tr>
+                            <tr><td>経験年数</td><td>${data.experience_years}年 (${data.experience_level})</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>調査状況</h6>
+                        <table class="table table-sm">
+                            <tr><td>現在の調査</td><td>${data.current_surveys}件</td></tr>
+                            <tr><td>完了した調査</td><td>${data.completed_surveys}件</td></tr>
+                            <tr><td>ステータス</td><td>${data.status_display}</td></tr>
+                        </table>
+
+                        ${data.specialties.length > 0 ? `
+                        <h6>専門分野</h6>
+                        <div class="mb-2">
+                            ${data.specialties.map(s => `<span class="badge bg-info me-1">${s}</span>`).join('')}
+                        </div>
+                        ` : ''}
+
+                        ${data.certifications.length > 0 ? `
+                        <h6>保有資格</h6>
+                        <div class="mb-2">
+                            ${data.certifications.map(c => `<span class="badge bg-success me-1">${c}</span>`).join('')}
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                ${data.notes ? `
+                <div class="mt-3">
+                    <h6>備考</h6>
+                    <p class="text-muted">${data.notes}</p>
+                </div>
+                ` : ''}
+            `;
+
+            document.getElementById('surveyorDetailContent').innerHTML = content;
+            new bootstrap.Modal(document.getElementById('surveyorDetailModal')).show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('詳細情報の取得に失敗しました');
+        });
+}
+</script>
+{% endblock %}

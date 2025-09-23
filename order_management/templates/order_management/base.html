@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}建築派遣管理システム{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            padding-top: 70px;
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        }
+        .table-responsive {
+            font-size: 0.9rem;
+        }
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .status-badge {
+            padding: 0.35em 0.65em;
+            font-size: 0.75em;
+            font-weight: 700;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 0.25rem;
+        }
+        .status-ordered {
+            background-color: #28a745;
+            color: white;
+        }
+        .status-ng {
+            background-color: #6c757d;
+            color: white;
+        }
+        .status-a {
+            background-color: #dc3545;
+            color: white;
+        }
+        .status-pending {
+            background-color: #ffc107;
+            color: black;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'order_management:dashboard' %}">
+                <i class="fas fa-building"></i> 建築派遣管理
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'order_management:dashboard' %}">
+                            <i class="fas fa-tachometer-alt"></i> ダッシュボード
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'order_management:project_list' %}">
+                            <i class="fas fa-list"></i> 案件一覧
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'order_management:contractor_dashboard' %}">
+                            <i class="fas fa-handshake"></i> 受注業務
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'order_management:ordering_dashboard' %}">
+                            <i class="fas fa-file-contract"></i> 発注業務
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="accountingDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-calculator"></i> 経理
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="accountingDropdown">
+                            <li><a class="dropdown-item" href="{% url 'order_management:accounting_dashboard' %}">
+                                <i class="fas fa-chart-line"></i> 経理ダッシュボード
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'order_management:payment_dashboard' %}">
+                                <i class="fas fa-arrow-up text-danger"></i> 出金管理
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'order_management:receipt_dashboard' %}">
+                                <i class="fas fa-arrow-down text-success"></i> 入金管理
+                            </a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'order_management:project_create' %}">
+                            <i class="fas fa-plus-circle"></i> 新規登録
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-handshake"></i> 発注管理
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="{% url 'subcontract_management:dashboard' %}">
+                                <i class="fas fa-chart-line"></i> ダッシュボード
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'subcontract_management:contractor_list' %}">
+                                <i class="fas fa-users"></i> 外注先マスター
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'subcontract_management:profit_analysis_list' %}">
+                                <i class="fas fa-chart-bar"></i> 利益分析
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'subcontract_management:payment_tracking' %}">
+                                <i class="fas fa-credit-card"></i> 支払い追跡
+                            </a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="surveysDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-search"></i> 現場調査管理
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="surveysDropdown">
+                            <li><a class="dropdown-item" href="{% url 'surveys:survey_list' %}">
+                                <i class="fas fa-list"></i> 調査一覧
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'surveys:survey_schedule' %}">
+                                <i class="fas fa-calendar-alt"></i> スケジュール管理
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'surveys:survey_create' %}">
+                                <i class="fas fa-plus-circle"></i> 調査予約作成
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/admin/surveys/surveyor/">
+                                <i class="fas fa-users"></i> 調査員管理
+                            </a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/">
+                            <i class="fas fa-cog"></i> 管理画面
+                        </a>
+                    </li>
+                </ul>
+                <!-- ユーザー情報 -->
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> {{ user.first_name|default:user.username }}さん
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><h6 class="dropdown-header">{{ user.first_name }} {{ user.last_name }}</h6></li>
+                            <li><span class="dropdown-item-text small text-muted">{{ user.email }}</span></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'order_management:logout' %}">
+                                <i class="fas fa-sign-out-alt"></i> ログアウト
+                            </a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'order_management:login' %}">
+                            <i class="fas fa-sign-in-alt"></i> ログイン
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="container-fluid">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center text-muted mt-5 mb-3">
+        <hr>
+        <p>&copy; 2025 建築派遣管理システム</p>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

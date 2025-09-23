@@ -1,0 +1,259 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}
+{% if order %}発注編集{% else %}資材発注{% endif %} - {{ block.super }}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>
+                        <i class="fas fa-paper-plane me-2"></i>
+                        {% if order %}発注編集{% else %}資材発注{% endif %}
+                    </h2>
+                    {% if project %}
+                        <h4 class="text-muted">{{ project.title }}</h4>
+                    {% endif %}
+                </div>
+                <div class="btn-group">
+                    {% if project %}
+                        <a href="{% url 'project_materials_view' project.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>案件に戻る
+                        </a>
+                    {% else %}
+                        <a href="{% url 'material_order_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>発注一覧
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 発注フォーム -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-edit me-2"></i>発注情報
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.project.id_for_label }}" class="form-label">案件</label>
+                                        {{ form.project }}
+                                        {% if form.project.errors %}
+                                            <div class="text-danger small">{{ form.project.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.supplier.id_for_label }}" class="form-label">業者</label>
+                                        {{ form.supplier }}
+                                        {% if form.supplier.errors %}
+                                            <div class="text-danger small">{{ form.supplier.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.order_details.id_for_label }}" class="form-label">発注内容</label>
+                                    {{ form.order_details }}
+                                    {% if form.order_details.errors %}
+                                        <div class="text-danger small">{{ form.order_details.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        必要な資材・数量・仕様などを詳しく記載してください。
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.estimated_cost.id_for_label }}" class="form-label">見積金額（円）</label>
+                                        {{ form.estimated_cost }}
+                                        {% if form.estimated_cost.errors %}
+                                            <div class="text-danger small">{{ form.estimated_cost.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.delivery_date.id_for_label }}" class="form-label">希望納期</label>
+                                        {{ form.delivery_date }}
+                                        {% if form.delivery_date.errors %}
+                                            <div class="text-danger small">{{ form.delivery_date.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.delivery_address.id_for_label }}" class="form-label">納品先住所</label>
+                                    {{ form.delivery_address }}
+                                    {% if form.delivery_address.errors %}
+                                        <div class="text-danger small">{{ form.delivery_address.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.contact_person.id_for_label }}" class="form-label">現場担当者</label>
+                                        {{ form.contact_person }}
+                                        {% if form.contact_person.errors %}
+                                            <div class="text-danger small">{{ form.contact_person.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.contact_phone.id_for_label }}" class="form-label">現場連絡先</label>
+                                        {{ form.contact_phone }}
+                                        {% if form.contact_phone.errors %}
+                                            <div class="text-danger small">{{ form.contact_phone.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.notes.id_for_label }}" class="form-label">備考</label>
+                                    {{ form.notes }}
+                                    {% if form.notes.errors %}
+                                        <div class="text-danger small">{{ form.notes.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i>
+                                        {% if order %}更新{% else %}発注作成{% endif %}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- サイドバー情報 -->
+                <div class="col-md-4">
+                    <!-- 案件情報 -->
+                    {% if project_info %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>案件情報</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>顧客:</strong> {{ project_info.project.customer.name }}</p>
+                            <p class="mb-1"><strong>工種:</strong> {{ project_info.project.project_type.name }}</p>
+                            <p class="mb-1"><strong>場所:</strong> {{ project_info.project.address }}</p>
+                            <p class="mb-1"><strong>期間:</strong> {{ project_info.project.start_date }} 〜 {{ project_info.project.end_date }}</p>
+                            <p class="mb-0"><strong>予算:</strong> {{ project_info.project.formatted_amount }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 調査データ -->
+                    {% if project_info.survey_report %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="fas fa-search me-2"></i>調査データ</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>実測面積:</strong> {{ project_info.survey_report.actual_area }}m²</p>
+                            <p class="mb-1"><strong>作業日数:</strong> {{ project_info.survey_report.estimated_work_days }}日</p>
+                            <p class="mb-1"><strong>難易度:</strong> {{ project_info.survey_report.get_difficulty_level_display }}</p>
+                            {% if project_info.survey_report.special_requirements %}
+                            <div class="mt-2">
+                                <small class="text-muted">特記事項:</small>
+                                <p class="small">{{ project_info.survey_report.special_requirements }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- アサイン職人 -->
+                    {% if project_info.assignments %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="fas fa-users me-2"></i>職人情報</h6>
+                        </div>
+                        <div class="card-body">
+                            {% for assignment in project_info.assignments %}
+                            <div class="mb-2">
+                                <strong>{{ assignment.craftsman.name }}</strong><br>
+                                <small class="text-muted">
+                                    {{ assignment.craftsman.get_skill_level_display }} |
+                                    {{ assignment.get_status_display }}
+                                </small>
+                            </div>
+                            {% if not forloop.last %}<hr class="my-2">{% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 発注ガイド -->
+                    <div class="card">
+                        <div class="card-header bg-warning text-white">
+                            <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>発注のポイント</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="small mb-0">
+                                <li>必要な資材を具体的に記載</li>
+                                <li>数量・サイズ・色などの仕様を明記</li>
+                                <li>希望納期は余裕を持って設定</li>
+                                <li>現場担当者の連絡先を正確に</li>
+                                <li>特殊な搬入条件があれば備考に記載</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.form-label {
+    font-weight: bold;
+}
+
+.form-text {
+    color: #6c757d;
+}
+</style>
+
+<script>
+// プロジェクト変更時に業者をフィルタリング
+document.addEventListener('DOMContentLoaded', function() {
+    const projectSelect = document.getElementById('id_project');
+    const supplierSelect = document.getElementById('id_supplier');
+
+    if (projectSelect && supplierSelect) {
+        projectSelect.addEventListener('change', function() {
+            const projectId = this.value;
+            if (projectId) {
+                // AJAX で業者リストを更新
+                fetch(`/material/api/suppliers-by-project/?project_id=${projectId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        supplierSelect.innerHTML = '<option value="">業者を選択してください</option>';
+                        data.suppliers.forEach(supplier => {
+                            const option = document.createElement('option');
+                            option.value = supplier.id;
+                            option.textContent = `${supplier.name} (${supplier.contact_person})`;
+                            supplierSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

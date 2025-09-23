@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>現地調査入力 - 建築派遣SaaS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../css/quotation_workflow.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+            padding-bottom: 100px;
+        }
+        .survey-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        .measurement-input {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .measurement-input:focus-within {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+        }
+        .photo-upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            background: rgba(102, 126, 234, 0.05);
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .photo-upload-area:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: #764ba2;
+        }
+        .photo-preview {
+            display: inline-block;
+            margin: 10px;
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .photo-preview img {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+        }
+        .photo-delete {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .submit-section {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .validation-message {
+            font-size: 0.85em;
+            margin-top: 5px;
+            transition: all 0.3s ease;
+        }
+        .is-valid {
+            border-color: #198754 !important;
+        }
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+        .progress-container {
+            margin: 20px 0;
+        }
+        .room-info-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .form-floating label {
+            color: #6c757d;
+        }
+        .form-floating > .form-control:focus ~ label {
+            color: #667eea;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="survey-header">
+        <div class="container">
+            <h2><i class="bi bi-clipboard-data"></i> 現地調査入力</h2>
+            <p class="mb-0">賃貸原状回復・水道設備工事</p>
+        </div>
+    </div>
+
+    <div class="container mt-4">
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="workflow-progress">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="text-white mb-0">調査進捗</h6>
+                    <span class="badge bg-light text-dark" id="progressPercent">0%</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar" role="progressbar" style="width: 0%" id="progressBar"></div>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <small class="text-white-50">開始</small>
+                    <small class="text-white-50">基本情報</small>
+                    <small class="text-white-50">測定</small>
+                    <small class="text-white-50">写真</small>
+                    <small class="text-white-50">完了</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Basic Room Information -->
+        <div class="room-info-card">
+            <h5 class="mb-3"><i class="bi bi-house-door"></i> 物件基本情報</h5>
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <div class="form-floating">
+                        <select class="form-select" id="propertyType" required>
+                            <option value="">選択してください</option>
+                            <option value="1K">1K</option>
+                            <option value="1DK">1DK</option>
+                            <option value="1LDK">1LDK</option>
+                            <option value="2K">2K</option>
+                            <option value="2DK">2DK</option>
+                            <option value="2LDK">2LDK</option>
+                        </select>
+                        <label for="propertyType">間取りタイプ</label>
+                    </div>
+                    <div class="validation-message text-success" id="propertyTypeMsg"></div>
+                </div>
+                <div class="col-12 mb-3">
+                    <div class="form-floating">
+                        <select class="form-select" id="workType" required>
+                            <option value="">選択してください</option>
+                            <option value="cleaning">クリーニング作業</option>
+                            <option value="wallpaper">壁紙貼り替え</option>
+                            <option value="plumbing">水道設備工事</option>
+                            <option value="combined">複合作業</option>
+                        </select>
+                        <label for="workType">作業種別</label>
+                    </div>
+                    <div class="validation-message text-success" id="workTypeMsg"></div>
+                </div>
+                <div class="col-12 mb-3">
+                    <div class="form-floating">
+                        <select class="form-select" id="roomTarget" required>
+                            <option value="">選択してください</option>
+                            <option value="living">リビング・ダイニング</option>
+                            <option value="bedroom">寝室</option>
+                            <option value="kitchen">キッチン</option>
+                            <option value="bathroom">浴室</option>
+                            <option value="toilet">トイレ</option>
+                            <option value="washroom">洗面所</option>
+                            <option value="balcony">ベランダ</option>
+                        </select>
+                        <label for="roomTarget">調査対象部屋</label>
+                    </div>
+                    <div class="validation-message text-success" id="roomTargetMsg"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Measurements -->
+        <div class="measurement-input">
+            <h5 class="mb-3"><i class="bi bi-rulers"></i> 測定値入力</h5>
+            <div class="row">
+                <div class="col-4">
+                    <div class="form-floating">
+                        <input type="number" class="form-control" id="width" placeholder="幅" step="0.1" min="0" required>
+                        <label for="width">幅 (m)</label>
+                    </div>
+                    <div class="validation-message" id="widthMsg"></div>
+                </div>
+                <div class="col-4">
+                    <div class="form-floating">
+                        <input type="number" class="form-control" id="depth" placeholder="奥行き" step="0.1" min="0" required>
+                        <label for="depth">奥行き (m)</label>
+                    </div>
+                    <div class="validation-message" id="depthMsg"></div>
+                </div>
+                <div class="col-4">
+                    <div class="form-floating">
+                        <input type="number" class="form-control" id="height" placeholder="高さ" step="0.1" min="0" required>
+                        <label for="height">高さ (m)</label>
+                    </div>
+                    <div class="validation-message" id="heightMsg"></div>
+                </div>
+            </div>
+            <div class="mt-3 p-3 bg-light rounded">
+                <h6>計算結果</h6>
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="fw-bold text-primary" id="floorArea">0.0㎡</div>
+                        <small class="text-muted">床面積</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold text-success" id="wallArea">0.0㎡</div>
+                        <small class="text-muted">壁面積</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold text-info" id="volume">0.0㎥</div>
+                        <small class="text-muted">容積</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Photo Upload -->
+        <div class="measurement-input">
+            <h5 class="mb-3"><i class="bi bi-camera"></i> 現場写真撮影</h5>
+            <div class="photo-upload-area" onclick="document.getElementById('photoInput').click()">
+                <i class="bi bi-camera fs-1 text-primary"></i>
+                <p class="mt-2 mb-0">タップして写真を撮影</p>
+                <small class="text-muted">複数枚の撮影が可能です</small>
+            </div>
+            <input type="file" id="photoInput" accept="image/*" multiple capture="environment" style="display: none;">
+            <div id="photoPreview" class="mt-3"></div>
+            <div class="validation-message" id="photoMsg"></div>
+        </div>
+
+        <!-- Special Notes -->
+        <div class="measurement-input">
+            <h5 class="mb-3"><i class="bi bi-journal-text"></i> 特記事項</h5>
+            <div class="form-floating">
+                <textarea class="form-control" id="specialNotes" placeholder="特記事項" style="height: 120px"></textarea>
+                <label for="specialNotes">損傷状況・注意点・追加工事の必要性など</label>
+            </div>
+            <div class="validation-message text-success" id="specialNotesMsg"></div>
+        </div>
+    </div>
+
+    <!-- Submit Section -->
+    <div class="submit-section">
+        <div class="container">
+            <div class="d-grid gap-2">
+                <button type="button" class="btn btn-primary btn-lg" id="submitSurvey" disabled>
+                    <i class="bi bi-send"></i> 調査データを送信
+                </button>
+                <div class="text-center">
+                    <small class="text-muted">送信後、社員による見積作成が開始されます</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">送信中...</span>
+                    </div>
+                    <p class="mb-0">調査データを送信中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-check-circle"></i> 送信完了</h5>
+                </div>
+                <div class="modal-body">
+                    <p>現地調査データの送信が完了しました。</p>
+                    <p>社員による見積作成が開始されます。進捗はステータス確認画面でご確認ください。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="goToStatus()">ステータス確認へ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/quotation_workflow.js"></script>
+    <script>
+        class RoomSurveyMobile {
+            constructor() {
+                this.photos = [];
+                this.validationRules = {
+                    propertyType: { required: true },
+                    workType: { required: true },
+                    roomTarget: { required: true },
+                    width: { required: true, min: 0.1, max: 50 },
+                    depth: { required: true, min: 0.1, max: 50 },
+                    height: { required: true, min: 1.0, max: 10 },
+                    photos: { required: true, min: 2 }
+                };
+                this.workflow = new QuotationWorkflow();
+                this.initializeEventListeners();
+                this.validateUserRole();
+                this.loadExistingData();
+            }
+
+            validateUserRole() {
+                const userRole = this.workflow.getUserRole();
+                if (userRole !== 'temporary') {
+                    alert('この画面は派遣スタッフ専用です。');
+                    window.location.href = '../index_manager.html';
+                    return;
+                }
+            }
+
+            initializeEventListeners() {
+                // Input validation
+                ['propertyType', 'workType', 'roomTarget'].forEach(id => {
+                    document.getElementById(id).addEventListener('change', () => {
+                        this.validateField(id);
+                        this.updateProgress();
+                    });
+                });
+
+                ['width', 'depth', 'height'].forEach(id => {
+                    const input = document.getElementById(id);
+                    input.addEventListener('input', () => {
+                        this.validateField(id);
+                        this.calculateAreas();
+                        this.updateProgress();
+                    });
+                });
+
+                document.getElementById('specialNotes').addEventListener('input', () => {
+                    this.updateProgress();
+                });
+
+                // Photo upload
+                document.getElementById('photoInput').addEventListener('change', (e) => {
+                    this.handlePhotoUpload(e);
+                });
+
+                // Submit button
+                document.getElementById('submitSurvey').addEventListener('click', () => {
+                    this.submitSurvey();
+                });
+
+                // Auto-save
+                setInterval(() => {
+                    this.autoSave();
+                }, 30000);
+            }
+
+            validateField(fieldId) {
+                const field = document.getElementById(fieldId);
+                const rule = this.validationRules[fieldId];
+                const value = field.value.trim();
+                const msgElement = document.getElementById(fieldId + 'Msg');
+
+                let isValid = true;
+                let message = '';
+
+                if (rule.required && !value) {
+                    isValid = false;
+                    message = '必須項目です';
+                } else if (rule.min !== undefined && parseFloat(value) < rule.min) {
+                    isValid = false;
+                    message = `${rule.min}以上で入力してください`;
+                } else if (rule.max !== undefined && parseFloat(value) > rule.max) {
+                    isValid = false;
+                    message = `${rule.max}以下で入力してください`;
+                } else if (value) {
+                    message = '✓ 入力完了';
+                }
+
+                field.classList.toggle('is-valid', isValid && value);
+                field.classList.toggle('is-invalid', !isValid && value);
+                msgElement.textContent = message;
+                msgElement.className = `validation-message ${isValid ? 'text-success' : 'text-danger'}`;
+
+                return isValid;
+            }
+
+            calculateAreas() {
+                const width = parseFloat(document.getElementById('width').value) || 0;
+                const depth = parseFloat(document.getElementById('depth').value) || 0;
+                const height = parseFloat(document.getElementById('height').value) || 0;
+
+                const floorArea = width * depth;
+                const wallArea = 2 * (width + depth) * height;
+                const volume = width * depth * height;
+
+                document.getElementById('floorArea').textContent = `${floorArea.toFixed(1)}㎡`;
+                document.getElementById('wallArea').textContent = `${wallArea.toFixed(1)}㎡`;
+                document.getElementById('volume').textContent = `${volume.toFixed(1)}㎥`;
+            }
+
+            handlePhotoUpload(event) {
+                const files = Array.from(event.target.files);
+
+                files.forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            this.photos.push({
+                                file: file,
+                                dataUrl: e.target.result,
+                                timestamp: new Date().toISOString()
+                            });
+                            this.updatePhotoPreview();
+                            this.validatePhotos();
+                            this.updateProgress();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            updatePhotoPreview() {
+                const preview = document.getElementById('photoPreview');
+                preview.innerHTML = this.photos.map((photo, index) => `
+                    <div class="photo-preview">
+                        <img src="${photo.dataUrl}" alt="現場写真${index + 1}">
+                        <button class="photo-delete" onclick="surveyApp.removePhoto(${index})">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            removePhoto(index) {
+                this.photos.splice(index, 1);
+                this.updatePhotoPreview();
+                this.validatePhotos();
+                this.updateProgress();
+            }
+
+            validatePhotos() {
+                const rule = this.validationRules.photos;
+                const msgElement = document.getElementById('photoMsg');
+                const isValid = this.photos.length >= rule.min;
+
+                let message = '';
+                if (this.photos.length === 0) {
+                    message = '最低2枚の写真が必要です';
+                } else if (this.photos.length < rule.min) {
+                    message = `あと${rule.min - this.photos.length}枚必要です`;
+                } else {
+                    message = `✓ ${this.photos.length}枚の写真が登録されています`;
+                }
+
+                msgElement.textContent = message;
+                msgElement.className = `validation-message ${isValid ? 'text-success' : 'text-warning'}`;
+
+                return isValid;
+            }
+
+            updateProgress() {
+                const requiredFields = ['propertyType', 'workType', 'roomTarget', 'width', 'depth', 'height'];
+                const completedFields = requiredFields.filter(id => {
+                    const value = document.getElementById(id).value.trim();
+                    return value && this.validateField(id);
+                }).length;
+
+                const photosValid = this.validatePhotos();
+                const totalSteps = requiredFields.length + 1; // +1 for photos
+                const completedSteps = completedFields + (photosValid ? 1 : 0);
+
+                const progress = Math.round((completedSteps / totalSteps) * 100);
+
+                document.getElementById('progressBar').style.width = `${progress}%`;
+                document.getElementById('progressPercent').textContent = `${progress}%`;
+
+                // Enable submit button when all required fields are completed
+                const allValid = completedSteps === totalSteps;
+                document.getElementById('submitSurvey').disabled = !allValid;
+
+                return progress;
+            }
+
+            autoSave() {
+                const surveyData = this.collectSurveyData();
+                localStorage.setItem('roomSurveyDraft', JSON.stringify(surveyData));
+            }
+
+            loadExistingData() {
+                const saved = localStorage.getItem('roomSurveyDraft');
+                if (saved) {
+                    try {
+                        const data = JSON.parse(saved);
+                        Object.keys(data).forEach(key => {
+                            if (key !== 'photos') {
+                                const element = document.getElementById(key);
+                                if (element) {
+                                    element.value = data[key];
+                                }
+                            }
+                        });
+                        this.calculateAreas();
+                        this.updateProgress();
+                    } catch (e) {
+                        console.error('Failed to load saved data:', e);
+                    }
+                }
+            }
+
+            collectSurveyData() {
+                const width = parseFloat(document.getElementById('width').value) || 0;
+                const depth = parseFloat(document.getElementById('depth').value) || 0;
+                const height = parseFloat(document.getElementById('height').value) || 0;
+
+                return {
+                    surveyId: `survey_${Date.now()}`,
+                    propertyType: document.getElementById('propertyType').value,
+                    workType: document.getElementById('workType').value,
+                    roomTarget: document.getElementById('roomTarget').value,
+                    measurements: {
+                        width: width,
+                        depth: depth,
+                        height: height,
+                        floorArea: width * depth,
+                        wallArea: 2 * (width + depth) * height,
+                        volume: width * depth * height
+                    },
+                    photos: this.photos.map(photo => ({
+                        dataUrl: photo.dataUrl,
+                        timestamp: photo.timestamp
+                    })),
+                    specialNotes: document.getElementById('specialNotes').value,
+                    timestamp: new Date().toISOString(),
+                    surveyorId: this.workflow.getCurrentUser().id,
+                    status: 'completed'
+                };
+            }
+
+            async submitSurvey() {
+                const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+                loadingModal.show();
+
+                try {
+                    const surveyData = this.collectSurveyData();
+
+                    // Save to workflow system
+                    await this.workflow.submitSurveyData(surveyData);
+
+                    // Save to localStorage for persistence
+                    const existingSurveys = JSON.parse(localStorage.getItem('completedSurveys') || '[]');
+                    existingSurveys.push(surveyData);
+                    localStorage.setItem('completedSurveys', JSON.stringify(existingSurveys));
+
+                    // Clear draft
+                    localStorage.removeItem('roomSurveyDraft');
+
+                    // Log audit trail
+                    this.workflow.logActivity('survey_completed', {
+                        surveyId: surveyData.surveyId,
+                        propertyType: surveyData.propertyType,
+                        workType: surveyData.workType
+                    });
+
+                    setTimeout(() => {
+                        loadingModal.hide();
+                        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                        successModal.show();
+                    }, 2000);
+
+                } catch (error) {
+                    loadingModal.hide();
+                    alert('送信に失敗しました。ネットワーク接続を確認してください。');
+                    console.error('Survey submission failed:', error);
+                }
+            }
+        }
+
+        // Global functions
+        function goToStatus() {
+            window.location.href = '../pricing/staff_status_view.html';
+        }
+
+        // Initialize app
+        let surveyApp;
+        document.addEventListener('DOMContentLoaded', () => {
+            surveyApp = new RoomSurveyMobile();
+        });
+    </script>
+</body>
+</html>

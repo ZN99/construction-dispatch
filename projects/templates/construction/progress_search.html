@@ -1,0 +1,208 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}工事進捗検索 - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-search me-2"></i>工事進捗検索
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- 検索フォーム -->
+                    <form method="get" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">案件名</label>
+                                    <input type="text" name="project_name" class="form-control"
+                                           value="{{ request.GET.project_name }}" placeholder="案件名で検索">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">顧客名</label>
+                                    <input type="text" name="customer_name" class="form-control"
+                                           value="{{ request.GET.customer_name }}" placeholder="顧客名で検索">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label class="form-label">進捗状況</label>
+                                    <select name="progress_status" class="form-select">
+                                        <option value="">すべて</option>
+                                        <option value="not_started" {% if request.GET.progress_status == 'not_started' %}selected{% endif %}>未着手</option>
+                                        <option value="in_progress" {% if request.GET.progress_status == 'in_progress' %}selected{% endif %}>進行中</option>
+                                        <option value="completed" {% if request.GET.progress_status == 'completed' %}selected{% endif %}>完了</option>
+                                        <option value="on_hold" {% if request.GET.progress_status == 'on_hold' %}selected{% endif %}>保留</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label class="form-label">期間</label>
+                                    <input type="date" name="date_from" class="form-control"
+                                           value="{{ request.GET.date_from }}">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <input type="date" name="date_to" class="form-control"
+                                           value="{{ request.GET.date_to }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-1"></i>検索
+                            </button>
+                            <a href="{% url 'progress_search' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-undo me-1"></i>リセット
+                            </a>
+                        </div>
+                    </form>
+
+                    <!-- 検索結果 -->
+                    {% if projects %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>案件名</th>
+                                    <th>顧客</th>
+                                    <th>開始日</th>
+                                    <th>予定完了日</th>
+                                    <th>進捗率</th>
+                                    <th>ステータス</th>
+                                    <th>担当者</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in projects %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'project_detail' project.pk %}" class="text-decoration-none fw-bold">
+                                            {{ project.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ project.customer.name }}</td>
+                                    <td>
+                                        {% if project.start_date %}
+                                            {{ project.start_date|date:"Y/m/d" }}
+                                        {% else %}
+                                            <span class="text-muted">未設定</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if project.estimated_end_date %}
+                                            {{ project.estimated_end_date|date:"Y/m/d" }}
+                                        {% else %}
+                                            <span class="text-muted">未設定</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% with progress=project.get_progress_percentage %}
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress me-2" style="width: 80px; height: 12px;">
+                                                <div class="progress-bar {% if progress >= 100 %}bg-success{% elif progress >= 75 %}bg-info{% elif progress >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                                                     style="width: {{ progress }}%"></div>
+                                            </div>
+                                            <small>{{ progress }}%</small>
+                                        </div>
+                                        {% endwith %}
+                                    </td>
+                                    <td>
+                                        {% if project.status == 'planning' %}
+                                            <span class="badge bg-secondary">計画中</span>
+                                        {% elif project.status == 'in_progress' %}
+                                            <span class="badge bg-warning">進行中</span>
+                                        {% elif project.status == 'completed' %}
+                                            <span class="badge bg-success">完了</span>
+                                        {% elif project.status == 'on_hold' %}
+                                            <span class="badge bg-info">保留</span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark">{{ project.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if project.assigned_craftsmen.exists %}
+                                            {% for craftsman in project.assigned_craftsmen.all|slice:":2" %}
+                                                <small class="badge bg-light text-dark me-1">{{ craftsman.name }}</small>
+                                            {% endfor %}
+                                            {% if project.assigned_craftsmen.count > 2 %}
+                                                <small class="text-muted">他{{ project.assigned_craftsmen.count|add:"-2" }}名</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">未配置</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'project_detail' project.pk %}" class="btn btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'project_progress' project.pk %}" class="btn btn-outline-info">
+                                                <i class="fas fa-chart-line"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- ページネーション -->
+                    {% if is_paginated %}
+                    <nav aria-label="検索結果ページネーション">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">前へ</a>
+                                </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">次へ</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+
+                    {% elif request.GET %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        検索条件に一致する案件が見つかりませんでした。
+                    </div>
+                    {% else %}
+                    <div class="alert alert-light">
+                        <i class="fas fa-search me-2"></i>
+                        検索条件を入力して、工事進捗を検索してください。
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

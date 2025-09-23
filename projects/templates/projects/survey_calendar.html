@@ -1,0 +1,228 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}調査カレンダー - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">調査カレンダー</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'survey_dashboard' %}" class="btn btn-secondary me-2">
+            <i class="fas fa-arrow-left me-1"></i>ダッシュボード
+        </a>
+        <a href="{% url 'survey_list' %}" class="btn btn-primary">
+            <i class="fas fa-list me-1"></i>調査一覧
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 調査員一覧 -->
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">調査員</h6>
+            </div>
+            <div class="card-body p-0">
+                {% for surveyor in surveyors %}
+                <div class="surveyor-item p-3 border-bottom" data-surveyor-id="{{ surveyor.id }}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ surveyor.name }}</strong>
+                            <small class="text-muted d-block">{{ surveyor.base_location }}</small>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">{{ surveyor.daily_capacity }}件/日</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 凡例 -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">ステータス</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <span class="badge bg-primary me-2"></span>予定
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-warning me-2"></span>調査中
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-success me-2"></span>完了
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-danger me-2"></span>遅延
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-secondary me-2"></span>キャンセル
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- カレンダー表示 -->
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-body">
+                <div id="calendar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 調査詳細モーダル -->
+<div class="modal fade" id="surveyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">調査詳細</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="surveyDetails"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                <button type="button" class="btn btn-primary" id="editSurvey">編集</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        locale: 'ja',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        slotMinTime: '08:00:00',
+        slotMaxTime: '19:00:00',
+        height: 'auto',
+        events: getCalendarEvents(),
+        eventClick: function(info) {
+            showSurveyDetails(info.event);
+        },
+        eventDrop: function(info) {
+            updateSurveySchedule(info.event);
+        },
+        editable: true
+    });
+
+    calendar.render();
+
+    function getCalendarEvents() {
+        var events = [];
+        var calendarData = {{ calendar_data|safe }};
+
+        for (var surveyorId in calendarData) {
+            var surveyor = calendarData[surveyorId];
+            for (var i = 0; i < surveyor.surveys.length; i++) {
+                var survey = surveyor.surveys[i];
+                var color = getStatusColor(survey.status);
+
+                events.push({
+                    id: survey.id,
+                    title: survey.title + ' - ' + survey.customer,
+                    start: survey.start,
+                    duration: { minutes: survey.duration },
+                    backgroundColor: color,
+                    borderColor: color,
+                    extendedProps: {
+                        surveyor: surveyor.name,
+                        customer: survey.customer,
+                        address: survey.address,
+                        status: survey.status,
+                        priority: survey.priority
+                    }
+                });
+            }
+        }
+        return events;
+    }
+
+    function getStatusColor(status) {
+        switch(status) {
+            case 'scheduled': return '#0d6efd';
+            case 'in_progress': return '#ffc107';
+            case 'completed': return '#198754';
+            case 'cancelled': return '#6c757d';
+            default: return '#dc3545';
+        }
+    }
+
+    function showSurveyDetails(event) {
+        var html = `
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>案件名:</strong> ${event.title.split(' - ')[0]}<br>
+                    <strong>顧客:</strong> ${event.extendedProps.customer}<br>
+                    <strong>調査員:</strong> ${event.extendedProps.surveyor}<br>
+                    <strong>ステータス:</strong> <span class="badge" style="background-color: ${event.backgroundColor}">${getStatusLabel(event.extendedProps.status)}</span>
+                </div>
+                <div class="col-md-6">
+                    <strong>開始時刻:</strong> ${new Date(event.start).toLocaleString('ja-JP')}<br>
+                    <strong>予定時間:</strong> ${Math.floor(event.extendedProps.duration / 60)}時間${event.extendedProps.duration % 60}分<br>
+                    <strong>優先度:</strong> ${event.extendedProps.priority}<br>
+                    <strong>住所:</strong> ${event.extendedProps.address}
+                </div>
+            </div>
+        `;
+
+        document.getElementById('surveyDetails').innerHTML = html;
+        document.getElementById('editSurvey').onclick = function() {
+            window.location.href = '/surveys/' + event.id + '/';
+        };
+
+        new bootstrap.Modal(document.getElementById('surveyModal')).show();
+    }
+
+    function getStatusLabel(status) {
+        switch(status) {
+            case 'scheduled': return '予定';
+            case 'in_progress': return '調査中';
+            case 'completed': return '完了';
+            case 'cancelled': return 'キャンセル';
+            default: return status;
+        }
+    }
+
+    function updateSurveySchedule(event) {
+        // Ajax call to update survey schedule
+        console.log('Update survey', event.id, 'to', event.start);
+        // 実装：サーバーサイドの更新処理を呼び出し
+    }
+});
+</script>
+
+<style>
+.surveyor-item {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.surveyor-item:hover {
+    background-color: #f8f9fa;
+}
+
+.fc-event {
+    font-size: 12px;
+    padding: 2px;
+}
+
+.fc-event-title {
+    font-weight: bold;
+}
+</style>
+{% endblock %}

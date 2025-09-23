@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>利益率分析画面 | 建築派遣SaaS</title>
+    <link rel="stylesheet" href="../css/simple_theme.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Bootstrap互換性のため一部保持 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .analytics-card {
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        .analytics-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .analytics-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-bottom: 1px solid #dee2e6;
+            border-radius: 12px 12px 0 0;
+        }
+        .kpi-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .kpi-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .kpi-trend {
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+        .trend-up {
+            color: #28a745;
+        }
+        .trend-down {
+            color: #dc3545;
+        }
+        .profit-high {
+            color: #28a745;
+        }
+        .profit-medium {
+            color: #ffc107;
+        }
+        .profit-low {
+            color: #dc3545;
+        }
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin: 20px 0;
+        }
+        .filter-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .analysis-table {
+            font-size: 0.9rem;
+        }
+        .analysis-table th {
+            background: #f8f9fa;
+            border-top: none;
+            font-weight: 600;
+        }
+        .profit-bar {
+            height: 20px;
+            border-radius: 10px;
+            position: relative;
+            background: #e9ecef;
+            overflow: hidden;
+        }
+        .profit-bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+            transition: width 0.3s ease;
+        }
+        .construction-type-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #fff;
+        }
+        .export-section {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="../index_manager.html">
+                <i class="bi bi-building"></i> 建築派遣SaaS
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="bi bi-person-badge"></i> 社員: <span id="currentUser">管理者</span>
+                </span>
+                <a class="nav-link" href="../index_manager.html">
+                    <i class="bi bi-house"></i> ホーム
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="bi bi-graph-up-arrow"></i> 利益率分析ダッシュボード</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="../index_manager.html">ホーム</a></li>
+                            <li class="breadcrumb-item active">利益率分析</li>
+                        </ol>
+                    </nav>
+                </div>
+
+                <!-- フィルター・設定セクション -->
+                <div class="filter-section">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="periodFilter" class="form-label">分析期間</label>
+                            <select id="periodFilter" class="form-select" onchange="profitAnalysis.updateFilters()">
+                                <option value="1m">過去1ヶ月</option>
+                                <option value="3m" selected>過去3ヶ月</option>
+                                <option value="6m">過去6ヶ月</option>
+                                <option value="1y">過去1年</option>
+                                <option value="custom">カスタム期間</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="constructionTypeFilter" class="form-label">工事種別</label>
+                            <select id="constructionTypeFilter" class="form-select" onchange="profitAnalysis.updateFilters()">
+                                <option value="">全ての工事種別</option>
+                                <option value="kitchen">キッチン</option>
+                                <option value="bathroom">バスルーム</option>
+                                <option value="flooring">フローリング</option>
+                                <option value="wallpaper">クロス</option>
+                                <option value="electrical">電気工事</option>
+                                <option value="plumbing">配管工事</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="sortBy" class="form-label">並び替え</label>
+                            <select id="sortBy" class="form-select" onchange="profitAnalysis.updateFilters()">
+                                <option value="profitRate">利益率順</option>
+                                <option value="revenue">売上順</option>
+                                <option value="profit">利益額順</option>
+                                <option value="date">日付順</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="button" class="btn btn-primary w-100" onclick="profitAnalysis.refreshData()">
+                                <i class="bi bi-arrow-clockwise"></i> データ更新
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI概要 -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value text-success" id="avgProfitRate">22.5%</div>
+                            <div class="kpi-label">平均利益率</div>
+                            <div class="kpi-trend trend-up" id="profitRateTrend">+2.3% (前月比)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value text-primary" id="totalRevenue">¥15,420,000</div>
+                            <div class="kpi-label">総売上</div>
+                            <div class="kpi-trend trend-up" id="revenueTrend">+12.8% (前月比)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value text-info" id="totalProfit">¥3,469,500</div>
+                            <div class="kpi-label">総利益額</div>
+                            <div class="kpi-trend trend-up" id="profitTrend">+18.2% (前月比)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value text-warning" id="projectCount">45</div>
+                            <div class="kpi-label">完了プロジェクト数</div>
+                            <div class="kpi-trend trend-up" id="projectTrend">+5 (前月比)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- 利益率推移グラフ -->
+                    <div class="col-md-8">
+                        <div class="analytics-card">
+                            <div class="analytics-header">
+                                <h5><i class="bi bi-graph-up"></i> 利益率推移</h5>
+                            </div>
+                            <div class="p-3">
+                                <div class="chart-container">
+                                    <canvas id="profitTrendChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 工事種別別利益率 -->
+                    <div class="col-md-4">
+                        <div class="analytics-card">
+                            <div class="analytics-header">
+                                <h5><i class="bi bi-pie-chart"></i> 工事種別別利益率</h5>
+                            </div>
+                            <div class="p-3">
+                                <div id="constructionTypeAnalysis">
+                                    <!-- 工事種別別分析がここに表示される -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- 詳細分析テーブル -->
+                    <div class="col-md-8">
+                        <div class="analytics-card">
+                            <div class="analytics-header">
+                                <h5><i class="bi bi-table"></i> プロジェクト詳細分析</h5>
+                            </div>
+                            <div class="p-3">
+                                <div class="table-responsive">
+                                    <table class="table table-hover analysis-table">
+                                        <thead>
+                                            <tr>
+                                                <th>プロジェクトID</th>
+                                                <th>工事種別</th>
+                                                <th>売上</th>
+                                                <th>原価</th>
+                                                <th>利益額</th>
+                                                <th>利益率</th>
+                                                <th>完了日</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="projectAnalysisTable">
+                                            <!-- テーブルデータがここに動的に表示される -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 分析インサイト -->
+                    <div class="col-md-4">
+                        <div class="analytics-card">
+                            <div class="analytics-header">
+                                <h5><i class="bi bi-lightbulb"></i> 分析インサイト</h5>
+                            </div>
+                            <div class="p-3">
+                                <div id="analyticsInsights">
+                                    <!-- インサイトがここに表示される -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="analytics-card">
+                            <div class="analytics-header">
+                                <h5><i class="bi bi-target"></i> 改善提案</h5>
+                            </div>
+                            <div class="p-3">
+                                <div id="improvementSuggestions">
+                                    <!-- 改善提案がここに表示される -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- エクスポート・レポート -->
+                <div class="export-section">
+                    <h5><i class="bi bi-download"></i> レポートエクスポート</h5>
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-outline-primary w-100" onclick="profitAnalysis.exportExcel()">
+                                <i class="bi bi-file-earmark-excel"></i> Excel出力
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-outline-danger w-100" onclick="profitAnalysis.exportPDF()">
+                                <i class="bi bi-file-earmark-pdf"></i> PDF出力
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-outline-info w-100" onclick="profitAnalysis.generateReport()">
+                                <i class="bi bi-file-earmark-text"></i> 分析レポート
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/simple_ui.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        class ProfitAnalysisSystem {
+            constructor() {
+                this.currentUser = this.getCurrentUser();
+                this.chartInstances = {};
+                this.filters = {
+                    period: '3m',
+                    constructionType: '',
+                    sortBy: 'profitRate'
+                };
+                this.projectData = this.generateSampleData();
+                this.init();
+            }
+
+            async init() {
+                this.setupFilters();
+                this.calculateKPIs();
+                this.renderConstructionTypeAnalysis();
+                this.renderProjectTable();
+                this.renderInsights();
+                this.renderImprovementSuggestions();
+                this.initProfitTrendChart();
+                this.setupAutoRefresh();
+            }
+
+            getCurrentUser() {
+                return JSON.parse(localStorage.getItem('currentUser') || '{"name": "管理者", "role": "社員", "id": "EMP001"}');
+            }
+
+            generateSampleData() {
+                const projects = [];
+                const constructionTypes = ['kitchen', 'bathroom', 'flooring', 'wallpaper', 'electrical', 'plumbing'];
+                const marginRates = { kitchen: 25, bathroom: 23, flooring: 20, wallpaper: 18, electrical: 30, plumbing: 22 };
+
+                for (let i = 1; i <= 45; i++) {
+                    const type = constructionTypes[Math.floor(Math.random() * constructionTypes.length)];
+                    const baseCost = Math.floor(Math.random() * 800000) + 200000;
+                    const targetMargin = marginRates[type] + (Math.random() * 10 - 5); // ±5%の変動
+                    const actualMargin = targetMargin * (0.8 + Math.random() * 0.4); // 実際のマージンに変動
+                    const revenue = Math.floor(baseCost * (1 + actualMargin / 100));
+                    const profit = revenue - baseCost;
+                    const profitRate = (profit / revenue) * 100;
+
+                    const completedDate = new Date();
+                    completedDate.setDate(completedDate.getDate() - Math.floor(Math.random() * 90));
+
+                    projects.push({
+                        id: `PRJ-${String(i).padStart(3, '0')}`,
+                        constructionType: type,
+                        baseCost: baseCost,
+                        revenue: revenue,
+                        profit: profit,
+                        profitRate: profitRate,
+                        completedDate: completedDate,
+                        customerName: `顧客${i}`,
+                        address: `東京都${Math.floor(Math.random() * 23) + 1}区`
+                    });
+                }
+
+                return projects.sort((a, b) => b.completedDate - a.completedDate);
+            }
+
+            setupFilters() {
+                document.getElementById('currentUser').textContent = this.currentUser.name;
+            }
+
+            updateFilters() {
+                this.filters.period = document.getElementById('periodFilter').value;
+                this.filters.constructionType = document.getElementById('constructionTypeFilter').value;
+                this.filters.sortBy = document.getElementById('sortBy').value;
+
+                this.calculateKPIs();
+                this.renderConstructionTypeAnalysis();
+                this.renderProjectTable();
+                this.renderInsights();
+                this.updateProfitTrendChart();
+            }
+
+            getFilteredData() {
+                let filtered = [...this.projectData];
+
+                // 期間フィルター
+                const now = new Date();
+                const periodDays = {
+                    '1m': 30,
+                    '3m': 90,
+                    '6m': 180,
+                    '1y': 365
+                };
+
+                if (this.filters.period !== 'custom') {
+                    const days = periodDays[this.filters.period];
+                    const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+                    filtered = filtered.filter(p => p.completedDate >= cutoffDate);
+                }
+
+                // 工事種別フィルター
+                if (this.filters.constructionType) {
+                    filtered = filtered.filter(p => p.constructionType === this.filters.constructionType);
+                }
+
+                // ソート
+                filtered.sort((a, b) => {
+                    switch (this.filters.sortBy) {
+                        case 'profitRate':
+                            return b.profitRate - a.profitRate;
+                        case 'revenue':
+                            return b.revenue - a.revenue;
+                        case 'profit':
+                            return b.profit - a.profit;
+                        case 'date':
+                            return b.completedDate - a.completedDate;
+                        default:
+                            return 0;
+                    }
+                });
+
+                return filtered;
+            }
+
+            calculateKPIs() {
+                const data = this.getFilteredData();
+
+                if (data.length === 0) {
+                    document.getElementById('avgProfitRate').textContent = '0%';
+                    document.getElementById('totalRevenue').textContent = '¥0';
+                    document.getElementById('totalProfit').textContent = '¥0';
+                    document.getElementById('projectCount').textContent = '0';
+                    return;
+                }
+
+                const totalRevenue = data.reduce((sum, p) => sum + p.revenue, 0);
+                const totalProfit = data.reduce((sum, p) => sum + p.profit, 0);
+                const avgProfitRate = (totalProfit / totalRevenue) * 100;
+
+                document.getElementById('avgProfitRate').textContent = `${avgProfitRate.toFixed(1)}%`;
+                document.getElementById('totalRevenue').textContent = `¥${totalRevenue.toLocaleString()}`;
+                document.getElementById('totalProfit').textContent = `¥${totalProfit.toLocaleString()}`;
+                document.getElementById('projectCount').textContent = data.length.toString();
+
+                // トレンド計算（簡略化）
+                const trendChange = Math.random() * 20 - 5; // -5% to +15%
+                const trendClass = trendChange >= 0 ? 'trend-up' : 'trend-down';
+                const trendSymbol = trendChange >= 0 ? '+' : '';
+
+                document.getElementById('profitRateTrend').textContent = `${trendSymbol}${trendChange.toFixed(1)}% (前月比)`;
+                document.getElementById('profitRateTrend').className = `kpi-trend ${trendClass}`;
+            }
+
+            renderConstructionTypeAnalysis() {
+                const data = this.getFilteredData();
+                const typeAnalysis = {};
+
+                data.forEach(project => {
+                    if (!typeAnalysis[project.constructionType]) {
+                        typeAnalysis[project.constructionType] = {
+                            count: 0,
+                            totalRevenue: 0,
+                            totalProfit: 0
+                        };
+                    }
+                    typeAnalysis[project.constructionType].count++;
+                    typeAnalysis[project.constructionType].totalRevenue += project.revenue;
+                    typeAnalysis[project.constructionType].totalProfit += project.profit;
+                });
+
+                const analysisHtml = Object.entries(typeAnalysis)
+                    .map(([type, stats]) => {
+                        const profitRate = (stats.totalProfit / stats.totalRevenue) * 100;
+                        const profitClass = profitRate >= 25 ? 'profit-high' : profitRate >= 20 ? 'profit-medium' : 'profit-low';
+
+                        return `
+                            <div class="construction-type-card">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">${this.getConstructionTypeName(type)}</h6>
+                                    <span class="badge bg-secondary">${stats.count}件</span>
+                                </div>
+                                <div class="profit-bar mb-2">
+                                    <div class="profit-bar-fill" style="width: ${Math.min(profitRate * 2, 100)}%"></div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">利益率</small>
+                                    <strong class="${profitClass}">${profitRate.toFixed(1)}%</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">売上合計</small>
+                                    <small>¥${stats.totalRevenue.toLocaleString()}</small>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                document.getElementById('constructionTypeAnalysis').innerHTML = analysisHtml;
+            }
+
+            renderProjectTable() {
+                const data = this.getFilteredData().slice(0, 20); // 上位20件
+
+                const tableHtml = data.map(project => {
+                    const profitClass = project.profitRate >= 25 ? 'profit-high' :
+                                      project.profitRate >= 20 ? 'profit-medium' : 'profit-low';
+
+                    return `
+                        <tr>
+                            <td>${project.id}</td>
+                            <td>${this.getConstructionTypeName(project.constructionType)}</td>
+                            <td>¥${project.revenue.toLocaleString()}</td>
+                            <td>¥${project.baseCost.toLocaleString()}</td>
+                            <td>¥${project.profit.toLocaleString()}</td>
+                            <td><strong class="${profitClass}">${project.profitRate.toFixed(1)}%</strong></td>
+                            <td>${project.completedDate.toLocaleDateString('ja-JP')}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                document.getElementById('projectAnalysisTable').innerHTML = tableHtml;
+            }
+
+            renderInsights() {
+                const data = this.getFilteredData();
+                const avgProfitRate = data.reduce((sum, p) => sum + p.profitRate, 0) / data.length;
+
+                const insights = [
+                    {
+                        icon: 'bi-trophy',
+                        title: '最高利益率',
+                        content: `${data[0]?.constructionType ? this.getConstructionTypeName(data[0].constructionType) : 'N/A'}: ${data[0]?.profitRate?.toFixed(1) || 0}%`,
+                        type: 'success'
+                    },
+                    {
+                        icon: 'bi-graph-up',
+                        title: '成長傾向',
+                        content: `電気工事の利益率が平均${avgProfitRate.toFixed(1)}%を上回る`,
+                        type: 'info'
+                    },
+                    {
+                        icon: 'bi-exclamation-triangle',
+                        title: '要注意',
+                        content: `フローリング工事の利益率が目標を下回る`,
+                        type: 'warning'
+                    },
+                    {
+                        icon: 'bi-calendar-week',
+                        title: '季節性',
+                        content: `キッチン工事は春季に利益率が向上する傾向`,
+                        type: 'primary'
+                    }
+                ];
+
+                const insightsHtml = insights.map(insight => `
+                    <div class="alert alert-${insight.type} alert-dismissible fade show">
+                        <i class="${insight.icon}"></i>
+                        <strong>${insight.title}</strong><br>
+                        ${insight.content}
+                    </div>
+                `).join('');
+
+                document.getElementById('analyticsInsights').innerHTML = insightsHtml;
+            }
+
+            renderImprovementSuggestions() {
+                const suggestions = [
+                    {
+                        priority: 'high',
+                        title: 'マージン率最適化',
+                        description: 'フローリング工事のマージン率を22%に調整することで年間利益を15%向上可能',
+                        action: 'マージン設定へ'
+                    },
+                    {
+                        priority: 'medium',
+                        title: '原価管理強化',
+                        description: '材料調達コストの見直しにより平均3-5%の原価削減が期待できます',
+                        action: '原価分析へ'
+                    },
+                    {
+                        priority: 'low',
+                        title: '受注戦略見直し',
+                        description: '電気工事の受注を増やすことで全体の利益率向上につながります',
+                        action: '営業戦略へ'
+                    }
+                ];
+
+                const suggestionsHtml = suggestions.map(suggestion => {
+                    const priorityColor = {
+                        'high': 'danger',
+                        'medium': 'warning',
+                        'low': 'info'
+                    };
+
+                    return `
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="card-title">${suggestion.title}</h6>
+                                    <span class="badge bg-${priorityColor[suggestion.priority]}">
+                                        ${suggestion.priority.toUpperCase()}
+                                    </span>
+                                </div>
+                                <p class="card-text small">${suggestion.description}</p>
+                                <button class="btn btn-outline-primary btn-sm">${suggestion.action}</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('improvementSuggestions').innerHTML = suggestionsHtml;
+            }
+
+            initProfitTrendChart() {
+                const ctx = document.getElementById('profitTrendChart').getContext('2d');
+
+                // 過去12ヶ月のダミーデータ
+                const labels = [];
+                const profitRateData = [];
+                const revenueData = [];
+
+                for (let i = 11; i >= 0; i--) {
+                    const date = new Date();
+                    date.setMonth(date.getMonth() - i);
+                    labels.push(date.toLocaleDateString('ja-JP', { month: 'short' }));
+                    profitRateData.push(18 + Math.random() * 12);
+                    revenueData.push((1000000 + Math.random() * 2000000) / 100000);
+                }
+
+                this.chartInstances.profitTrend = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '利益率 (%)',
+                            data: profitRateData,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y'
+                        }, {
+                            label: '売上 (万円)',
+                            data: revenueData,
+                            borderColor: '#007bff',
+                            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: '利益率 (%)'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: '売上 (万円)'
+                                },
+                                grid: {
+                                    drawOnChartArea: false,
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        }
+                    }
+                });
+            }
+
+            updateProfitTrendChart() {
+                // フィルター変更時のチャート更新（実装簡略化）
+                if (this.chartInstances.profitTrend) {
+                    this.chartInstances.profitTrend.update();
+                }
+            }
+
+            refreshData() {
+                this.showNotification('データを更新中...', 'info');
+
+                setTimeout(() => {
+                    this.projectData = this.generateSampleData();
+                    this.calculateKPIs();
+                    this.renderConstructionTypeAnalysis();
+                    this.renderProjectTable();
+                    this.renderInsights();
+                    this.updateProfitTrendChart();
+                    this.showNotification('データが更新されました', 'success');
+                }, 1000);
+            }
+
+            exportExcel() {
+                this.showNotification('Excel形式でエクスポートしています...', 'info');
+                // 実際の実装では、データをExcel形式でエクスポート
+                setTimeout(() => {
+                    this.showNotification('Excelファイルをダウンロードしました', 'success');
+                }, 2000);
+            }
+
+            exportPDF() {
+                this.showNotification('PDF形式でエクスポートしています...', 'info');
+                // 実際の実装では、レポートをPDF形式でエクスポート
+                setTimeout(() => {
+                    this.showNotification('PDFファイルをダウンロードしました', 'success');
+                }, 2000);
+            }
+
+            generateReport() {
+                this.showNotification('分析レポートを生成しています...', 'info');
+                // 実際の実装では、詳細な分析レポートを生成
+                setTimeout(() => {
+                    this.showNotification('分析レポートを生成しました', 'success');
+                }, 3000);
+            }
+
+            setupAutoRefresh() {
+                // 5分毎にデータを自動更新
+                setInterval(() => {
+                    this.refreshData();
+                }, 300000);
+            }
+
+            getConstructionTypeName(type) {
+                const types = {
+                    'kitchen': 'キッチン',
+                    'bathroom': 'バスルーム',
+                    'flooring': 'フローリング',
+                    'wallpaper': 'クロス',
+                    'electrical': '電気工事',
+                    'plumbing': '配管工事'
+                };
+                return types[type] || type;
+            }
+
+            showNotification(message, type = 'info') {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+                alertDiv.style.top = '20px';
+                alertDiv.style.right = '20px';
+                alertDiv.style.zIndex = '9999';
+                alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(alertDiv);
+
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.parentNode.removeChild(alertDiv);
+                    }
+                }, 5000);
+            }
+        }
+
+        const profitAnalysis = new ProfitAnalysisSystem();
+    </script>
+</body>
+</html>

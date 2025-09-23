@@ -1,0 +1,370 @@
+{% extends "projects/base.html" %}
+
+{% block title %}アサイン詳細 - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-file-alt me-2"></i>アサイン詳細</h2>
+    <div class="btn-group">
+        <a href="{% url 'assignment_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-1"></i>一覧に戻る
+        </a>
+        {% if assignment.status == 'inquiry' %}
+            <a href="{% url 'assignment_response' assignment.id %}" class="btn btn-warning">
+                <i class="fas fa-reply me-1"></i>返答処理
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0"><i class="fas fa-info-circle me-1"></i>アサイン情報</h5>
+                <span class="badge bg-{{ assignment.status|yesno:'inquiry:warning,confirmed:success,declined:danger,cancelled:secondary' }} fs-6">
+                    {{ assignment.get_status_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-project-diagram me-1"></i>案件情報</h6>
+                        <div class="ps-3">
+                            <div class="mb-2">
+                                <strong>案件名:</strong>
+                                <a href="{% url 'project_detail' assignment.project.id %}" class="text-decoration-none">
+                                    {{ assignment.project.title }}
+                                </a>
+                            </div>
+                            <div class="mb-2">
+                                <strong>顧客:</strong> {{ assignment.project.customer.company_name }}
+                            </div>
+                            <div class="mb-2">
+                                <strong>案件種別:</strong> {{ assignment.project.project_type.name }}
+                            </div>
+                            {% if assignment.project.location %}
+                                <div class="mb-2">
+                                    <strong>場所:</strong> {{ assignment.project.location }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-user me-1"></i>職人情報</h6>
+                        <div class="ps-3">
+                            <div class="mb-2">
+                                <strong>職人名:</strong>
+                                <a href="{% url 'craftsman_detail' assignment.craftsman.id %}" class="text-decoration-none">
+                                    {{ assignment.craftsman.name }}
+                                </a>
+                            </div>
+                            <div class="mb-2">
+                                <strong>スキル:</strong> {{ assignment.craftsman.skill_category }}
+                            </div>
+                            <div class="mb-2">
+                                <strong>経験年数:</strong> {{ assignment.craftsman.experience_years }}年
+                            </div>
+                            {% if assignment.craftsman.phone %}
+                                <div class="mb-2">
+                                    <strong>電話:</strong>
+                                    <a href="{% url 'contact_craftsman' assignment.id 'phone' %}" class="text-decoration-none">
+                                        {{ assignment.craftsman.phone }}
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="text-muted small">開始予定日</div>
+                            <div class="fw-bold">{{ assignment.scheduled_start_date|date:"Y/m/d" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="text-muted small">終了予定日</div>
+                            <div class="fw-bold">{{ assignment.scheduled_end_date|date:"Y/m/d" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="text-muted small">予定作業時間</div>
+                            <div class="fw-bold">{{ assignment.estimated_hours }}時間/日</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="text-muted small">提示単価</div>
+                            <div class="fw-bold">¥{{ assignment.offered_rate|floatformat:0 }}/時</div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>連絡方法:</strong> {{ assignment.get_contact_method_display }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>優先度:</strong>
+                        <span class="badge bg-{{ assignment.priority|yesno:'high:danger,medium:warning,low:secondary' }}">
+                            {{ assignment.get_priority_display }}
+                        </span>
+                    </div>
+                </div>
+
+                {% if assignment.inquiry_message %}
+                    <div class="mb-3">
+                        <strong>打診メッセージ:</strong>
+                        <div class="mt-2 p-3 bg-light rounded">
+                            {{ assignment.inquiry_message|linebreaks }}
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if assignment.special_requirements %}
+                    <div class="mb-3">
+                        <strong>特別要件:</strong>
+                        <div class="mt-2 p-3 bg-light rounded">
+                            {{ assignment.special_requirements|linebreaks }}
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if assignment.response_message %}
+                    <div class="mb-3">
+                        <strong>職人からの返答:</strong>
+                        <div class="mt-2 p-3 bg-primary bg-opacity-10 rounded">
+                            {{ assignment.response_message|linebreaks }}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-history me-1"></i>タイムライン</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">アサイン作成</h6>
+                            <p class="timeline-text text-muted">
+                                {{ assignment.created_at|date:"Y/m/d H:i" }} - {{ assignment.assigned_by.name }}により作成
+                            </p>
+                        </div>
+                    </div>
+
+                    {% if assignment.inquiry_sent_date %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title">打診送信</h6>
+                                <p class="timeline-text text-muted">
+                                    {{ assignment.inquiry_sent_date|date:"Y/m/d H:i" }} - 職人に打診を送信
+                                </p>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if assignment.response_date %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-{{ assignment.status|yesno:'confirmed:success,declined:danger' }}"></div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title">返答受信</h6>
+                                <p class="timeline-text text-muted">
+                                    {{ assignment.response_date|date:"Y/m/d H:i" }} - {{ assignment.get_status_display }}
+                                </p>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if assignment.actual_start_date %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title">作業開始</h6>
+                                <p class="timeline-text text-muted">
+                                    {{ assignment.actual_start_date|date:"Y/m/d H:i" }} - 実際の作業開始
+                                </p>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if assignment.actual_end_date %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-dark"></div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title">作業完了</h6>
+                                <p class="timeline-text text-muted">
+                                    {{ assignment.actual_end_date|date:"Y/m/d H:i" }} - 作業完了
+                                </p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-tasks me-1"></i>クイックアクション</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if assignment.status == 'inquiry' %}
+                        <a href="{% url 'assignment_response' assignment.id %}" class="btn btn-warning">
+                            <i class="fas fa-reply me-1"></i>返答処理
+                        </a>
+                    {% endif %}
+
+                    {% if assignment.craftsman.phone %}
+                        <a href="{% url 'contact_craftsman' assignment.id 'phone' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-phone me-1"></i>電話をかける
+                        </a>
+                    {% endif %}
+
+                    {% if assignment.craftsman.line_id %}
+                        <a href="{% url 'contact_craftsman' assignment.id 'line' %}" class="btn btn-outline-success">
+                            <i class="fab fa-line me-1"></i>LINEで連絡
+                        </a>
+                    {% endif %}
+
+                    {% if assignment.craftsman.email %}
+                        <a href="{% url 'contact_craftsman' assignment.id 'email' %}" class="btn btn-outline-info">
+                            <i class="fas fa-envelope me-1"></i>メール送信
+                        </a>
+                    {% endif %}
+
+                    <a href="{% url 'craftsman_schedule_calendar' assignment.craftsman.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-calendar me-1"></i>スケジュール確認
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-chart-line me-1"></i>統計情報</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="text-muted small">予想収益</div>
+                        <div class="fw-bold text-success">
+                            ¥{{ assignment.estimated_revenue|floatformat:0 }}
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-muted small">日数</div>
+                        <div class="fw-bold">
+                            {{ assignment.duration_days }}日
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if assignment.status != 'inquiry' %}
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0"><i class="fas fa-star me-1"></i>評価</h6>
+                </div>
+                <div class="card-body">
+                    {% if assignment.rating %}
+                        <div class="text-center">
+                            <div class="h4 text-warning mb-1">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= assignment.rating %}
+                                        <i class="fas fa-star"></i>
+                                    {% else %}
+                                        <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="small text-muted">{{ assignment.rating }}/5</div>
+                            {% if assignment.rating_comment %}
+                                <div class="mt-2 p-2 bg-light rounded small">
+                                    {{ assignment.rating_comment }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <i class="fas fa-star-half-alt fa-2x mb-2"></i>
+                            <div>まだ評価されていません</div>
+                            {% if assignment.status == 'completed' %}
+                                <button class="btn btn-sm btn-outline-primary mt-2">
+                                    <i class="fas fa-star me-1"></i>評価する
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -25px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-content {
+    padding-left: 20px;
+}
+
+.timeline-title {
+    margin-bottom: 5px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.timeline-text {
+    margin-bottom: 0;
+    font-size: 13px;
+}
+</style>
+{% endblock %}

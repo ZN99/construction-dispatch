@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建築派遣SaaS - 調査計画（社員専用）</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <div class="d-flex align-items-center px-3 mb-3">
+                        <i class="fas fa-user-tie text-primary me-2"></i>
+                        <span class="fw-bold text-primary">社員モード</span>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="../index_manager.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../projects/project_list_manager.html">
+                                <i class="fas fa-project-diagram me-2"></i>案件管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="survey_planning.html">
+                                <i class="fas fa-clipboard-list me-2"></i>調査計画
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="survey_result_analysis.html">
+                                <i class="fas fa-chart-line me-2"></i>結果分析
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../task_assignment.html">
+                                <i class="fas fa-tasks me-2"></i>タスク指示
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <div>
+                        <h1 class="h2">調査計画管理（社員専用）</h1>
+                        <small class="text-muted">調査の計画立案・チェックリスト作成・派遣指示</small>
+                    </div>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-primary" onclick="createSurveyPlan()">
+                                <i class="fas fa-plus me-1"></i>新規調査計画
+                            </button>
+                            <button type="button" class="btn btn-outline-success" onclick="createChecklist()">
+                                <i class="fas fa-clipboard-check me-1"></i>チェックリスト作成
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="assignSurveyors()">
+                                <i class="fas fa-user-plus me-1"></i>派遣指示
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 調査統計（社員専用） -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <i class="fas fa-clipboard-list text-info mb-2" style="font-size: 2rem;"></i>
+                                <h4 class="text-info">12</h4>
+                                <p class="card-text">計画中調査</p>
+                                <small class="text-muted">予算: ¥2,400,000</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <i class="fas fa-clock text-warning mb-2" style="font-size: 2rem;"></i>
+                                <h4 class="text-warning">8</h4>
+                                <p class="card-text">実行中調査</p>
+                                <small class="text-muted">派遣中: 5名</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-danger">
+                            <div class="card-body text-center">
+                                <i class="fas fa-exclamation-triangle text-danger mb-2" style="font-size: 2rem;"></i>
+                                <h4 class="text-danger">3</h4>
+                                <p class="card-text">承認待ち</p>
+                                <small class="text-muted">要確認</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <i class="fas fa-check-circle text-success mb-2" style="font-size: 2rem;"></i>
+                                <h4 class="text-success">28</h4>
+                                <p class="card-text">完了調査</p>
+                                <small class="text-success">今月実績</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 調査計画作成エリア -->
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-edit me-2"></i>新規調査計画作成
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="surveyPlanForm">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">対象案件</label>
+                                            <select class="form-select" id="projectSelect" required>
+                                                <option value="">案件を選択...</option>
+                                                <option value="1">港区ワンルーム原状回復</option>
+                                                <option value="2">新宿1K原状回復</option>
+                                                <option value="3">品川マンション修繕</option>
+                                                <option value="4">渋谷2DK原状回復</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">調査予算</label>
+                                            <input type="number" class="form-control" id="surveyBudget" placeholder="予算金額" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">実施予定日</label>
+                                            <input type="datetime-local" class="form-control" id="scheduledDate" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">所要時間（分）</label>
+                                            <select class="form-select" id="duration" required>
+                                                <option value="">時間を選択...</option>
+                                                <option value="60">1時間</option>
+                                                <option value="90">1.5時間</option>
+                                                <option value="120">2時間</option>
+                                                <option value="180">3時間</option>
+                                                <option value="240">4時間</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">調査カテゴリ</label>
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="waterCheck" value="water">
+                                                    <label class="form-check-label" for="waterCheck">水道設備</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="wallCheck" value="wall">
+                                                    <label class="form-check-label" for="wallCheck">壁面・クロス</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="floorCheck" value="floor">
+                                                    <label class="form-check-label" for="floorCheck">床面</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="electricCheck" value="electric">
+                                                    <label class="form-check-label" for="electricCheck">電気設備</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">調査の重点項目</label>
+                                        <textarea class="form-control" id="surveyFocus" rows="3" placeholder="派遣スタッフが重点的にチェックすべき項目を記載してください"></textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">顧客情報・注意事項</label>
+                                        <textarea class="form-control" id="customerNotes" rows="2" placeholder="顧客への配慮事項、現地での注意点等"></textarea>
+                                    </div>
+
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="saveDraft()">下書き保存</button>
+                                        <button type="submit" class="btn btn-primary">調査計画作成</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <!-- 派遣可能スタッフ -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-users me-2"></i>派遣可能スタッフ
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold">田中太郎</div>
+                                            <small class="text-muted">調査専門・経験3年</small>
+                                        </div>
+                                        <span class="badge bg-success">空き</span>
+                                    </div>
+                                    <small class="text-primary">得意: 水道・クロス</small>
+                                </div>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold">佐藤花子</div>
+                                            <small class="text-muted">連絡係・経験2年</small>
+                                        </div>
+                                        <span class="badge bg-warning">稼働中</span>
+                                    </div>
+                                    <small class="text-muted">復帰予定: 15:30</small>
+                                </div>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold">鈴木一郎</div>
+                                            <small class="text-muted">調査員・経験1年</small>
+                                        </div>
+                                        <span class="badge bg-success">空き</span>
+                                    </div>
+                                    <small class="text-primary">得意: 電気・床面</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 調査テンプレート -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-clipboard-check me-2"></i>調査テンプレート
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group list-group-flush">
+                                    <a href="#" class="list-group-item list-group-item-action" onclick="loadTemplate('basic')">
+                                        <div class="fw-bold">基本調査</div>
+                                        <small class="text-muted">標準的な原状回復調査</small>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action" onclick="loadTemplate('water')">
+                                        <div class="fw-bold">水道設備重点</div>
+                                        <small class="text-muted">水回り専門調査</small>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action" onclick="loadTemplate('full')">
+                                        <div class="fw-bold">フル調査</div>
+                                        <small class="text-muted">全項目詳細調査</small>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action" onclick="loadTemplate('emergency')">
+                                        <div class="fw-bold">緊急調査</div>
+                                        <small class="text-muted">緊急対応用</small>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 調査計画一覧 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-list me-2"></i>調査計画一覧
+                            </h5>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-secondary" onclick="filterSurveys('all')">全て</button>
+                                <button class="btn btn-outline-warning" onclick="filterSurveys('planned')">計画中</button>
+                                <button class="btn btn-outline-info" onclick="filterSurveys('active')">実行中</button>
+                                <button class="btn btn-outline-danger" onclick="filterSurveys('pending')">承認待ち</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>調査計画名</th>
+                                        <th>対象案件</th>
+                                        <th>担当派遣</th>
+                                        <th>予定日時</th>
+                                        <th>予算</th>
+                                        <th>ステータス</th>
+                                        <th>進捗</th>
+                                        <th>管理操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr data-status="active">
+                                        <td>
+                                            <div class="fw-bold">港区水道設備調査</div>
+                                            <small class="text-muted">基本調査+重点項目</small>
+                                        </td>
+                                        <td>港区ワンルーム原状回復</td>
+                                        <td>
+                                            <div class="fw-bold">田中太郎</div>
+                                            <small class="text-success">実行中</small>
+                                        </td>
+                                        <td>
+                                            <div>2025-09-15 14:30</div>
+                                            <small class="text-muted">2時間予定</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-success">¥45,000</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-warning">実行中</span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 12px;">
+                                                <div class="progress-bar" style="width: 60%">60%</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="trackSurvey(1)" title="追跡">
+                                                    <i class="fas fa-map-marker-alt"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info" onclick="contactSurveyor(1)" title="連絡">
+                                                    <i class="fas fa-phone"></i>
+                                                </button>
+                                                <button class="btn btn-outline-warning" onclick="modifyPlan(1)" title="変更">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" onclick="stopSurvey(1)" title="中止">
+                                                    <i class="fas fa-stop"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr data-status="planned">
+                                        <td>
+                                            <div class="fw-bold">新宿フル調査</div>
+                                            <small class="text-muted">全項目詳細調査</small>
+                                        </td>
+                                        <td>新宿1K原状回復</td>
+                                        <td>
+                                            <div class="text-muted">未指定</div>
+                                            <small class="text-warning">要指定</small>
+                                        </td>
+                                        <td>
+                                            <div>2025-09-16 10:00</div>
+                                            <small class="text-muted">3時間予定</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-info">¥67,000</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">計画中</span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 12px;">
+                                                <div class="progress-bar bg-secondary" style="width: 0%">0%</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-primary" onclick="assignSurveyor(2)" title="派遣指示">
+                                                    <i class="fas fa-user-plus"></i>
+                                                </button>
+                                                <button class="btn btn-outline-warning" onclick="editPlan(2)" title="編集">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-success" onclick="approvePlan(2)" title="承認">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr data-status="pending">
+                                        <td>
+                                            <div class="fw-bold">品川緊急調査</div>
+                                            <small class="text-muted">水漏れ緊急対応</small>
+                                        </td>
+                                        <td>品川マンション修繕</td>
+                                        <td>
+                                            <div class="fw-bold">佐藤花子</div>
+                                            <small class="text-danger">承認待ち</small>
+                                        </td>
+                                        <td>
+                                            <div class="text-danger">2025-09-15 16:00</div>
+                                            <small class="text-danger">緊急</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-danger">¥85,000</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-danger">承認待ち</span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 12px;">
+                                                <div class="progress-bar bg-danger" style="width: 10%">10%</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-success" onclick="approveEmergency(3)" title="緊急承認">
+                                                    <i class="fas fa-check-double"></i>
+                                                </button>
+                                                <button class="btn btn-outline-warning" onclick="reviewPlan(3)" title="再検討">
+                                                    <i class="fas fa-search"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" onclick="rejectPlan(3)" title="却下">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        // 社員専用調査計画機能
+
+        document.getElementById('surveyPlanForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            createSurveyPlan();
+        });
+
+        function createSurveyPlan() {
+            const formData = {
+                project: document.getElementById('projectSelect').value,
+                budget: document.getElementById('surveyBudget').value,
+                scheduledDate: document.getElementById('scheduledDate').value,
+                duration: document.getElementById('duration').value,
+                categories: getSelectedCategories(),
+                focus: document.getElementById('surveyFocus').value,
+                notes: document.getElementById('customerNotes').value
+            };
+
+            // バリデーション
+            if (!formData.project || !formData.budget || !formData.scheduledDate || !formData.duration) {
+                alert('必須項目を入力してください');
+                return;
+            }
+
+            // 監査ログ
+            if (window.app) {
+                window.app.logAuditEvent('SURVEY_PLAN_CREATED', {
+                    projectId: formData.project,
+                    budget: formData.budget,
+                    scheduledDate: formData.scheduledDate,
+                    duration: formData.duration,
+                    createdBy: 'manager_001'
+                });
+            }
+
+            showToast('調査計画が作成されました', 'success');
+
+            // フォームリセット
+            document.getElementById('surveyPlanForm').reset();
+        }
+
+        function getSelectedCategories() {
+            const categories = [];
+            if (document.getElementById('waterCheck').checked) categories.push('water');
+            if (document.getElementById('wallCheck').checked) categories.push('wall');
+            if (document.getElementById('floorCheck').checked) categories.push('floor');
+            if (document.getElementById('electricCheck').checked) categories.push('electric');
+            return categories;
+        }
+
+        function createChecklist() {
+            window.location.href = 'survey_checklist_create.html';
+        }
+
+        function assignSurveyors() {
+            window.location.href = '../task_assignment.html?type=survey';
+        }
+
+        function loadTemplate(type) {
+            const templates = {
+                basic: {
+                    duration: '120',
+                    categories: ['water', 'wall'],
+                    focus: '基本的な損傷・不具合の確認',
+                    notes: '標準的な調査手順に従って実施'
+                },
+                water: {
+                    duration: '90',
+                    categories: ['water'],
+                    focus: '給水管の漏れ、排水の流れ、蛇口の動作確認',
+                    notes: '水道メーターの確認も忘れずに'
+                },
+                full: {
+                    duration: '180',
+                    categories: ['water', 'wall', 'floor', 'electric'],
+                    focus: '全項目を詳細にチェック、写真撮影を多めに',
+                    notes: '時間に余裕を持って丁寧に調査'
+                },
+                emergency: {
+                    duration: '60',
+                    categories: ['water'],
+                    focus: '緊急対応項目のみ重点チェック',
+                    notes: '安全確保を最優先に実施'
+                }
+            };
+
+            const template = templates[type];
+            if (template) {
+                document.getElementById('duration').value = template.duration;
+                document.getElementById('surveyFocus').value = template.focus;
+                document.getElementById('customerNotes').value = template.notes;
+
+                // カテゴリをクリア
+                document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+                // テンプレートのカテゴリを選択
+                template.categories.forEach(cat => {
+                    const checkbox = document.getElementById(cat + 'Check');
+                    if (checkbox) checkbox.checked = true;
+                });
+
+                showToast(`${type}テンプレートを適用しました`, 'info');
+            }
+        }
+
+        function saveDraft() {
+            const formData = new FormData(document.getElementById('surveyPlanForm'));
+            localStorage.setItem('surveyPlanDraft', JSON.stringify(Object.fromEntries(formData)));
+            showToast('下書きが保存されました', 'info');
+        }
+
+        function trackSurvey(id) {
+            window.location.href = `survey_tracking.html?id=${id}`;
+        }
+
+        function contactSurveyor(id) {
+            const message = prompt('派遣スタッフへの連絡メッセージを入力してください：');
+            if (message) {
+                if (window.app) {
+                    window.app.logAuditEvent('SURVEYOR_CONTACTED', {
+                        surveyId: id,
+                        message: message,
+                        contactedBy: 'manager_001'
+                    });
+                }
+                showToast('連絡を送信しました', 'success');
+            }
+        }
+
+        function modifyPlan(id) {
+            window.location.href = `survey_plan_edit.html?id=${id}`;
+        }
+
+        function stopSurvey(id) {
+            if (confirm('調査を中止しますか？この操作により派遣スタッフに通知されます。')) {
+                if (window.app) {
+                    window.app.logAuditEvent('SURVEY_STOPPED', {
+                        surveyId: id,
+                        reason: 'Manager decision',
+                        stoppedBy: 'manager_001'
+                    });
+                }
+                showToast('調査を中止しました', 'warning');
+
+                // ステータス更新
+                const row = document.querySelector(`tr[data-status] td button[onclick*="${id}"]`).closest('tr');
+                const statusBadge = row.querySelector('.badge');
+                statusBadge.className = 'badge bg-secondary';
+                statusBadge.textContent = '中止';
+            }
+        }
+
+        function assignSurveyor(id) {
+            window.location.href = `../task_assignment.html?survey=${id}`;
+        }
+
+        function editPlan(id) {
+            window.location.href = `survey_plan_edit.html?id=${id}`;
+        }
+
+        function approvePlan(id) {
+            if (confirm('この調査計画を承認しますか？')) {
+                if (window.app) {
+                    window.app.logAuditEvent('SURVEY_PLAN_APPROVED', {
+                        surveyId: id,
+                        approvedBy: 'manager_001'
+                    });
+                }
+                showToast('調査計画が承認されました', 'success');
+
+                // ステータス更新
+                const row = document.querySelector(`tr[data-status] td button[onclick*="${id}"]`).closest('tr');
+                const statusBadge = row.querySelector('.badge');
+                statusBadge.className = 'badge bg-success';
+                statusBadge.textContent = '承認済み';
+            }
+        }
+
+        function approveEmergency(id) {
+            if (confirm('緊急調査を承認しますか？即座に派遣スタッフに指示が送られます。')) {
+                if (window.app) {
+                    window.app.logAuditEvent('EMERGENCY_SURVEY_APPROVED', {
+                        surveyId: id,
+                        approvedBy: 'manager_001',
+                        priority: 'urgent'
+                    });
+                }
+                showToast('緊急調査が承認されました', 'success');
+
+                // ステータス更新
+                const row = document.querySelector(`tr[data-status] td button[onclick*="${id}"]`).closest('tr');
+                const statusBadge = row.querySelector('.badge');
+                statusBadge.className = 'badge bg-warning';
+                statusBadge.textContent = '実行中';
+            }
+        }
+
+        function reviewPlan(id) {
+            window.location.href = `survey_plan_review.html?id=${id}`;
+        }
+
+        function rejectPlan(id) {
+            const reason = prompt('却下理由を入力してください：');
+            if (reason) {
+                if (window.app) {
+                    window.app.logAuditEvent('SURVEY_PLAN_REJECTED', {
+                        surveyId: id,
+                        reason: reason,
+                        rejectedBy: 'manager_001'
+                    });
+                }
+                showToast('調査計画が却下されました', 'danger');
+
+                // ステータス更新
+                const row = document.querySelector(`tr[data-status] td button[onclick*="${id}"]`).closest('tr');
+                const statusBadge = row.querySelector('.badge');
+                statusBadge.className = 'badge bg-danger';
+                statusBadge.textContent = '却下';
+            }
+        }
+
+        function filterSurveys(status) {
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const rowStatus = row.getAttribute('data-status');
+                if (status === 'all' || rowStatus === status) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // ボタンのアクティブ状態更新
+            document.querySelectorAll('.btn-group .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function showToast(message, type) {
+            if (window.app && window.app.showToast) {
+                window.app.showToast(message, type);
+            }
+        }
+
+        // 権限チェック
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.app && !window.app.checkPermission('CREATE_SURVEY')) {
+                alert('調査計画作成の権限がありません');
+                window.location.href = '../index.html';
+            }
+
+            // 下書きの復元
+            const draft = localStorage.getItem('surveyPlanDraft');
+            if (draft) {
+                const data = JSON.parse(draft);
+                Object.keys(data).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        element.value = data[key];
+                    }
+                });
+            }
+        });
+    </script>
+
+    <style>
+        .form-check-input:checked {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        .progress {
+            border-radius: 10px;
+        }
+
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+
+        .list-group-item-action:hover {
+            background-color: #f8f9fa;
+        }
+
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            background-color: #f8f9fa;
+        }
+
+        .btn-group-sm .btn {
+            padding: 0.25rem 0.5rem;
+        }
+    </style>
+</body>
+</html>

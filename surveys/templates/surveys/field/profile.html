@@ -1,0 +1,152 @@
+{% extends 'surveys/field/base.html' %}
+
+{% block title %}プロファイル - 現場調査システム{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- ヘッダー -->
+        <div class="col-12 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="text-success mb-0">
+                    <i class="fas fa-user"></i> プロファイル
+                </h2>
+                <div class="text-muted">
+                    {{ request.surveyor.name }}さんの情報
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- プロファイル情報 -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-id-card"></i> 基本情報
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4 fw-bold">名前:</div>
+                        <div class="col-sm-8">{{ request.surveyor.name }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 fw-bold">社員番号:</div>
+                        <div class="col-sm-8">{{ request.surveyor.employee_id }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 fw-bold">メールアドレス:</div>
+                        <div class="col-sm-8">{{ request.surveyor.email|default:"未設定" }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 fw-bold">電話番号:</div>
+                        <div class="col-sm-8">{{ request.surveyor.phone|default:"未設定" }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 fw-bold">専門分野:</div>
+                        <div class="col-sm-8">{{ request.surveyor.specialization|default:"未設定" }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 fw-bold">ステータス:</div>
+                        <div class="col-sm-8">
+                            {% if request.surveyor.is_active %}
+                                <span class="badge bg-success">アクティブ</span>
+                            {% else %}
+                                <span class="badge bg-secondary">非アクティブ</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 統計情報 -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i> 実績統計
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-6 fw-bold">総調査数:</div>
+                        <div class="col-sm-6">{{ stats.total_surveys }}件</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-6 fw-bold">完了済み:</div>
+                        <div class="col-sm-6">{{ stats.completed_surveys }}件</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-6 fw-bold">進行中:</div>
+                        <div class="col-sm-6">{{ stats.in_progress_surveys }}件</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-6 fw-bold">予定:</div>
+                        <div class="col-sm-6">{{ stats.scheduled_surveys }}件</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 月別実績 -->
+    {% if monthly_stats %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-alt"></i> 月別完了実績（過去6か月）
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for stat in monthly_stats %}
+                        <div class="col-md-2 col-sm-4 mb-3 text-center">
+                            <div class="card bg-light">
+                                <div class="card-body py-2">
+                                    <div class="fw-bold text-success">{{ stat.count }}</div>
+                                    <small class="text-muted">{{ stat.month }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- アクションボタン -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="{% url 'surveys:field_dashboard' %}" class="btn btn-success btn-lg me-2">
+                <i class="fas fa-arrow-left"></i> ダッシュボードに戻る
+            </a>
+            <a href="{% url 'surveys:field_survey_list' %}" class="btn btn-outline-success btn-lg">
+                <i class="fas fa-list"></i> 調査一覧
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // アクティブなナビゲーション項目をハイライト
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+
+    navLinks.forEach(function(link) {
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>見積進捗確認 - 建築派遣SaaS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../css/quotation_workflow.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        .status-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+        }
+        .timeline-item {
+            position: relative;
+            padding: 20px 0;
+            border-left: 3px solid #e9ecef;
+            margin-left: 20px;
+            padding-left: 40px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 25px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #e9ecef;
+        }
+        .timeline-item.completed::before {
+            background: #28a745;
+        }
+        .timeline-item.active::before {
+            background: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.3);
+        }
+        .timeline-item.pending::before {
+            background: #ffc107;
+        }
+        .current-status {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        .data-summary {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .refresh-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            color: white;
+            font-size: 1.2em;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+        }
+        .refresh-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.7em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .estimated-time {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .contact-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .status-pending {
+            color: #856404;
+            background: #fff3cd;
+        }
+        .status-active {
+            color: #0c5460;
+            background: #d1ecf1;
+        }
+        .status-completed {
+            color: #155724;
+            background: #d4edda;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-section">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-clock-history"></i> 見積進捗確認</h2>
+                    <p class="mb-0">現在の見積作成状況</p>
+                </div>
+                <div>
+                    <span class="badge bg-info fs-6">派遣スタッフ</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Refresh Button -->
+    <button class="refresh-button" onclick="refreshStatus()" title="最新状況に更新">
+        <i class="bi bi-arrow-clockwise"></i>
+        <div class="notification-badge" id="updateBadge" style="display: none;">!</div>
+    </button>
+
+    <div class="container">
+        <!-- Current Status Overview -->
+        <div class="current-status">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h4 id="currentStepTitle">現地調査完了</h4>
+                    <p class="mb-0" id="currentStepDesc">材料費入力を待機中です</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="display-6" id="currentProgress">50%</div>
+                    <small>完了</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="status-card">
+            <h5><i class="bi bi-list-check"></i> 進捗タイムライン</h5>
+            <div class="timeline">
+                <div class="timeline-item completed">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">現地調査完了</h6>
+                            <p class="mb-1">物件調査・測定・写真撮影が完了しました</p>
+                            <small class="text-muted" id="surveyCompletedTime">2024-01-15 14:30</small>
+                        </div>
+                        <span class="badge status-completed">完了</span>
+                    </div>
+                </div>
+
+                <div class="timeline-item active">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">材料費入力</h6>
+                            <p class="mb-1">社員による材料費算出を実施中です</p>
+                            <small class="text-muted" id="materialCostTime">進行中...</small>
+                        </div>
+                        <span class="badge status-active">進行中</span>
+                    </div>
+                </div>
+
+                <div class="timeline-item pending">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">マージン設定</h6>
+                            <p class="mb-1">社員によるマージン率設定</p>
+                            <small class="text-muted">待機中</small>
+                        </div>
+                        <span class="badge status-pending">待機中</span>
+                    </div>
+                </div>
+
+                <div class="timeline-item pending">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">見積書生成</h6>
+                            <p class="mb-1">最終見積書の作成・確認</p>
+                            <small class="text-muted">待機中</small>
+                        </div>
+                        <span class="badge status-pending">待機中</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estimated Completion Time -->
+        <div class="estimated-time">
+            <h6><i class="bi bi-alarm text-primary"></i> 完了予定時刻</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>材料費算出完了予定:</strong>
+                    <div id="materialCostEta">本日 17:00頃</div>
+                </div>
+                <div class="col-md-6">
+                    <strong>最終見積書完成予定:</strong>
+                    <div id="quotationEta">本日 19:00頃</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submitted Data Summary -->
+        <div class="status-card">
+            <h5><i class="bi bi-clipboard-data"></i> 提出済みデータ</h5>
+
+            <div class="data-summary">
+                <h6>現地調査データ</h6>
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>物件タイプ:</strong>
+                        <div id="submittedPropertyType">1DK</div>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>作業種別:</strong>
+                        <div id="submittedWorkType">複合作業</div>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>床面積:</strong>
+                        <div id="submittedFloorArea">25.2㎡</div>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>写真枚数:</strong>
+                        <div id="submittedPhotos">8枚</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-summary">
+                <h6>材料費データ</h6>
+                <div class="row" id="materialCostSummary">
+                    <div class="col-md-4">
+                        <strong>クリーニング材料:</strong>
+                        <div id="submittedCleaning">¥8,500</div>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>壁紙関連材料:</strong>
+                        <div id="submittedWallpaper">¥45,200</div>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>水道設備材料:</strong>
+                        <div id="submittedPlumbing">¥32,800</div>
+                    </div>
+                </div>
+                <hr>
+                <div class="text-center">
+                    <strong>総材料費:</strong>
+                    <span class="fs-5 text-primary" id="submittedTotalCost">¥86,500</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employee Notes/Updates -->
+        <div class="status-card" id="employeeUpdates">
+            <h5><i class="bi bi-chat-square-text"></i> 社員からの連絡</h5>
+            <div class="alert alert-info" id="latestUpdate">
+                <div class="d-flex align-items-start">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <div>
+                        <strong>田中 社員</strong> - 2024-01-15 15:45<br>
+                        材料費の算出を開始しました。水道設備の仕様確認中です。17:00頃に完了予定です。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="contact-section">
+            <h6><i class="bi bi-telephone text-warning"></i> 緊急時連絡先</h6>
+            <p class="mb-2">見積に関する緊急のお問い合わせは下記までご連絡ください：</p>
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>営業部:</strong> 03-1234-5678<br>
+                    <small class="text-muted">平日 9:00-18:00</small>
+                </div>
+                <div class="col-md-6">
+                    <strong>緊急対応:</strong> 080-1234-5678<br>
+                    <small class="text-muted">24時間対応</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mt-4 mb-4">
+            <div class="col-md-6">
+                <button type="button" class="btn btn-outline-primary w-100" onclick="exportData()">
+                    <i class="bi bi-download"></i> データをダウンロード
+                </button>
+            </div>
+            <div class="col-md-6">
+                <button type="button" class="btn btn-primary w-100" onclick="goToDashboard()">
+                    <i class="bi bi-house"></i> ダッシュボードへ戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Notification Modal -->
+    <div class="modal fade" id="updateModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-bell"></i> ステータス更新</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-success">
+                        <strong>更新通知:</strong>
+                        <div id="updateMessage">新しいステータス更新があります</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">確認</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/quotation_workflow.js"></script>
+    <script>
+        class StaffStatusView {
+            constructor() {
+                this.workflow = new QuotationWorkflow();
+                this.lastUpdateTime = null;
+                this.refreshInterval = null;
+                this.initializeApp();
+            }
+
+            initializeApp() {
+                this.validateAccess();
+                this.loadStatusData();
+                this.setupAutoRefresh();
+                this.setupNotifications();
+            }
+
+            validateAccess() {
+                const userRole = this.workflow.getUserRole();
+                if (userRole !== 'temporary') {
+                    alert('この画面は派遣スタッフ専用です。');
+                    window.location.href = '../index_manager.html';
+                    return;
+                }
+            }
+
+            loadStatusData() {
+                // Load current workflow status
+                const workflowStatus = this.workflow.getCurrentWorkflowStatus();
+                if (workflowStatus) {
+                    this.updateCurrentStatus(workflowStatus);
+                    this.updateTimeline(workflowStatus);
+                    this.updateEstimatedTimes(workflowStatus);
+                }
+
+                // Load submitted survey data
+                const surveyData = this.workflow.getCurrentSurveyData();
+                if (surveyData) {
+                    this.displaySurveyData(surveyData);
+                }
+
+                // Load material cost data if available
+                const materialData = this.workflow.getCurrentMaterialCosts();
+                if (materialData) {
+                    this.displayMaterialCosts(materialData);
+                }
+
+                // Load employee updates
+                this.loadEmployeeUpdates();
+            }
+
+            updateCurrentStatus(status) {
+                const stepTitles = {
+                    'room_survey': '現地調査実施中',
+                    'material_input': '材料費算出中',
+                    'margin_setting': 'マージン設定中',
+                    'quotation_generate': '見積書生成中'
+                };
+
+                const stepDescriptions = {
+                    'room_survey': '現地での測定・撮影を実施しています',
+                    'material_input': '社員が材料費を算出しています',
+                    'margin_setting': '社員がマージン率を設定しています',
+                    'quotation_generate': '最終見積書を作成しています'
+                };
+
+                const progress = {
+                    'room_survey': 25,
+                    'material_input': 50,
+                    'margin_setting': 75,
+                    'quotation_generate': 100
+                };
+
+                document.getElementById('currentStepTitle').textContent =
+                    stepTitles[status.currentStep] || '処理中';
+                document.getElementById('currentStepDesc').textContent =
+                    stepDescriptions[status.currentStep] || '進行中です';
+                document.getElementById('currentProgress').textContent =
+                    `${progress[status.currentStep] || 0}%`;
+            }
+
+            updateTimeline(status) {
+                const timelineItems = document.querySelectorAll('.timeline-item');
+                const steps = ['room_survey', 'material_input', 'margin_setting', 'quotation_generate'];
+
+                steps.forEach((step, index) => {
+                    const item = timelineItems[index];
+                    if (!item) return;
+
+                    const badge = item.querySelector('.badge');
+                    const timeElement = item.querySelector('small');
+
+                    if (status.completedSteps && status.completedSteps.includes(step)) {
+                        item.className = 'timeline-item completed';
+                        badge.textContent = '完了';
+                        badge.className = 'badge status-completed';
+                        if (status.stepTimes && status.stepTimes[step]) {
+                            timeElement.textContent = new Date(status.stepTimes[step]).toLocaleString('ja-JP');
+                        }
+                    } else if (status.currentStep === step) {
+                        item.className = 'timeline-item active';
+                        badge.textContent = '進行中';
+                        badge.className = 'badge status-active';
+                        timeElement.textContent = '進行中...';
+                    } else {
+                        item.className = 'timeline-item pending';
+                        badge.textContent = '待機中';
+                        badge.className = 'badge status-pending';
+                        timeElement.textContent = '待機中';
+                    }
+                });
+            }
+
+            updateEstimatedTimes(status) {
+                const now = new Date();
+                let materialEta, quotationEta;
+
+                switch (status.currentStep) {
+                    case 'room_survey':
+                        materialEta = new Date(now.getTime() + 3 * 60 * 60 * 1000); // +3 hours
+                        quotationEta = new Date(now.getTime() + 5 * 60 * 60 * 1000); // +5 hours
+                        break;
+                    case 'material_input':
+                        materialEta = new Date(now.getTime() + 1 * 60 * 60 * 1000); // +1 hour
+                        quotationEta = new Date(now.getTime() + 3 * 60 * 60 * 1000); // +3 hours
+                        break;
+                    case 'margin_setting':
+                        materialEta = new Date(); // Already done
+                        quotationEta = new Date(now.getTime() + 1 * 60 * 60 * 1000); // +1 hour
+                        break;
+                    default:
+                        materialEta = new Date();
+                        quotationEta = new Date();
+                }
+
+                document.getElementById('materialCostEta').textContent =
+                    this.formatEstimatedTime(materialEta, status.currentStep === 'material_input');
+                document.getElementById('quotationEta').textContent =
+                    this.formatEstimatedTime(quotationEta, status.currentStep === 'quotation_generate');
+            }
+
+            formatEstimatedTime(date, inProgress = false) {
+                if (inProgress) {
+                    return '処理中...';
+                }
+
+                const today = new Date();
+                const isToday = date.toDateString() === today.toDateString();
+
+                if (isToday) {
+                    return `本日 ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}頃`;
+                } else {
+                    return date.toLocaleDateString('ja-JP') + ' ' +
+                           date.getHours() + ':' + date.getMinutes().toString().padStart(2, '0') + '頃';
+                }
+            }
+
+            displaySurveyData(surveyData) {
+                if (!surveyData) return;
+
+                document.getElementById('submittedPropertyType').textContent =
+                    surveyData.propertyType || '-';
+                document.getElementById('submittedWorkType').textContent =
+                    this.getWorkTypeLabel(surveyData.workType) || '-';
+
+                if (surveyData.measurements) {
+                    document.getElementById('submittedFloorArea').textContent =
+                        `${surveyData.measurements.floorArea.toFixed(1)}㎡`;
+                }
+
+                document.getElementById('submittedPhotos').textContent =
+                    surveyData.photos ? `${surveyData.photos.length}枚` : '0枚';
+
+                // Update timestamp
+                if (surveyData.timestamp) {
+                    document.getElementById('surveyCompletedTime').textContent =
+                        new Date(surveyData.timestamp).toLocaleString('ja-JP');
+                }
+            }
+
+            displayMaterialCosts(materialData) {
+                if (!materialData || !materialData.categories) return;
+
+                document.getElementById('submittedCleaning').textContent =
+                    `¥${materialData.categories.cleaning?.toLocaleString() || '0'}`;
+                document.getElementById('submittedWallpaper').textContent =
+                    `¥${materialData.categories.wallpaper?.toLocaleString() || '0'}`;
+                document.getElementById('submittedPlumbing').textContent =
+                    `¥${materialData.categories.plumbing?.toLocaleString() || '0'}`;
+                document.getElementById('submittedTotalCost').textContent =
+                    `¥${materialData.totalCost?.toLocaleString() || '0'}`;
+            }
+
+            getWorkTypeLabel(workType) {
+                const labels = {
+                    'cleaning': 'クリーニング作業',
+                    'wallpaper': '壁紙貼り替え',
+                    'plumbing': '水道設備工事',
+                    'combined': '複合作業'
+                };
+                return labels[workType] || workType;
+            }
+
+            loadEmployeeUpdates() {
+                // Load updates from workflow system
+                const updates = this.workflow.getEmployeeUpdates();
+
+                if (updates && updates.length > 0) {
+                    const latestUpdate = updates[0];
+                    const updateElement = document.getElementById('latestUpdate');
+
+                    updateElement.innerHTML = `
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <div>
+                                <strong>${latestUpdate.employeeName}</strong> - ${new Date(latestUpdate.timestamp).toLocaleString('ja-JP')}<br>
+                                ${latestUpdate.message}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Default message
+                    document.getElementById('latestUpdate').innerHTML = `
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <div>
+                                システム自動通知<br>
+                                現地調査データを受信しました。担当社員による処理を開始します。
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            setupAutoRefresh() {
+                // Refresh every 30 seconds
+                this.refreshInterval = setInterval(() => {
+                    this.checkForUpdates();
+                }, 30000);
+            }
+
+            setupNotifications() {
+                // Request notification permission
+                if (Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+            }
+
+            async checkForUpdates() {
+                try {
+                    const currentStatus = this.workflow.getCurrentWorkflowStatus();
+                    const hasUpdates = this.workflow.hasNewUpdates(this.lastUpdateTime);
+
+                    if (hasUpdates) {
+                        document.getElementById('updateBadge').style.display = 'block';
+
+                        // Show notification if permitted
+                        if (Notification.permission === 'granted') {
+                            new Notification('見積進捗更新', {
+                                body: 'ステータスが更新されました',
+                                icon: '../images/logo.png'
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Update check failed:', error);
+                }
+            }
+
+            refreshStatus() {
+                document.getElementById('updateBadge').style.display = 'none';
+                this.lastUpdateTime = new Date().toISOString();
+                this.loadStatusData();
+
+                // Show refresh feedback
+                const button = document.querySelector('.refresh-button i');
+                button.style.animation = 'spin 0.5s linear';
+                setTimeout(() => {
+                    button.style.animation = '';
+                }, 500);
+            }
+        }
+
+        // Global functions
+        function refreshStatus() {
+            app.refreshStatus();
+        }
+
+        function exportData() {
+            const data = {
+                survey: app.workflow.getCurrentSurveyData(),
+                materials: app.workflow.getCurrentMaterialCosts(),
+                status: app.workflow.getCurrentWorkflowStatus(),
+                timestamp: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `quotation_data_${new Date().getTime()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function goToDashboard() {
+            window.location.href = '../index_manager.html';
+        }
+
+        // Initialize app
+        let app;
+        document.addEventListener('DOMContentLoaded', () => {
+            app = new StaffStatusView();
+        });
+
+        // Add CSS animation for refresh button
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

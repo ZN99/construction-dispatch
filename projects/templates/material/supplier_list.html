@@ -1,0 +1,217 @@
+{% extends "projects/base.html" %}
+
+{% block title %}業者管理 - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-building me-2"></i>業者管理</h2>
+    <a href="{% url 'supplier_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i>新規業者登録
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-filter me-1"></i>検索・フィルター</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">業者名</label>
+                        <input type="text" name="name" class="form-control" value="{{ request.GET.name }}" placeholder="業者名で検索">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">専門分野</label>
+                        <select name="specialty" class="form-select">
+                            <option value="">全て</option>
+                            <option value="材料" {% if request.GET.specialty == '材料' %}selected{% endif %}>材料</option>
+                            <option value="工具" {% if request.GET.specialty == '工具' %}selected{% endif %}>工具</option>
+                            <option value="設備" {% if request.GET.specialty == '設備' %}selected{% endif %}>設備</option>
+                            <option value="その他" {% if request.GET.specialty == 'その他' %}selected{% endif %}>その他</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">エリア</label>
+                        <input type="text" name="area" class="form-control" value="{{ request.GET.area }}" placeholder="対応エリア">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">
+                                <i class="fas fa-search me-1"></i>検索
+                            </button>
+                            <a href="{% url 'supplier_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {% if suppliers %}
+        {% for supplier in suppliers %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title mb-0">{{ supplier.name }}</h5>
+                            <span class="badge bg-{{ supplier.is_active|yesno:'success,secondary' }}">
+                                {{ supplier.is_active|yesno:'稼働中,休止中' }}
+                            </span>
+                        </div>
+
+                        <div class="mb-2">
+                            <span class="badge bg-info">{{ supplier.specialty }}</span>
+                            {% if supplier.delivery_area %}
+                                <span class="badge bg-outline-secondary">{{ supplier.delivery_area }}</span>
+                            {% endif %}
+                        </div>
+
+                        {% if supplier.contact_person %}
+                            <div class="mb-2">
+                                <i class="fas fa-user me-1 text-muted"></i>
+                                <small>{{ supplier.contact_person }}</small>
+                            </div>
+                        {% endif %}
+
+                        {% if supplier.phone %}
+                            <div class="mb-2">
+                                <i class="fas fa-phone me-1 text-muted"></i>
+                                <small>
+                                    <a href="tel:{{ supplier.phone }}" class="text-decoration-none">
+                                        {{ supplier.phone }}
+                                    </a>
+                                </small>
+                            </div>
+                        {% endif %}
+
+                        {% if supplier.email %}
+                            <div class="mb-2">
+                                <i class="fas fa-envelope me-1 text-muted"></i>
+                                <small>
+                                    <a href="mailto:{{ supplier.email }}" class="text-decoration-none">
+                                        {{ supplier.email }}
+                                    </a>
+                                </small>
+                            </div>
+                        {% endif %}
+
+                        {% if supplier.address %}
+                            <div class="mb-3">
+                                <i class="fas fa-map-marker-alt me-1 text-muted"></i>
+                                <small class="text-muted">{{ supplier.address|truncatewords:8 }}</small>
+                            </div>
+                        {% endif %}
+
+                        <div class="row text-center mb-3">
+                            <div class="col-6">
+                                <div class="text-muted small">評価</div>
+                                <div class="fw-bold">
+                                    {% if supplier.average_rating %}
+                                        {{ supplier.average_rating|floatformat:1 }}
+                                        <small class="text-warning">★</small>
+                                    {% else %}
+                                        <small class="text-muted">未評価</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small">取引回数</div>
+                                <div class="fw-bold">{{ supplier.order_count|default:0 }}回</div>
+                            </div>
+                        </div>
+
+                        {% if supplier.notes %}
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-sticky-note me-1"></i>
+                                    {{ supplier.notes|truncatewords:15 }}
+                                </small>
+                            </div>
+                        {% endif %}
+
+                        <div class="d-flex gap-1 mt-auto">
+                            <a href="{% url 'supplier_detail' supplier.id %}" class="btn btn-outline-primary btn-sm flex-fill">
+                                <i class="fas fa-eye me-1"></i>詳細
+                            </a>
+                            <a href="{% url 'material_order_create' %}?supplier={{ supplier.id }}" class="btn btn-primary btn-sm flex-fill">
+                                <i class="fas fa-shopping-cart me-1"></i>発注
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">業者が見つかりませんでした</h5>
+                <p class="text-muted">新しい業者を登録するか、検索条件を変更してください。</p>
+                <a href="{% url 'supplier_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>新規業者登録
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% if is_paginated %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav aria-label="業者一覧ページネーション">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.name %}&name={{ request.GET.name }}{% endif %}{% if request.GET.specialty %}&specialty={{ request.GET.specialty }}{% endif %}{% if request.GET.area %}&area={{ request.GET.area }}{% endif %}">最初</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.name %}&name={{ request.GET.name }}{% endif %}{% if request.GET.specialty %}&specialty={{ request.GET.specialty }}{% endif %}{% if request.GET.area %}&area={{ request.GET.area }}{% endif %}">前へ</a>
+                    </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">
+                        {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.name %}&name={{ request.GET.name }}{% endif %}{% if request.GET.specialty %}&specialty={{ request.GET.specialty }}{% endif %}{% if request.GET.area %}&area={{ request.GET.area }}{% endif %}">次へ</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.name %}&name={{ request.GET.name }}{% endif %}{% if request.GET.specialty %}&specialty={{ request.GET.specialty }}{% endif %}{% if request.GET.area %}&area={{ request.GET.area }}{% endif %}">最後</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 業者カードのホバー効果
+    const supplierCards = document.querySelectorAll('.card');
+    supplierCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+            this.style.transition = 'all 0.2s ease';
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+        });
+    });
+});
+</script>
+{% endblock %}

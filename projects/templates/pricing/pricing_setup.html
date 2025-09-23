@@ -1,0 +1,376 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}{{ project.title }} - マージン設定 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-percentage me-2"></i>マージン設定</h2>
+                    <h4 class="text-muted">{{ project.title }}</h4>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'project_cost_setup' project.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>コスト積算
+                    </a>
+                    {% if current_pricing %}
+                    <a href="{% url 'pricing_detail' project.id %}" class="btn btn-primary">
+                        <i class="fas fa-eye me-1"></i>価格詳細
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if not project_cost %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                コスト情報が設定されていません。先に<a href="{% url 'project_cost_setup' project.id %}">コスト積算</a>を行ってください。
+            </div>
+            {% endif %}
+
+            <div class="row">
+                <!-- マージン設定フォーム -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-edit me-2"></i>マージン設定
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="pricingForm" method="post">
+                                {% csrf_token %}
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.base_cost.id_for_label }}" class="form-label">基準コスト（円）</label>
+                                        {{ form.base_cost }}
+                                        {% if form.base_cost.errors %}
+                                            <div class="text-danger small">{{ form.base_cost.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.pricing_stage.id_for_label }}" class="form-label">価格設定段階</label>
+                                        {{ form.pricing_stage }}
+                                        {% if form.pricing_stage.errors %}
+                                            <div class="text-danger small">{{ form.pricing_stage.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.margin_rate.id_for_label }}" class="form-label">マージン率（%）</label>
+                                    <div class="input-group">
+                                        {{ form.margin_rate }}
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                    {% if form.margin_rate.help_text %}
+                                        <div class="form-text">{{ form.margin_rate.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.margin_rate.errors %}
+                                        <div class="text-danger small">{{ form.margin_rate.errors }}</div>
+                                    {% endif %}
+
+                                    <!-- 推奨マージン率ボタン -->
+                                    <div class="mt-2">
+                                        <span class="small text-muted">クイック設定: </span>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setMarginRate({{ recommended.min }})">
+                                            {{ recommended.min }}%
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="setMarginRate({{ recommended.standard }})">
+                                            {{ recommended.standard }}%（推奨）
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setMarginRate({{ recommended.max }})">
+                                            {{ recommended.max }}%
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.notes.id_for_label }}" class="form-label">備考</label>
+                                    {{ form.notes }}
+                                    {% if form.notes.errors %}
+                                        <div class="text-danger small">{{ form.notes.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- リアルタイム計算結果 -->
+                                <div class="alert alert-info">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <h6>マージン金額</h6>
+                                            <h5 id="marginAmount">¥0</h5>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6>最終請求額</h6>
+                                            <h5 id="finalPrice" class="text-success">¥0</h5>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6>利益率</h6>
+                                            <h5 id="profitRate" class="text-primary">0%</h5>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i>価格設定保存
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 価格比較ツール -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-balance-scale me-2"></i>価格比較シミュレーション
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="comparisonForm">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ comparison_form.base_cost.id_for_label }}" class="form-label">基準コスト</label>
+                                        {{ comparison_form.base_cost }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ comparison_form.margin_rates.id_for_label }}" class="form-label">比較マージン率</label>
+                                        {{ comparison_form.margin_rates }}
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-success" onclick="runComparison()">
+                                    <i class="fas fa-calculator me-1"></i>比較実行
+                                </button>
+                            </form>
+
+                            <!-- 比較結果テーブル -->
+                            <div id="comparisonResults" class="mt-3" style="display: none;">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>マージン率</th>
+                                            <th>マージン金額</th>
+                                            <th>最終価格</th>
+                                            <th>利益率</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="comparisonTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- サイドバー情報 -->
+                <div class="col-md-4">
+                    <!-- 案件情報 -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>案件情報</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>顧客:</strong> {{ project.customer.name }}</p>
+                            <p class="mb-1"><strong>工種:</strong> {{ project.project_type.name }}</p>
+                            <p class="mb-1"><strong>場所:</strong> {{ project.address }}</p>
+                            <p class="mb-1"><strong>期間:</strong> {{ project.start_date }} 〜 {{ project.end_date }}</p>
+                            <p class="mb-0"><strong>予算:</strong> {{ project.formatted_amount }}</p>
+                        </div>
+                    </div>
+
+                    <!-- コスト情報 -->
+                    {% if project_cost %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-warning text-white">
+                            <h6 class="mb-0"><i class="fas fa-calculator me-2"></i>コスト情報</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>職人費用</span>
+                                <span>¥{{ project_cost.craftsman_cost|floatformat:0 }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>資材費</span>
+                                <span>¥{{ project_cost.material_cost|floatformat:0 }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>交通費</span>
+                                <span>¥{{ project_cost.transportation_cost|floatformat:0 }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>調査費</span>
+                                <span>¥{{ project_cost.survey_cost|floatformat:0 }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>その他</span>
+                                <span>¥{{ project_cost.other_cost|floatformat:0 }}</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between">
+                                <strong>総コスト</strong>
+                                <strong class="text-primary">{{ project_cost.formatted_total_cost }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 現在の価格設定 -->
+                    {% if current_pricing %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0"><i class="fas fa-tag me-2"></i>現在の価格設定</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>段階:</strong> {{ current_pricing.get_pricing_stage_display }}</p>
+                            <p class="mb-1"><strong>マージン率:</strong> {{ current_pricing.margin_rate }}%</p>
+                            <p class="mb-1"><strong>最終価格:</strong> {{ current_pricing.formatted_final_price }}</p>
+                            <p class="mb-1"><strong>利益率:</strong> {{ current_pricing.profit_rate }}%</p>
+                            <p class="mb-0"><strong>設定者:</strong> {{ current_pricing.set_by.first_name }} {{ current_pricing.set_by.last_name }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- マージン設定ガイド -->
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>マージン設定ガイド</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <h6>{{ project.project_type.name }}の推奨範囲</h6>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" style="width: {{ recommended.min }}%"></div>
+                                    <div class="progress-bar bg-warning" style="width: {{ recommended.standard|add:'-'|add:recommended.min }}%"></div>
+                                    <div class="progress-bar bg-danger" style="width: {{ recommended.max|add:'-'|add:recommended.standard }}%"></div>
+                                </div>
+                                <div class="d-flex justify-content-between small mt-1">
+                                    <span>{{ recommended.min }}%</span>
+                                    <span>{{ recommended.standard }}%</span>
+                                    <span>{{ recommended.max }}%</span>
+                                </div>
+                            </div>
+                            <ul class="small mb-0">
+                                <li>見積もり段階：高めの設定で安全性を確保</li>
+                                <li>受注段階：市場競争力を考慮</li>
+                                <li>確定段階：最終的な利益確保</li>
+                                <li>複雑な案件は高めのマージンを設定</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.margin-rate-input {
+    text-align: right;
+}
+
+.form-label {
+    font-weight: bold;
+}
+
+.progress {
+    height: 8px;
+}
+</style>
+
+<script>
+// マージン率設定
+function setMarginRate(rate) {
+    document.getElementById('id_margin_rate').value = rate;
+    calculateMargin();
+}
+
+// リアルタイムマージン計算
+function calculateMargin() {
+    const baseCost = parseFloat(document.getElementById('id_base_cost').value) || 0;
+    const marginRate = parseFloat(document.getElementById('id_margin_rate').value) || 0;
+
+    fetch(`/pricing/api/margin-calculation/?base_cost=${baseCost}&margin_rate=${marginRate}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('marginAmount').textContent = data.formatted_margin_amount;
+                document.getElementById('finalPrice').textContent = data.formatted_final_price;
+                document.getElementById('profitRate').textContent = data.profit_rate + '%';
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+// 価格比較実行
+function runComparison() {
+    const form = document.getElementById('comparisonForm');
+    const formData = new FormData(form);
+
+    fetch('/pricing/api/comparison/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayComparisonResults(data.comparisons);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// 比較結果表示
+function displayComparisonResults(comparisons) {
+    const tbody = document.getElementById('comparisonTableBody');
+    tbody.innerHTML = '';
+
+    comparisons.forEach(comp => {
+        const row = tbody.insertRow();
+        row.innerHTML = `
+            <td><strong>${comp.margin_rate}%</strong></td>
+            <td>${comp.formatted_margin_amount}</td>
+            <td><strong class="text-success">${comp.formatted_final_price}</strong></td>
+            <td><span class="badge bg-primary">${comp.profit_rate}%</span></td>
+        `;
+    });
+
+    document.getElementById('comparisonResults').style.display = 'block';
+}
+
+// ページ読み込み時の初期設定
+document.addEventListener('DOMContentLoaded', function() {
+    // マージン率変更時の計算
+    const marginRateInput = document.getElementById('id_margin_rate');
+    if (marginRateInput) {
+        marginRateInput.addEventListener('input', calculateMargin);
+    }
+
+    // 基準コスト変更時の計算
+    const baseCostInput = document.getElementById('id_base_cost');
+    if (baseCostInput) {
+        baseCostInput.addEventListener('input', calculateMargin);
+    }
+
+    // 比較フォームの基準コストを設定
+    const comparisonBaseCost = document.querySelector('#comparisonForm input[name="base_cost"]');
+    if (comparisonBaseCost && baseCostInput) {
+        comparisonBaseCost.value = baseCostInput.value;
+    }
+
+    // 初期計算
+    calculateMargin();
+});
+</script>
+{% endblock %}

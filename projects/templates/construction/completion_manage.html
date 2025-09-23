@@ -1,0 +1,348 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}完了管理 - {{ project.title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-flag-checkered me-2"></i>完了管理</h2>
+                    <h4 class="text-muted">{{ project.title }}</h4>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'project_progress_detail' project.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>戻る
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-clipboard-check me-2"></i>完了チェックリスト
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+
+                                <!-- 完了日程 -->
+                                <div class="row mb-4">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="{{ form.completion_date.id_for_label }}" class="form-label">
+                                                <i class="fas fa-calendar me-1"></i>完了日
+                                            </label>
+                                            {{ form.completion_date }}
+                                            {% if form.completion_date.errors %}
+                                                <div class="text-danger small">{{ form.completion_date.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="{{ form.customer_check_date.id_for_label }}" class="form-label">
+                                                <i class="fas fa-user-check me-1"></i>顧客確認日
+                                            </label>
+                                            {{ form.customer_check_date }}
+                                            {% if form.customer_check_date.errors %}
+                                                <div class="text-danger small">{{ form.customer_check_date.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="{{ form.approval_date.id_for_label }}" class="form-label">
+                                                <i class="fas fa-stamp me-1"></i>承認日
+                                            </label>
+                                            {{ form.approval_date }}
+                                            {% if form.approval_date.errors %}
+                                                <div class="text-danger small">{{ form.approval_date.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 完了チェック項目 -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h6><i class="fas fa-tasks me-2"></i>完了確認項目</h6>
+                                        <div class="list-group">
+                                            <div class="list-group-item">
+                                                <div class="form-check">
+                                                    {{ form.final_photos_submitted }}
+                                                    <label for="{{ form.final_photos_submitted.id_for_label }}" class="form-check-label">
+                                                        <i class="fas fa-camera me-2"></i>完了写真提出済み
+                                                        <span class="badge bg-info ms-2">{{ final_photos_count }}枚</span>
+                                                    </label>
+                                                </div>
+                                                {% if final_photos_count == 0 %}
+                                                <small class="text-warning d-block mt-1">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                                    完了写真が登録されていません。進捗報告から写真を追加してください。
+                                                </small>
+                                                {% endif %}
+                                            </div>
+
+                                            <div class="list-group-item">
+                                                <div class="form-check">
+                                                    {{ form.customer_signature }}
+                                                    <label for="{{ form.customer_signature.id_for_label }}" class="form-check-label">
+                                                        <i class="fas fa-signature me-2"></i>顧客サイン・印鑑取得済み
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div class="list-group-item">
+                                                <div class="form-check">
+                                                    {{ form.payment_processed }}
+                                                    <label for="{{ form.payment_processed.id_for_label }}" class="form-check-label">
+                                                        <i class="fas fa-credit-card me-2"></i>支払い処理済み
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 完了備考 -->
+                                <div class="mb-3">
+                                    <label for="{{ form.completion_notes.id_for_label }}" class="form-label">
+                                        <i class="fas fa-sticky-note me-1"></i>完了備考
+                                    </label>
+                                    {{ form.completion_notes }}
+                                    {% if form.completion_notes.errors %}
+                                        <div class="text-danger small">{{ form.completion_notes.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="{% url 'project_progress_detail' project.id %}" class="btn btn-outline-secondary">
+                                        キャンセル
+                                    </a>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-save me-1"></i>完了情報保存
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- サイドバー -->
+                <div class="col-md-4">
+                    <!-- 完了進捗 -->
+                    {% if completion %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>完了進捗</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <div class="progress mx-auto" style="width: 100px; height: 100px; border-radius: 50%;">
+                                    <div class="progress-bar bg-success" style="width: {{ completion.completion_percentage }}%"></div>
+                                </div>
+                                <h4 class="mt-2">{{ completion.completion_percentage|floatformat:0 }}%</h4>
+                                <small class="text-muted">完了率</small>
+                            </div>
+
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span>完了日設定</span>
+                                    <span class="badge bg-{% if completion.completion_date %}success{% else %}secondary{% endif %}">
+                                        {% if completion.completion_date %}済{% else %}未{% endif %}
+                                    </span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span>顧客確認</span>
+                                    <span class="badge bg-{% if completion.customer_check_date %}success{% else %}secondary{% endif %}">
+                                        {% if completion.customer_check_date %}済{% else %}未{% endif %}
+                                    </span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span>完了写真</span>
+                                    <span class="badge bg-{% if completion.final_photos_submitted %}success{% else %}secondary{% endif %}">
+                                        {% if completion.final_photos_submitted %}済{% else %}未{% endif %}
+                                    </span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span>顧客サイン</span>
+                                    <span class="badge bg-{% if completion.customer_signature %}success{% else %}secondary{% endif %}">
+                                        {% if completion.customer_signature %}済{% else %}未{% endif %}
+                                    </span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span>支払い処理</span>
+                                    <span class="badge bg-{% if completion.payment_processed %}success{% else %}secondary{% endif %}">
+                                        {% if completion.payment_processed %}済{% else %}未{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 案件情報 -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>案件情報</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>顧客:</strong> {{ project.customer.name }}</p>
+                            <p class="mb-1"><strong>工種:</strong> {{ project.project_type.name }}</p>
+                            <p class="mb-1"><strong>場所:</strong> {{ project.address }}</p>
+                            <p class="mb-1"><strong>期間:</strong> {{ project.start_date }} 〜 {{ project.end_date }}</p>
+                            <p class="mb-0"><strong>状況:</strong> {{ project.get_status_display }}</p>
+                        </div>
+                    </div>
+
+                    <!-- 完了チェックポイント -->
+                    <div class="card">
+                        <div class="card-header bg-warning text-white">
+                            <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>完了チェックポイント</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="small mb-0">
+                                <li><strong>写真確認:</strong> 施工前・施工中・完了写真を確認</li>
+                                <li><strong>品質チェック:</strong> 仕様通りの施工が完了しているか</li>
+                                <li><strong>清掃確認:</strong> 現場の清掃・片付けが完了しているか</li>
+                                <li><strong>顧客説明:</strong> 施工内容・注意点を顧客に説明</li>
+                                <li><strong>書類完備:</strong> 必要な書類・保証書等の準備</li>
+                                <li><strong>支払い確認:</strong> 支払い方法・期日の確認</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- アクションボタン -->
+                    <div class="card mt-3">
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'photo_gallery' project.id %}?type=after" class="btn btn-outline-primary">
+                                    <i class="fas fa-images me-1"></i>完了写真を確認
+                                </a>
+                                <a href="{% url 'progress_report_create' project.id %}" class="btn btn-outline-success">
+                                    <i class="fas fa-camera me-1"></i>完了写真を追加
+                                </a>
+                                {% if project.pricing %}
+                                <a href="{% url 'pricing_detail' project.id %}" class="btn btn-outline-info">
+                                    <i class="fas fa-yen-sign me-1"></i>価格設定を確認
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.form-label {
+    font-weight: bold;
+}
+
+.form-check-label {
+    font-weight: normal;
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.progress {
+    background-color: #e9ecef;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress.mx-auto {
+    background: conic-gradient(#198754 {{ completion.completion_percentage|default:0 }}%, #e9ecef 0%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress.mx-auto::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70px;
+    height: 70px;
+    background: white;
+    border-radius: 50%;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 完了チェック項目の変更時に警告
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                const label = this.nextElementSibling.textContent;
+                if (confirm(`「${label}」を完了済みとしてマークしますか？`)) {
+                    // 確認済み
+                } else {
+                    this.checked = false;
+                }
+            }
+        });
+    });
+
+    // 支払い処理チェック時の確認
+    const paymentCheckbox = document.getElementById('{{ form.payment_processed.id_for_label }}');
+    if (paymentCheckbox) {
+        paymentCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                alert('支払い処理完了後は、案件ステータスが「完了」に変更されます。');
+            }
+        });
+    }
+
+    // 全項目完了時の自動案内
+    function checkCompletion() {
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        const completionDate = document.getElementById('{{ form.completion_date.id_for_label }}').value;
+        const customerCheckDate = document.getElementById('{{ form.customer_check_date.id_for_label }}').value;
+
+        if (allChecked && completionDate && customerCheckDate) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success mt-3';
+            alert.innerHTML = '<i class="fas fa-check-circle me-2"></i>すべての完了項目が完了しました！案件をクローズできます。';
+
+            const form = document.querySelector('form');
+            form.appendChild(alert);
+        }
+    }
+
+    // 入力値変更時のチェック
+    checkboxes.forEach(cb => cb.addEventListener('change', checkCompletion));
+    document.getElementById('{{ form.completion_date.id_for_label }}').addEventListener('change', checkCompletion);
+    document.getElementById('{{ form.customer_check_date.id_for_label }}').addEventListener('change', checkCompletion);
+});
+</script>
+{% endblock %}

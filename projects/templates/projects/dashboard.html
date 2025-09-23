@@ -1,0 +1,123 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}ダッシュボード - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">ダッシュボード</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'project_create_select_type' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>新規案件登録
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stat mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">総案件数</h5>
+                        <span class="h2 font-weight-bold mb-0">{{ total_projects }}</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-primary text-white rounded-circle shadow">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stat mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">進行中案件</h5>
+                        <span class="h2 font-weight-bold mb-0">{{ active_projects }}</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-success text-white rounded-circle shadow">
+                            <i class="fas fa-play-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">最新案件</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_projects %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>案件名</th>
+                                    <th>顧客</th>
+                                    <th>工種</th>
+                                    <th>ステータス</th>
+                                    <th>開始予定</th>
+                                    <th>金額</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in recent_projects %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'project_detail' project.pk %}" class="text-decoration-none">
+                                            {{ project.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ project.customer.name }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ project.project_type.name }}</span>
+                                    </td>
+                                    <td>
+                                        {% if project.status == 'draft' %}
+                                            <span class="badge bg-secondary">下書き</span>
+                                        {% elif project.status == 'confirmed' %}
+                                            <span class="badge bg-primary">確定</span>
+                                        {% elif project.status == 'in_progress' %}
+                                            <span class="badge bg-warning">作業中</span>
+                                        {% elif project.status == 'completed' %}
+                                            <span class="badge bg-success">完了</span>
+                                        {% elif project.status == 'cancelled' %}
+                                            <span class="badge bg-danger">キャンセル</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ project.start_date }}</td>
+                                    <td>{{ project.formatted_amount }}</td>
+                                    <td>
+                                        <a href="{% url 'project_detail' project.pk %}" class="btn btn-sm btn-outline-primary">
+                                            詳細
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">まだ案件が登録されていません。</p>
+                        <a href="{% url 'project_create_select_type' %}" class="btn btn-primary">
+                            最初の案件を登録する
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

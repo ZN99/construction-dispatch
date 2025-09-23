@@ -1,0 +1,157 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}調査開始 - {{ survey.project.site_name }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-play-circle me-2"></i>調査開始確認
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5 class="mb-3">調査を開始しますか？</h5>
+
+                            <!-- 調査情報 -->
+                            <div class="bg-light rounded p-3 mb-4">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-2">
+                                            <small class="text-muted">案件名</small>
+                                            <div class="fw-bold">{{ survey.project.site_name }}</div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <small class="text-muted">顧客</small>
+                                            <div>{{ survey.project.customer.name }}</div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <small class="text-muted">調査員</small>
+                                            <div>{{ survey.surveyor.name }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-2">
+                                            <small class="text-muted">作業場所</small>
+                                            <div>{{ survey.project.address }}</div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <small class="text-muted">予定日時</small>
+                                            <div>
+                                                {% if survey.scheduled_date %}
+                                                    {{ survey.scheduled_date|date:"Y年m月d日" }}
+                                                    {% if survey.scheduled_start_time %}
+                                                        {{ survey.scheduled_start_time|time:"H:i" }}
+                                                    {% endif %}
+                                                {% else %}
+                                                    未設定
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <small class="text-muted">予想所要時間</small>
+                                            <div>
+                                                <span class="badge bg-info">
+                                                    {{ survey.estimated_duration }}分
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- アクセス情報 -->
+                            {% if survey.access_info %}
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-map-marker-alt me-2"></i>アクセス情報</h6>
+                                <div>{{ survey.access_info|linebreaks }}</div>
+                            </div>
+                            {% endif %}
+
+                            <!-- 調査メモ -->
+                            {% if survey.notes %}
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-sticky-note me-2"></i>調査メモ</h6>
+                                <div>{{ survey.notes|linebreaks }}</div>
+                            </div>
+                            {% endif %}
+
+                            <!-- 開始ボタン -->
+                            <form method="post" class="mt-4">
+                                {% csrf_token %}
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="{% url 'survey_detail' survey.id %}" class="btn btn-secondary me-md-2">
+                                        <i class="fas fa-arrow-left me-1"></i>戻る
+                                    </a>
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="fas fa-play me-2"></i>調査を開始する
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- サイドバー -->
+                        <div class="col-md-4">
+                            <!-- 現在時刻 -->
+                            <div class="card mb-3">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted">現在時刻</h6>
+                                    <div class="h4" id="current-time"></div>
+                                </div>
+                            </div>
+
+                            <!-- 調査手順 -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">調査手順</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ol class="list-group list-group-numbered">
+                                        <li class="list-group-item bg-light">
+                                            <strong>調査開始</strong>
+                                            <br><small class="text-muted">開始時刻を記録</small>
+                                        </li>
+                                        <li class="list-group-item">
+                                            現地確認・測定
+                                            <br><small class="text-muted">写真撮影・記録</small>
+                                        </li>
+                                        <li class="list-group-item">
+                                            詳細記録作成
+                                            <br><small class="text-muted">調査報告書記入</small>
+                                        </li>
+                                        <li class="list-group-item">
+                                            調査完了
+                                            <br><small class="text-muted">終了時刻を記録</small>
+                                        </li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 現在時刻を表示
+function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('ja-JP', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    document.getElementById('current-time').textContent = timeString;
+}
+
+// 1秒ごとに時刻を更新
+updateTime();
+setInterval(updateTime, 1000);
+</script>
+{% endblock %}

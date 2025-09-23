@@ -1,0 +1,346 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}職人スケジュールカレンダー - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-calendar-alt me-2"></i>職人スケジュールカレンダー</h2>
+                    {% if craftsman %}
+                        <h4 class="text-muted">{{ craftsman.name }}</h4>
+                    {% endif %}
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'craftsman_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>ダッシュボード
+                    </a>
+                    {% if craftsman %}
+                        <a href="{% url 'schedule_bulk_update' %}?craftsman={{ craftsman.id }}" class="btn btn-primary">
+                            <i class="fas fa-calendar-plus me-1"></i>一括設定
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 職人選択 -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <label for="craftsmanSelect" class="form-label">職人を選択</label>
+                            <select id="craftsmanSelect" class="form-select" onchange="changeCraftsman()">
+                                <option value="">職人を選択してください</option>
+                                {% for c in craftsmen %}
+                                    <option value="{{ c.id }}" {% if c.id == craftsman.id %}selected{% endif %}>
+                                        {{ c.name }} ({{ c.get_skill_level_display }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if craftsman %}
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <strong>{{ craftsman.name }}</strong><br>
+                                    <small class="text-muted">{{ craftsman.get_skill_level_display }} | {{ craftsman.hourly_rate }}円/時</small>
+                                </div>
+                                <div class="ms-auto">
+                                    <a href="{% url 'craftsman_detail' craftsman.id %}" class="btn btn-outline-info btn-sm">
+                                        <i class="fas fa-user me-1"></i>詳細
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if craftsman and calendar_data %}
+            <!-- カレンダー -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar me-2"></i>
+                            {{ start_date|date:"Y年m月" }} スケジュール
+                        </h5>
+                        <div class="d-flex align-items-center">
+                            <!-- 凡例 -->
+                            <small class="me-3">
+                                <span class="badge bg-success me-1">空き</span>
+                                <span class="badge bg-danger me-1">アサイン済み</span>
+                                <span class="badge bg-secondary me-1">休み</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="calendar-grid">
+                        <!-- カレンダーヘッダー -->
+                        <div class="calendar-header">
+                            <div class="day-header">日</div>
+                            <div class="day-header">月</div>
+                            <div class="day-header">火</div>
+                            <div class="day-header">水</div>
+                            <div class="day-header">木</div>
+                            <div class="day-header">金</div>
+                            <div class="day-header">土</div>
+                        </div>
+
+                        <!-- カレンダーボディ -->
+                        <div class="calendar-body">
+                            {% for day_data in calendar_data %}
+                                {% if forloop.first %}
+                                    <!-- 月初の空セルを追加 -->
+                                    {% for i in "0123456"|make_list %}
+                                        {% if forloop.counter0 < day_data.date.weekday %}
+                                            <div class="calendar-day empty"></div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+
+                                <div class="calendar-day
+                                    {% if day_data.status == 'available' %}available
+                                    {% elif day_data.status == 'assigned' %}assigned
+                                    {% else %}unavailable{% endif %}
+                                    {% if day_data.date.weekday == 6 %}sunday{% endif %}"
+                                    data-date="{{ day_data.date|date:'Y-m-d' }}"
+                                    onclick="showDayDetails('{{ day_data.date|date:'Y-m-d' }}', '{{ day_data.status }}', '{% if day_data.assignment %}{{ day_data.assignment.project.title }}{% endif %}')">
+
+                                    <div class="day-number">{{ day_data.date.day }}</div>
+
+                                    {% if day_data.status == 'assigned' and day_data.assignment %}
+                                        <div class="assignment-info">
+                                            <small>{{ day_data.assignment.project.title|truncatechars:10 }}</small>
+                                        </div>
+                                    {% elif day_data.status == 'unavailable' %}
+                                        <div class="unavailable-info">
+                                            <small>休み</small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                {% if forloop.last %}
+                                    <!-- 月末の空セルを追加 -->
+                                    {% with end_day_of_week=day_data.date.weekday %}
+                                        {% for i in "0123456"|make_list %}
+                                            {% if end_day_of_week < 6 and forloop.counter0 < 6 %}
+                                                <div class="calendar-day empty"></div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% elif craftsman %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    {{ craftsman.name }}さんのスケジュールデータがありません。
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    職人を選択してスケジュールを表示してください。
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 日付詳細モーダル -->
+<div class="modal fade" id="dayDetailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">日付詳細</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="dayDetailContent">
+                    <!-- JavaScript で動的に内容を設定 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.calendar-grid {
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    margin-bottom: 1px;
+}
+
+.calendar-body {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+}
+
+.day-header {
+    background-color: #f8f9fa;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    border: 1px solid #dee2e6;
+}
+
+.calendar-day {
+    min-height: 80px;
+    padding: 8px;
+    border: 1px solid #dee2e6;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-day:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.02);
+}
+
+.calendar-day.empty {
+    background-color: #f8f9fa;
+    cursor: default;
+}
+
+.calendar-day.empty:hover {
+    background-color: #f8f9fa;
+    transform: none;
+}
+
+.calendar-day.available {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.calendar-day.assigned {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.calendar-day.unavailable {
+    background-color: #e2e3e5;
+    border-color: #d6d8db;
+}
+
+.calendar-day.sunday {
+    background-color: #fff3cd;
+}
+
+.day-number {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.assignment-info, .unavailable-info {
+    font-size: 0.7rem;
+    color: #333;
+    overflow: hidden;
+}
+
+.assignment-info {
+    background-color: rgba(255,255,255,0.7);
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.unavailable-info {
+    text-align: center;
+    color: #6c757d;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .calendar-day {
+        min-height: 60px;
+        padding: 4px;
+        font-size: 0.8rem;
+    }
+
+    .day-header {
+        padding: 5px;
+        font-size: 0.9rem;
+    }
+
+    .assignment-info, .unavailable-info {
+        font-size: 0.6rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function changeCraftsman() {
+    const select = document.getElementById('craftsmanSelect');
+    const craftsmanId = select.value;
+
+    if (craftsmanId) {
+        window.location.href = `{% url 'craftsman_schedule_calendar' %}`.replace('None', craftsmanId);
+    } else {
+        window.location.href = `{% url 'craftsman_schedule_calendar' %}`;
+    }
+}
+
+function showDayDetails(date, status, assignmentTitle) {
+    const modal = new bootstrap.Modal(document.getElementById('dayDetailModal'));
+    const content = document.getElementById('dayDetailContent');
+
+    let statusText = '';
+    let statusClass = '';
+
+    switch(status) {
+        case 'available':
+            statusText = '稼働可能';
+            statusClass = 'text-success';
+            break;
+        case 'assigned':
+            statusText = 'アサイン済み';
+            statusClass = 'text-danger';
+            break;
+        case 'unavailable':
+            statusText = '休み';
+            statusClass = 'text-secondary';
+            break;
+    }
+
+    content.innerHTML = `
+        <div class="mb-3">
+            <h6>日付: ${date}</h6>
+            <p class="mb-1">ステータス: <span class="${statusClass}">${statusText}</span></p>
+            ${assignmentTitle ? `<p class="mb-1">案件: ${assignmentTitle}</p>` : ''}
+        </div>
+    `;
+
+    modal.show();
+}
+
+// カレンダーナビゲーション
+document.addEventListener('DOMContentLoaded', function() {
+    // キーボードナビゲーション
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            // 前月/次月のナビゲーション（実装予定）
+        }
+    });
+});
+</script>
+{% endblock %}

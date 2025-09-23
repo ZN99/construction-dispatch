@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>調査一覧 - 建築派遣SaaS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <h5 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>メインメニュー</span>
+                    </h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="../index.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../projects/project_list.html">
+                                <i class="fas fa-project-diagram me-2"></i>案件管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="survey_list.html">
+                                <i class="fas fa-clipboard-list me-2"></i>調査管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../craftsman/craftsman_list.html">
+                                <i class="fas fa-users me-2"></i>職人管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../material/supplier_list.html">
+                                <i class="fas fa-building me-2"></i>資材業者
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../pricing/pricing_list.html">
+                                <i class="fas fa-yen-sign me-2"></i>見積管理
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">調査管理</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <a href="survey_create.html" class="btn btn-primary">
+                                <i class="fas fa-calendar-plus me-1"></i>調査スケジュール
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-info">12</h5>
+                                <p class="card-text">総調査数</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-warning">4</h5>
+                                <p class="card-text">進行中</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-secondary">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-secondary">3</h5>
+                                <p class="card-text">予定</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-success">5</h5>
+                                <p class="card-text">完了済み</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Today's Schedule -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar-day me-2"></i>今日の調査スケジュール
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="survey-card border rounded p-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="fw-bold">10:00 - 12:00</h6>
+                                            <p class="mb-1">港区ワンルーム原状回復調査</p>
+                                            <small class="text-muted">
+                                                <i class="fas fa-user me-1"></i>田中太郎
+                                                <i class="fas fa-map-marker-alt ms-2 me-1"></i>港区芝浦2-3-15
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-warning">進行中</span>
+                                    </div>
+                                    <div class="mt-2 d-flex gap-1">
+                                        <a href="survey_detail.html" class="btn btn-outline-primary btn-sm">詳細</a>
+                                        <a href="survey_start.html" class="btn btn-warning btn-sm">開始</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="survey-card border rounded p-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="fw-bold">14:30 - 16:30</h6>
+                                            <p class="mb-1">新宿1K原状回復調査</p>
+                                            <small class="text-muted">
+                                                <i class="fas fa-user me-1"></i>佐藤花子
+                                                <i class="fas fa-map-marker-alt ms-2 me-1"></i>新宿区西新宿3-4-10
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-secondary">予定</span>
+                                    </div>
+                                    <div class="mt-2 d-flex gap-1">
+                                        <a href="survey_detail.html" class="btn btn-outline-primary btn-sm">詳細</a>
+                                        <a href="survey_start.html" class="btn btn-secondary btn-sm">開始</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- All Surveys -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>すべての調査
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Filter -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">すべてのステータス</option>
+                                    <option value="scheduled">予定</option>
+                                    <option value="in_progress">進行中</option>
+                                    <option value="completed">完了</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="surveyorFilter">
+                                    <option value="">すべての調査員</option>
+                                    <option value="tanaka">田中太郎</option>
+                                    <option value="sato">佐藤花子</option>
+                                    <option value="suzuki">鈴木一郎</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="date" class="form-control" id="dateFilter" value="2025-09-15">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-primary w-100">絞り込み</button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>案件名</th>
+                                        <th>調査員</th>
+                                        <th>予定日時</th>
+                                        <th>所要時間</th>
+                                        <th>ステータス</th>
+                                        <th>進捗</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <a href="survey_detail.html" class="text-decoration-none fw-bold">
+                                                新宿オフィスビル清掃調査
+                                            </a>
+                                            <br><small class="text-muted">ABC商事株式会社</small>
+                                        </td>
+                                        <td>田中太郎</td>
+                                        <td>2025-09-15<br><small class="text-muted">10:00-12:00</small></td>
+                                        <td>120分</td>
+                                        <td><span class="badge bg-warning">進行中</span></td>
+                                        <td>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-warning" style="width: 60%"></div>
+                                            </div>
+                                            <small class="text-muted">60%</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="survey_detail.html" class="btn btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="survey_complete.html" class="btn btn-outline-success">
+                                                    <i class="fas fa-check"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <a href="survey_detail.html" class="text-decoration-none fw-bold">
+                                                渋谷マンション配管調査
+                                            </a>
+                                            <br><small class="text-muted">XYZ不動産</small>
+                                        </td>
+                                        <td>佐藤花子</td>
+                                        <td>2025-09-15<br><small class="text-muted">14:30-16:30</small></td>
+                                        <td>120分</td>
+                                        <td><span class="badge bg-secondary">予定</span></td>
+                                        <td>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-secondary" style="width: 0%"></div>
+                                            </div>
+                                            <small class="text-muted">0%</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="survey_detail.html" class="btn btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="survey_start.html" class="btn btn-outline-warning">
+                                                    <i class="fas fa-play"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <a href="survey_detail.html" class="text-decoration-none fw-bold">
+                                                六本木店舗内装調査
+                                            </a>
+                                            <br><small class="text-muted">レストランチェーン株式会社</small>
+                                        </td>
+                                        <td>鈴木一郎</td>
+                                        <td>2025-09-14<br><small class="text-muted">09:00-11:30</small></td>
+                                        <td>150分</td>
+                                        <td><span class="badge bg-success">完了</span></td>
+                                        <td>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-success" style="width: 100%"></div>
+                                            </div>
+                                            <small class="text-muted">100%</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="survey_detail.html" class="btn btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="report_detail.html" class="btn btn-outline-info">
+                                                    <i class="fas fa-file-alt"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <a href="survey_detail.html" class="text-decoration-none fw-bold">
+                                                品川オフィス電気工事調査
+                                            </a>
+                                            <br><small class="text-muted">テック企業A</small>
+                                        </td>
+                                        <td>田中太郎</td>
+                                        <td>2025-09-16<br><small class="text-muted">13:00-15:00</small></td>
+                                        <td>120分</td>
+                                        <td><span class="badge bg-secondary">予定</span></td>
+                                        <td>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-secondary" style="width: 0%"></div>
+                                            </div>
+                                            <small class="text-muted">0%</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="survey_detail.html" class="btn btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="survey_edit.html" class="btn btn-outline-secondary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <nav aria-label="調査ページネーション">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" tabindex="-1">前へ</a>
+                                </li>
+                                <li class="page-item active">
+                                    <a class="page-link" href="#">1</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">2</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">次へ</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/app.js"></script>
+</body>
+</html>

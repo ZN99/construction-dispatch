@@ -1,0 +1,551 @@
+{% extends 'order_management/base.html' %}
+{% load static %}
+
+{% block title %}現地調査レポート - {{ survey.project.site_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.report-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.report-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.report-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+    border: 1px solid #e9ecef;
+}
+
+.section-title {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e9ecef;
+    display: flex;
+    align-items: center;
+}
+
+.section-title i {
+    margin-right: 0.5rem;
+    color: #28a745;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.info-item {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #28a745;
+}
+
+.info-item label {
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    display: block;
+}
+
+.info-item .value {
+    font-size: 1.1rem;
+    color: #495057;
+}
+
+.room-summary {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.room-title {
+    font-weight: 600;
+    color: #1976d2;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.wall-measurements {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.5rem;
+}
+
+.wall-item {
+    background: white;
+    padding: 0.75rem;
+    border-radius: 6px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+}
+
+.wall-item .direction {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.wall-item .dimensions {
+    color: #1976d2;
+    font-size: 1rem;
+    margin-top: 0.25rem;
+}
+
+.damage-item {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.damage-item.severity-high {
+    background: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.damage-item.severity-medium {
+    background: #fff3cd;
+    border-color: #ffeaa7;
+}
+
+.damage-item.severity-low {
+    background: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.damage-type {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.damage-description {
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+.photo-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.photo-item {
+    text-align: center;
+}
+
+.photo-item img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.photo-item img:hover {
+    transform: scale(1.05);
+}
+
+.photo-caption {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    padding: 1.5rem;
+    border: 1px solid #dee2e6;
+}
+
+.action-items {
+    margin-top: 1rem;
+}
+
+.action-item {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.action-item i {
+    color: #28a745;
+    margin-right: 0.5rem;
+}
+
+.duration-info {
+    background: #e3f2fd;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.duration-info .time {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1976d2;
+}
+
+.duration-info .label {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.btn-group-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.btn-action {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    min-width: 150px;
+}
+
+@media print {
+    .btn-group-actions,
+    .floating-actions {
+        display: none !important;
+    }
+
+    .report-section {
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+        page-break-inside: avoid;
+    }
+
+    .report-header {
+        background: #28a745 !important;
+        color: white !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .report-container {
+        padding: 0 1rem;
+    }
+
+    .report-header {
+        padding: 1.5rem;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .wall-measurements {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .photo-gallery {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .btn-group-actions {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <!-- レポートヘッダー -->
+    <div class="report-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="mb-2">
+                    <i class="fas fa-file-alt"></i>
+                    現地調査レポート
+                </h2>
+                <h4 class="mb-1">{{ survey.project.site_name }}</h4>
+                <p class="mb-0 opacity-75">
+                    管理番号: {{ survey.project.management_no }} |
+                    調査日: {{ survey.scheduled_date|date:"Y年m月d日" }} |
+                    調査員: {{ survey.surveyor.name }}
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="badge bg-success fs-6 p-2">
+                    <i class="fas fa-check-circle"></i>
+                    調査完了
+                </div>
+                <div class="mt-2">
+                    <small>完了日時: {{ survey.actual_end_time|date:"Y/m/d H:i" }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 基本情報セクション -->
+    <div class="report-section">
+        <h5 class="section-title">
+            <i class="fas fa-info-circle"></i>
+            基本情報
+        </h5>
+        <div class="info-grid">
+            <div class="info-item">
+                <label>現場住所</label>
+                <div class="value">{{ survey.project.site_address }}</div>
+            </div>
+            <div class="info-item">
+                <label>工事種別</label>
+                <div class="value">{{ survey.project.work_type }}</div>
+            </div>
+            <div class="info-item">
+                <label>調査開始時刻</label>
+                <div class="value">{{ survey.actual_start_time|time:"H:i" }}</div>
+            </div>
+            <div class="info-item">
+                <label>調査終了時刻</label>
+                <div class="value">{{ survey.actual_end_time|time:"H:i" }}</div>
+            </div>
+        </div>
+
+        {% if survey.get_actual_duration_minutes %}
+        <div class="duration-info">
+            <div class="time">{{ survey.get_actual_duration_minutes }}分</div>
+            <div class="label">実際の調査時間</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 部屋・壁面調査結果 -->
+    {% if survey.rooms.exists %}
+    <div class="report-section">
+        <h5 class="section-title">
+            <i class="fas fa-home"></i>
+            部屋・壁面調査結果
+        </h5>
+        {% for room in survey.rooms.all %}
+        <div class="room-summary">
+            <div class="room-title">{{ room.room_name }}</div>
+            {% if room.walls.exists %}
+            <div class="wall-measurements">
+                {% for wall in room.walls.all %}
+                <div class="wall-item">
+                    <div class="direction">{{ wall.get_direction_display }}</div>
+                    <div class="dimensions">
+                        {{ wall.length }}m × {{ wall.height }}m
+                        <br>
+                        <small>({{ wall.calculate_area|floatformat:1 }}㎡)</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <strong>総面積:</strong>
+                    {% with total_area=0 %}
+                        {% for wall in room.walls.all %}
+                            {% with total_area=total_area|add:wall.calculate_area %}
+                            {% endwith %}
+                        {% endfor %}
+                        {{ total_area|floatformat:1 }}㎡
+                    {% endwith %}
+                </div>
+                <div class="col-md-6">
+                    <strong>壁面数:</strong> {{ room.walls.count }}面
+                </div>
+            </div>
+            {% else %}
+            <p class="text-muted">壁面データが記録されていません</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- 損傷状況 -->
+    {% if survey.damages.exists %}
+    <div class="report-section">
+        <h5 class="section-title">
+            <i class="fas fa-exclamation-triangle"></i>
+            損傷状況
+        </h5>
+        {% for damage in survey.damages.all %}
+        <div class="damage-item severity-{{ damage.severity|default:'low' }}">
+            <div class="damage-type">
+                {{ damage.get_damage_type_display }}
+                {% if damage.has_dents %}
+                <span class="badge bg-warning ms-2">凹み有り ({{ damage.dent_count }}箇所)</span>
+                {% endif %}
+            </div>
+            {% if damage.description %}
+            <div class="damage-description">{{ damage.description }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <!-- 損傷サマリー -->
+        {% with damage_summary=survey.get_damage_summary %}
+        {% if damage_summary %}
+        <div class="summary-card mt-3">
+            <h6>損傷種別別集計</h6>
+            <div class="row">
+                {% for damage_type, count in damage_summary.items %}
+                <div class="col-md-3 col-6">
+                    <strong>{{ damage_type }}:</strong> {{ count }}件
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+    {% endif %}
+
+    <!-- 写真記録 -->
+    {% if survey.photos.exists %}
+    <div class="report-section">
+        <h5 class="section-title">
+            <i class="fas fa-camera"></i>
+            写真記録
+        </h5>
+        <div class="photo-gallery">
+            {% for photo in survey.photos.all %}
+            <div class="photo-item">
+                <img src="{{ photo.image.url }}" alt="{{ photo.caption }}"
+                     onclick="showPhotoModal('{{ photo.image.url }}', '{{ photo.caption }}')">
+                <div class="photo-caption">
+                    {{ photo.get_photo_type_display }}
+                    {% if photo.caption %}
+                    <br><small>{{ photo.caption }}</small>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 調査備考・総評 -->
+    {% if survey.notes %}
+    <div class="report-section">
+        <h5 class="section-title">
+            <i class="fas fa-sticky-note"></i>
+            調査備考・総評
+        </h5>
+        <div class="summary-card">
+            <pre style="white-space: pre-wrap; font-family: inherit;">{{ survey.notes }}</pre>
+        </div>
+
+        <!-- 推奨アクション（例） -->
+        <div class="action-items">
+            <h6>推奨アクション</h6>
+            <div class="action-item">
+                <i class="fas fa-calculator"></i>
+                詳細見積の作成
+            </div>
+            <div class="action-item">
+                <i class="fas fa-phone"></i>
+                顧客への調査結果報告
+            </div>
+            <div class="action-item">
+                <i class="fas fa-tools"></i>
+                専門業者との工法相談
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- アクションボタン -->
+    <div class="report-section">
+        <div class="btn-group-actions">
+            <button class="btn btn-outline-primary btn-action" onclick="window.print()">
+                <i class="fas fa-print"></i> 印刷
+            </button>
+            <button class="btn btn-outline-info btn-action" onclick="downloadPDF()">
+                <i class="fas fa-file-pdf"></i> PDF出力
+            </button>
+            <a href="{% url 'surveys:survey_edit' survey.pk %}" class="btn btn-outline-warning btn-action">
+                <i class="fas fa-edit"></i> 編集
+            </a>
+            <a href="{% url 'order_management:project_detail' survey.project.pk %}" class="btn btn-success btn-action">
+                <i class="fas fa-arrow-left"></i> 案件詳細へ
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 写真拡大表示モーダル -->
+<div class="modal fade" id="photoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="photoModalTitle">写真詳細</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="photoModalImage" src="" alt="" style="max-width: 100%; height: auto;">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showPhotoModal(imageUrl, caption) {
+    document.getElementById('photoModalImage').src = imageUrl;
+    document.getElementById('photoModalTitle').textContent = caption || '写真詳細';
+    new bootstrap.Modal(document.getElementById('photoModal')).show();
+}
+
+function downloadPDF() {
+    // PDF生成の実装（実際のプロジェクトでは適切なライブラリまたはAPIを使用）
+    alert('PDF出力機能は実装中です。現在は印刷機能をご利用ください。');
+}
+
+// 印刷時のスタイル調整
+function setupPrintStyles() {
+    const printCSS = `
+        @media print {
+            body { background: white !important; }
+            .report-header { background: #28a745 !important; }
+            .report-section { border: 1px solid #ccc !important; margin-bottom: 1rem !important; }
+            .photo-gallery img { max-height: 100px !important; }
+        }
+    `;
+
+    const style = document.createElement('style');
+    style.textContent = printCSS;
+    document.head.appendChild(style);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    setupPrintStyles();
+});
+</script>
+{% endblock %}

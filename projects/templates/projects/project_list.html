@@ -1,0 +1,156 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}案件一覧 - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">案件一覧</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'project_create_select_type' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>新規案件登録
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control" placeholder="案件名・顧客名・住所で検索"
+                       value="{{ request.GET.search }}">
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">全てのステータス</option>
+                    {% for status_key, status_label in status_choices %}
+                        <option value="{{ status_key }}" {% if request.GET.status == status_key %}selected{% endif %}>
+                            {{ status_label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="project_type" class="form-select">
+                    <option value="">全ての工種</option>
+                    {% for project_type in project_types %}
+                        <option value="{{ project_type.id }}" {% if request.GET.project_type == project_type.id|stringformat:"s" %}selected{% endif %}>
+                            {{ project_type.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-search me-1"></i>検索
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if projects %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>案件名</th>
+                            <th>顧客</th>
+                            <th>工種</th>
+                            <th>ステータス</th>
+                            <th>期間</th>
+                            <th>金額</th>
+                            <th>登録日</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'project_detail' project.pk %}" class="text-decoration-none">
+                                    {{ project.title }}
+                                </a>
+                            </td>
+                            <td>{{ project.customer.name }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ project.project_type.name }}</span>
+                            </td>
+                            <td>
+                                {% if project.status == 'draft' %}
+                                    <span class="badge bg-secondary">下書き</span>
+                                {% elif project.status == 'confirmed' %}
+                                    <span class="badge bg-primary">確定</span>
+                                {% elif project.status == 'in_progress' %}
+                                    <span class="badge bg-warning">作業中</span>
+                                {% elif project.status == 'completed' %}
+                                    <span class="badge bg-success">完了</span>
+                                {% elif project.status == 'cancelled' %}
+                                    <span class="badge bg-danger">キャンセル</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ project.start_date }} ～ {{ project.end_date }}
+                                <small class="text-muted">({{ project.duration_days }}日間)</small>
+                            </td>
+                            <td>{{ project.formatted_amount }}</td>
+                            <td>{{ project.created_at|date:"Y/m/d" }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'project_detail' project.pk %}" class="btn btn-outline-primary">
+                                        詳細
+                                    </a>
+                                    <a href="{% url 'project_update' project.pk %}" class="btn btn-outline-secondary">
+                                        編集
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if is_paginated %}
+                <nav aria-label="案件一覧ページネーション">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.project_type %}&project_type={{ request.GET.project_type }}{% endif %}">前へ</a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.project_type %}&project_type={{ request.GET.project_type }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.project_type %}&project_type={{ request.GET.project_type }}{% endif %}">次へ</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">案件が見つかりませんでした</h5>
+                <p class="text-muted">検索条件を変更するか、新しい案件を登録してください。</p>
+                <a href="{% url 'project_create_select_type' %}" class="btn btn-primary">
+                    新規案件登録
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

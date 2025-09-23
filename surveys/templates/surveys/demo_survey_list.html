@@ -1,0 +1,354 @@
+{% extends 'surveys/surveyor_base.html' %}
+{% load static %}
+
+{% block title %}現地調査一覧 - デモ{% endblock %}
+
+{% block extra_css %}
+<style>
+    .survey-demo-container {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+
+    .demo-header {
+        text-align: center;
+        color: white;
+        margin-bottom: 3rem;
+    }
+
+    .demo-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    .demo-subtitle {
+        font-size: 1.2rem;
+        opacity: 0.9;
+    }
+
+    .survey-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+    .survey-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+
+    .survey-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .survey-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .survey-status {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .status-scheduled {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .survey-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .info-icon {
+        color: #10b981;
+        width: 20px;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #64748b;
+    }
+
+    .info-value {
+        color: #1e293b;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .button-section {
+        width: 100%;
+        text-align: center;
+    }
+
+    .btn-checklist {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        min-height: 80px;
+        text-align: center;
+    }
+
+    .btn-checklist:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-simple {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+        border: 3px solid #60a5fa;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-simple:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4) !important;
+        transform: translateY(-2px) scale(1.02);
+    }
+
+    .btn-simple::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn-simple:hover::before {
+        left: 100%;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+        .action-buttons {
+            flex-direction: row;
+            gap: 1rem;
+        }
+    }
+
+    .demo-feature {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+        color: white;
+    }
+
+    .feature-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .feature-list li {
+        padding: 0.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .feature-list li::before {
+        content: "✓";
+        background: #10b981;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="survey-demo-container">
+    <div class="container">
+        <!-- ナビゲーション -->
+        <div class="mb-4">
+            <a href="/surveys/list/" class="btn btn-outline-light btn-lg">
+                <i class="fas fa-arrow-left me-2"></i>調査一覧に戻る
+            </a>
+        </div>
+
+        <!-- デモヘッダー -->
+        <div class="demo-header">
+            <h1 class="demo-title">
+                <i class="fas fa-clipboard-check"></i>
+                現地調査システム
+            </h1>
+            <p class="demo-subtitle">
+                派遣スタッフをプロ調査員に変える、ステップバイステップ調査アプリ
+            </p>
+        </div>
+
+        <!-- デモ機能説明 -->
+        <div class="demo-feature">
+            <h4><i class="fas fa-star"></i> このシステムの特徴</h4>
+            <ul class="feature-list">
+                <li>専門知識不要のチェックシート形式</li>
+                <li>図解付きの測定ガイド</li>
+                <li>写真撮影による状態記録</li>
+                <li>抜け漏れ防止の完了確認</li>
+                <li>ベテラン職人による後判定</li>
+            </ul>
+        </div>
+
+        <!-- 調査リスト -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="survey-card">
+                    <div class="survey-header">
+                        <h3 class="survey-title">クロス張り替え調査</h3>
+                        <span class="survey-status status-scheduled">
+                            <i class="fas fa-clock"></i> 予定
+                        </span>
+                    </div>
+
+                    <div class="survey-info">
+                        <div class="info-item">
+                            <i class="fas fa-building info-icon"></i>
+                            <span class="info-label">現場:</span>
+                            <span class="info-value">浦和3LDK</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-user info-icon"></i>
+                            <span class="info-label">調査員:</span>
+                            <span class="info-value">田中 太郎</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-calendar info-icon"></i>
+                            <span class="info-label">予定日:</span>
+                            <span class="info-value">{{ today|date:"Y年m月d日" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-clock info-icon"></i>
+                            <span class="info-label">開始時刻:</span>
+                            <span class="info-value">10:00</span>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <div class="button-section">
+                            <h5 style="font-size: 18px; margin-bottom: 15px; color: #374151;">
+                                🎯 調査方法を選択してください
+                            </h5>
+                            <a href="/surveys/22/checklist/cross-replacement/" class="btn-checklist">
+                                <i class="fas fa-clipboard-list"></i>
+                                標準版で開始
+                                <small style="display: block; font-size: 14px; margin-top: 5px; opacity: 0.8;">
+                                    PC・タブレット推奨
+                                </small>
+                            </a>
+                            <a href="/surveys/22/checklist/cross-replacement/?simple=1" class="btn-checklist btn-simple">
+                                <i class="fas fa-mobile-alt"></i>
+                                📱 シンプルUI版で開始
+                                <small style="display: block; font-size: 14px; margin-top: 5px; opacity: 0.8;">
+                                    スマホ・タブレット最適
+                                </small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- デモ用追加情報 -->
+                <div class="demo-feature">
+                    <h5><i class="fas fa-info-circle"></i> デモの使い方</h5>
+                    <p>
+                        <strong>「チェックリスト開始」</strong>ボタンをクリックすると、
+                        標準的な調査記録画面が開きます。
+                    </p>
+                    <p>
+                        <strong>「シンプルUI版」</strong>ボタンをクリックすると、
+                        より大きなボタンとわかりやすい表示の調査画面が開きます。
+                        タブレットやスマートフォンでも操作しやすく設計されています。
+                    </p>
+                    <p>
+                        どちらも専門知識がなくても、画面の指示に従うだけで
+                        プロレベルの調査を完了できます。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // アニメーション効果
+    const cards = document.querySelectorAll('.survey-card');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.2}s`;
+        card.style.animation = 'slideInUp 0.6s ease-out forwards';
+    });
+});
+
+// CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

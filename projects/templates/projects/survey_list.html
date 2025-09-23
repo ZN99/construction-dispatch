@@ -1,0 +1,217 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}調査一覧 - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">調査一覧</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'survey_dashboard' %}" class="btn btn-secondary me-2">
+            <i class="fas fa-chart-line me-1"></i>ダッシュボード
+        </a>
+        <a href="{% url 'auto_assign_surveys' %}" class="btn btn-success">
+            <i class="fas fa-magic me-1"></i>自動アサイン
+        </a>
+    </div>
+</div>
+
+<!-- フィルター -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">全てのステータス</option>
+                    {% for status_key, status_label in status_choices %}
+                        <option value="{{ status_key }}" {% if request.GET.status == status_key %}selected{% endif %}>
+                            {{ status_label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="surveyor" class="form-select">
+                    <option value="">全ての調査員</option>
+                    {% for surveyor in surveyors %}
+                        <option value="{{ surveyor.id }}" {% if request.GET.surveyor == surveyor.id|stringformat:"s" %}selected{% endif %}>
+                            {{ surveyor.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="date" name="date" class="form-control" value="{{ request.GET.date }}" placeholder="日付">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-search me-1"></i>検索
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 調査一覧 -->
+<div class="card">
+    <div class="card-body">
+        {% if surveys %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>案件名</th>
+                            <th>顧客</th>
+                            <th>調査員</th>
+                            <th>予定日時</th>
+                            <th>ステータス</th>
+                            <th>優先度</th>
+                            <th>進捗</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for survey in surveys %}
+                        <tr class="{% if survey.is_overdue %}table-warning{% endif %}">
+                            <td>
+                                <a href="{% url 'survey_detail' survey.pk %}" class="text-decoration-none">
+                                    {{ survey.project.title }}
+                                </a>
+                                {% if survey.is_overdue %}
+                                    <i class="fas fa-exclamation-triangle text-warning ms-1" title="遅延"></i>
+                                {% endif %}
+                            </td>
+                            <td>{{ survey.project.customer.name }}</td>
+                            <td>
+                                {% if survey.surveyor %}
+                                    <span class="badge bg-info">{{ survey.surveyor.name }}</span>
+                                {% else %}
+                                    <span class="badge bg-warning">未アサイン</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if survey.scheduled_date %}
+                                    {{ survey.scheduled_date|date:"m/d H:i" }}
+                                    <small class="text-muted d-block">{{ survey.estimated_duration }}分</small>
+                                {% else %}
+                                    <span class="text-muted">未設定</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if survey.status == 'completed' %}success{% elif survey.status == 'in_progress' %}warning{% elif survey.status == 'cancelled' %}danger{% else %}primary{% endif %}">
+                                    {% if survey.status == 'scheduled' %}予定
+                                    {% elif survey.status == 'in_progress' %}調査中
+                                    {% elif survey.status == 'completed' %}完了
+                                    {% elif survey.status == 'cancelled' %}キャンセル
+                                    {% elif survey.status == 'rescheduled' %}再調整
+                                    {% else %}{{ survey.get_status_display }}{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if survey.priority == 'urgent' %}danger{% elif survey.priority == 'high' %}warning{% elif survey.priority == 'low' %}secondary{% else %}info{% endif %}">
+                                    {% if survey.priority == 'urgent' %}緊急
+                                    {% elif survey.priority == 'high' %}高
+                                    {% elif survey.priority == 'low' %}低
+                                    {% else %}通常{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if survey.is_survey_completed %}
+                                    <i class="fas fa-check-circle text-success" title="調査完了"></i>
+                                {% elif survey.status == 'in_progress' %}
+                                    <i class="fas fa-clock text-warning" title="調査中"></i>
+                                {% else %}
+                                    <i class="fas fa-circle text-muted" title="未開始"></i>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'survey_detail' survey.pk %}" class="btn btn-outline-primary">
+                                        詳細
+                                    </a>
+                                    {% if not survey.surveyor %}
+                                        <a href="{% url 'survey_assign' survey.project.pk %}" class="btn btn-outline-success">
+                                            アサイン
+                                        </a>
+                                    {% elif survey.status == 'scheduled' %}
+                                        <a href="{% url 'survey_complete' survey.pk %}" class="btn btn-outline-warning">
+                                            完了
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ページネーション -->
+            {% if is_paginated %}
+                <nav aria-label="調査一覧ページネーション">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.surveyor %}&surveyor={{ request.GET.surveyor }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}">前へ</a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.surveyor %}&surveyor={{ request.GET.surveyor }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.surveyor %}&surveyor={{ request.GET.surveyor }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}">次へ</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">調査が見つかりませんでした</h5>
+                <p class="text-muted">検索条件を変更するか、新しい案件に調査をアサインしてください。</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 統計サマリー -->
+{% if surveys %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h5 class="text-primary">{{ surveys|length }}</h5>
+                        <p class="text-muted mb-0">表示中の調査</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h5 class="text-warning">{% for survey in surveys %}{% if not survey.surveyor %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}</h5>
+                        <p class="text-muted mb-0">未アサイン</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h5 class="text-success">{% for survey in surveys %}{% if survey.status == 'completed' %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}</h5>
+                        <p class="text-muted mb-0">完了</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h5 class="text-danger">{% for survey in surveys %}{% if survey.is_overdue %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}</h5>
+                        <p class="text-muted mb-0">遅延</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

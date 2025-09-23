@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建築派遣SaaS - 協力会社計画（社員専用）</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <div class="d-flex align-items-center px-3 mb-3">
+                        <i class="fas fa-user-tie text-primary me-2"></i>
+                        <span class="fw-bold text-primary">社員モード</span>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="../index_manager.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../projects/project_list_manager.html">
+                                <i class="fas fa-project-diagram me-2"></i>案件管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="contractor_planning_manager.html">
+                                <i class="fas fa-building me-2"></i>協力会社計画
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="contractor_approval_manager.html">
+                                <i class="fas fa-check-circle me-2"></i>協力会社承認
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../task_assignment.html">
+                                <i class="fas fa-tasks me-2"></i>タスク指示
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <div>
+                        <h1 class="h2">協力会社計画（社員専用）</h1>
+                        <small class="text-muted">工程表作成・協力会社選定・予算決定・派遣指示作成</small>
+                    </div>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-primary" onclick="createSchedule()">
+                                <i class="fas fa-plus me-1"></i>新規工程表作成
+                            </button>
+                            <button type="button" class="btn btn-outline-success" onclick="selectContractors()">
+                                <i class="fas fa-handshake me-1"></i>協力会社選定
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="createInstructions()">
+                                <i class="fas fa-clipboard me-1"></i>派遣指示書作成
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 協力会社統計（社員専用：コスト・リスク情報表示） -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <i class="fas fa-building text-primary mb-2" style="font-size: 2rem;"></i>
+                                <h4 class="text-primary">15</h4>
+                                <p class="card-text">登録協力会社</p>
+                                <small class="text-muted">平均評価: 4.2/5</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <i class="fas fa-calendar-alt text-warning mb-2" style="font-size: 2rem;"></i>
+                                <h4 class="text-warning">8</h4>
+                                <p class="card-text">進行中工程</p>
+                                <small class="text-muted">総予算: ¥4,200,000</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-danger">
+                            <div class="card-body text-center">
+                                <i class="fas fa-exclamation-triangle text-danger mb-2" style="font-size: 2rem;"></i>
+                                <h4 class="text-danger">3</h4>
+                                <p class="card-text">選定待ち</p>
+                                <small class="text-muted">要対応</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <i class="fas fa-handshake text-success mb-2" style="font-size: 2rem;"></i>
+                                <h4 class="text-success">22</h4>
+                                <p class="card-text">今月契約</p>
+                                <small class="text-success">売上: ¥6,800,000</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 工程表作成エリア -->
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-calendar-plus me-2"></i>新規工程表作成
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="scheduleForm">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">対象案件</label>
+                                            <select class="form-select" id="projectSelect" required>
+                                                <option value="">案件を選択...</option>
+                                                <option value="1">港区ワンルーム原状回復</option>
+                                                <option value="2">新宿1K原状回復</option>
+                                                <option value="3">品川マンション修繕</option>
+                                                <option value="4">渋谷2DK原状回復</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">総予算</label>
+                                            <input type="number" class="form-control" id="totalBudget" placeholder="予算金額（円）" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">開始予定日</label>
+                                            <input type="date" class="form-control" id="startDate" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">完了予定日</label>
+                                            <input type="date" class="form-control" id="endDate" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">作業工程</label>
+                                        <div id="processSteps">
+                                            <div class="row mb-2 process-step">
+                                                <div class="col-md-3">
+                                                    <select class="form-select" name="stepType">
+                                                        <option value="">工程種別</option>
+                                                        <option value="cleaning">クリーニング</option>
+                                                        <option value="wall">クロス張替</option>
+                                                        <option value="floor">床修繕</option>
+                                                        <option value="water">水道工事</option>
+                                                        <option value="electric">電気工事</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <input type="number" class="form-control" name="stepBudget" placeholder="予算（円）">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <input type="number" class="form-control" name="stepDays" placeholder="日数">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <input type="text" class="form-control" name="stepNotes" placeholder="備考">
+                                                </div>
+                                                <div class="col-md-1">
+                                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeStep(this)">
+                                                        <i class="fas fa-minus"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addProcessStep()">
+                                            <i class="fas fa-plus me-1"></i>工程追加
+                                        </button>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">特記事項・要求品質</label>
+                                        <textarea class="form-control" id="requirements" rows="3" placeholder="協力会社への要求品質、注意事項等"></textarea>
+                                    </div>
+
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="saveDraft()">下書き保存</button>
+                                        <button type="submit" class="btn btn-primary">工程表作成</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <!-- 協力会社データベース -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-database me-2"></i>協力会社データベース
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold">A建設工業</div>
+                                            <small class="text-muted">クロス・内装専門</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="text-success fw-bold">★4.8</div>
+                                            <small class="text-muted">¥2,500/㎡</small>
+                                        </div>
+                                    </div>
+                                    <div class="mt-1">
+                                        <span class="badge bg-success">稼働可能</span>
+                                        <span class="badge bg-info">品質優良</span>
+                                    </div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold">B水道サービス</div>
+                                            <small class="text-muted">水道・配管専門</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="text-success fw-bold">★4.6</div>
+                                            <small class="text-muted">¥15,000/件</small>
+                                        </div>
+                                    </div>
+                                    <div class="mt-1">
+                                        <span class="badge bg-warning">一部対応可</span>
+                                        <span class="badge bg-secondary">緊急対応</span>
+                                    </div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold">Cクリーニング</div>
+                                            <small class="text-muted">清掃専門</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="text-warning fw-bold">★4.2</div>
+                                            <small class="text-muted">¥8,000/件</small>
+                                        </div>
+                                    </div>
+                                    <div class="mt-1">
+                                        <span class="badge bg-danger">満杯</span>
+                                        <span class="badge bg-primary">コスト重視</span>
+                                    </div>
+                                </div>
+
+                                <div class="text-end mt-3">
+                                    <a href="../material/supplier_list.html" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-arrow-right me-1"></i>全て表示
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- コスト・リスク分析 -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-chart-line me-2"></i>コスト・リスク分析
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>予算適正性</span>
+                                        <span class="fw-bold text-success">95%</span>
+                                    </div>
+                                    <div class="progress mt-1" style="height: 8px;">
+                                        <div class="progress-bar bg-success" style="width: 95%"></div>
+                                    </div>
+                                    <small class="text-muted">市場価格と比較</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>協力会社リスク</span>
+                                        <span class="fw-bold text-warning">低</span>
+                                    </div>
+                                    <div class="progress mt-1" style="height: 8px;">
+                                        <div class="progress-bar bg-warning" style="width: 25%"></div>
+                                    </div>
+                                    <small class="text-muted">実績・評価基準</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>スケジュールリスク</span>
+                                        <span class="fw-bold text-info">中</span>
+                                    </div>
+                                    <div class="progress mt-1" style="height: 8px;">
+                                        <div class="progress-bar bg-info" style="width: 60%"></div>
+                                    </div>
+                                    <small class="text-muted">工期・稼働状況</small>
+                                </div>
+
+                                <div class="alert alert-info mb-0">
+                                    <small class="fw-bold">推奨アクション:</small><br>
+                                    <small>A建設工業を優先検討。B水道サービスは緊急時バックアップとして確保。</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 協力会社選定・工程管理 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-clipboard-list me-2"></i>協力会社選定・工程管理
+                            </h5>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-secondary" onclick="filterSchedules('all')">全て</button>
+                                <button class="btn btn-outline-warning" onclick="filterSchedules('planning')">計画中</button>
+                                <button class="btn btn-outline-info" onclick="filterSchedules('selecting')">選定中</button>
+                                <button class="btn btn-outline-success" onclick="filterSchedules('approved')">承認済み</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>工程名</th>
+                                        <th>対象案件</th>
+                                        <th>総予算</th>
+                                        <th>期間</th>
+                                        <th>選定状況</th>
+                                        <th>リスク評価</th>
+                                        <th>ステータス</th>
+                                        <th>管理操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr data-status="selecting">
+                                        <td>
+                                            <div class="fw-bold">港区クロス張替工程</div>
+                                            <small class="text-muted">3工程・5日間</small>
+                                        </td>
+                                        <td>港区ワンルーム原状回復</td>
+                                        <td>
+                                            <div class="fw-bold text-success">¥180,000</div>
+                                            <small class="text-muted">利益率: 25%</small>
+                                        </td>
+                                        <td>
+                                            <div>9/20 - 9/25</div>
+                                            <small class="text-muted">5日間</small>
+                                        </td>
+                                        <td>
+                                            <div class="text-warning fw-bold">協力会社選定中</div>
+                                            <small class="text-muted">3社候補</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">低リスク</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-warning">選定中</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-primary" onclick="selectContractor(1)" title="協力会社選定">
+                                                    <i class="fas fa-handshake"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info" onclick="viewBudgetDetail(1)" title="予算詳細">
+                                                    <i class="fas fa-calculator"></i>
+                                                </button>
+                                                <button class="btn btn-outline-warning" onclick="editSchedule(1)" title="編集">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" onclick="cancelSchedule(1)" title="キャンセル">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr data-status="approved">
+                                        <td>
+                                            <div class="fw-bold">新宿水道修理工程</div>
+                                            <small class="text-muted">2工程・3日間</small>
+                                        </td>
+                                        <td>新宿1K原状回復</td>
+                                        <td>
+                                            <div class="fw-bold text-success">¥120,000</div>
+                                            <small class="text-muted">利益率: 20%</small>
+                                        </td>
+                                        <td>
+                                            <div>9/18 - 9/20</div>
+                                            <small class="text-muted">3日間</small>
+                                        </td>
+                                        <td>
+                                            <div class="text-success fw-bold">B水道サービス</div>
+                                            <small class="text-success">承認済み</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-warning">中リスク</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">承認済み</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="createInstruction(2)" title="派遣指示作成">
+                                                    <i class="fas fa-clipboard"></i>
+                                                </button>
+                                                <button class="btn btn-outline-success" onclick="trackProgress(2)" title="進捗追跡">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info" onclick="contactContractor(2)" title="連絡">
+                                                    <i class="fas fa-phone"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr data-status="planning">
+                                        <td>
+                                            <div class="fw-bold">品川総合修繕工程</div>
+                                            <small class="text-muted">5工程・10日間</small>
+                                        </td>
+                                        <td>品川マンション修繕</td>
+                                        <td>
+                                            <div class="fw-bold text-info">¥350,000</div>
+                                            <small class="text-muted">利益率: 15%</small>
+                                        </td>
+                                        <td>
+                                            <div>9/25 - 10/5</div>
+                                            <small class="text-muted">10日間</small>
+                                        </td>
+                                        <td>
+                                            <div class="text-muted">未開始</div>
+                                            <small class="text-muted">要計画確定</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-danger">高リスク</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">計画中</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-primary" onclick="finalizePlan(3)" title="計画確定">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-outline-warning" onclick="editSchedule(3)" title="編集">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info" onclick="riskAssessment(3)" title="リスク評価">
+                                                    <i class="fas fa-shield-alt"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        // 社員専用協力会社計画機能
+
+        document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            createContractorSchedule();
+        });
+
+        function createContractorSchedule() {
+            const formData = {
+                project: document.getElementById('projectSelect').value,
+                totalBudget: document.getElementById('totalBudget').value,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                requirements: document.getElementById('requirements').value,
+                processSteps: getProcessSteps()
+            };
+
+            // バリデーション
+            if (!formData.project || !formData.totalBudget || !formData.startDate || !formData.endDate) {
+                alert('必須項目を入力してください');
+                return;
+            }
+
+            if (new Date(formData.startDate) >= new Date(formData.endDate)) {
+                alert('完了予定日は開始予定日より後の日付を選択してください');
+                return;
+            }
+
+            if (formData.processSteps.length === 0) {
+                alert('最低1つの工程を追加してください');
+                return;
+            }
+
+            // 監査ログ
+            if (window.app) {
+                window.app.logAuditEvent('CONTRACTOR_SCHEDULE_CREATED', {
+                    projectId: formData.project,
+                    totalBudget: formData.totalBudget,
+                    startDate: formData.startDate,
+                    endDate: formData.endDate,
+                    processCount: formData.processSteps.length,
+                    createdBy: 'manager_001'
+                });
+            }
+
+            showToast('工程表が作成されました', 'success');
+
+            // フォームリセット
+            document.getElementById('scheduleForm').reset();
+            resetProcessSteps();
+        }
+
+        function getProcessSteps() {
+            const steps = [];
+            const stepElements = document.querySelectorAll('.process-step');
+
+            stepElements.forEach(step => {
+                const stepType = step.querySelector('select[name="stepType"]').value;
+                const stepBudget = step.querySelector('input[name="stepBudget"]').value;
+                const stepDays = step.querySelector('input[name="stepDays"]').value;
+                const stepNotes = step.querySelector('input[name="stepNotes"]').value;
+
+                if (stepType && stepBudget && stepDays) {
+                    steps.push({
+                        type: stepType,
+                        budget: parseInt(stepBudget),
+                        days: parseInt(stepDays),
+                        notes: stepNotes
+                    });
+                }
+            });
+
+            return steps;
+        }
+
+        function addProcessStep() {
+            const processSteps = document.getElementById('processSteps');
+            const newStep = document.createElement('div');
+            newStep.className = 'row mb-2 process-step';
+            newStep.innerHTML = `
+                <div class="col-md-3">
+                    <select class="form-select" name="stepType">
+                        <option value="">工程種別</option>
+                        <option value="cleaning">クリーニング</option>
+                        <option value="wall">クロス張替</option>
+                        <option value="floor">床修繕</option>
+                        <option value="water">水道工事</option>
+                        <option value="electric">電気工事</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" class="form-control" name="stepBudget" placeholder="予算（円）">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control" name="stepDays" placeholder="日数">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="stepNotes" placeholder="備考">
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeStep(this)">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            `;
+            processSteps.appendChild(newStep);
+        }
+
+        function removeStep(button) {
+            button.closest('.process-step').remove();
+        }
+
+        function resetProcessSteps() {
+            const processSteps = document.getElementById('processSteps');
+            processSteps.innerHTML = `
+                <div class="row mb-2 process-step">
+                    <div class="col-md-3">
+                        <select class="form-select" name="stepType">
+                            <option value="">工程種別</option>
+                            <option value="cleaning">クリーニング</option>
+                            <option value="wall">クロス張替</option>
+                            <option value="floor">床修繕</option>
+                            <option value="water">水道工事</option>
+                            <option value="electric">電気工事</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" name="stepBudget" placeholder="予算（円）">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" name="stepDays" placeholder="日数">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" name="stepNotes" placeholder="備考">
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeStep(this)">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function saveDraft() {
+            const formData = new FormData(document.getElementById('scheduleForm'));
+            localStorage.setItem('contractorScheduleDraft', JSON.stringify(Object.fromEntries(formData)));
+            showToast('下書きが保存されました', 'info');
+        }
+
+        function selectContractor(scheduleId) {
+            window.location.href = `contractor_selection.html?schedule=${scheduleId}`;
+        }
+
+        function viewBudgetDetail(scheduleId) {
+            window.location.href = `budget_analysis.html?schedule=${scheduleId}`;
+        }
+
+        function editSchedule(scheduleId) {
+            window.location.href = `contractor_schedule_edit.html?id=${scheduleId}`;
+        }
+
+        function cancelSchedule(scheduleId) {
+            if (confirm('この工程をキャンセルしますか？')) {
+                if (window.app) {
+                    window.app.logAuditEvent('CONTRACTOR_SCHEDULE_CANCELLED', {
+                        scheduleId: scheduleId,
+                        cancelledBy: 'manager_001',
+                        reason: 'Manager decision'
+                    });
+                }
+
+                showToast('工程がキャンセルされました', 'warning');
+
+                // ステータス更新
+                const row = document.querySelector(`tr[data-status] td button[onclick*="${scheduleId}"]`).closest('tr');
+                const statusBadge = row.querySelector('.badge');
+                statusBadge.className = 'badge bg-secondary';
+                statusBadge.textContent = 'キャンセル';
+            }
+        }
+
+        function createInstruction(scheduleId) {
+            window.location.href = `../task_assignment.html?contractor=${scheduleId}`;
+        }
+
+        function trackProgress(scheduleId) {
+            window.location.href = `contractor_progress_tracking.html?id=${scheduleId}`;
+        }
+
+        function contactContractor(scheduleId) {
+            const message = prompt('協力会社への連絡内容を入力してください：');
+            if (message) {
+                if (window.app) {
+                    window.app.logAuditEvent('CONTRACTOR_CONTACTED', {
+                        scheduleId: scheduleId,
+                        message: message,
+                        contactedBy: 'manager_001'
+                    });
+                }
+                showToast('協力会社に連絡しました', 'success');
+            }
+        }
+
+        function finalizePlan(scheduleId) {
+            if (confirm('この計画を確定しますか？確定後は協力会社選定に進みます。')) {
+                if (window.app) {
+                    window.app.logAuditEvent('CONTRACTOR_PLAN_FINALIZED', {
+                        scheduleId: scheduleId,
+                        finalizedBy: 'manager_001'
+                    });
+                }
+
+                showToast('計画が確定されました', 'success');
+
+                // ステータス更新
+                const row = document.querySelector(`tr[data-status] td button[onclick*="${scheduleId}"]`).closest('tr');
+                const statusBadge = row.querySelector('.badge');
+                statusBadge.className = 'badge bg-warning';
+                statusBadge.textContent = '選定中';
+                row.setAttribute('data-status', 'selecting');
+            }
+        }
+
+        function riskAssessment(scheduleId) {
+            window.location.href = `risk_assessment.html?schedule=${scheduleId}`;
+        }
+
+        function filterSchedules(status) {
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const rowStatus = row.getAttribute('data-status');
+                if (status === 'all' || rowStatus === status) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // ボタンのアクティブ状態更新
+            document.querySelectorAll('.btn-group .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function createSchedule() {
+            document.getElementById('scheduleForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function selectContractors() {
+            window.location.href = 'contractor_database.html';
+        }
+
+        function createInstructions() {
+            window.location.href = '../task_assignment.html?type=contractor';
+        }
+
+        function showToast(message, type) {
+            if (window.app && window.app.showToast) {
+                window.app.showToast(message, type);
+            }
+        }
+
+        // 権限チェック
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.app && !window.app.checkPermission('MANAGE_CONTRACTORS')) {
+                alert('協力会社管理の権限がありません');
+                window.location.href = '../index.html';
+            }
+
+            // 下書きの復元
+            const draft = localStorage.getItem('contractorScheduleDraft');
+            if (draft && confirm('下書きが保存されています。復元しますか？')) {
+                const data = JSON.parse(draft);
+                Object.keys(data).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        element.value = data[key];
+                    }
+                });
+            }
+
+            // 今日の日付を最小値に設定
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').min = today;
+            document.getElementById('endDate').min = today;
+        });
+
+        // 日付の連動
+        document.getElementById('startDate').addEventListener('change', function() {
+            const startDate = this.value;
+            document.getElementById('endDate').min = startDate;
+        });
+    </script>
+
+    <style>
+        .process-step {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .progress {
+            border-radius: 10px;
+        }
+
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            background-color: #f8f9fa;
+        }
+
+        .btn-group-sm .btn {
+            padding: 0.25rem 0.5rem;
+        }
+
+        .form-select:focus,
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        .alert {
+            border-radius: 8px;
+        }
+    </style>
+</body>
+</html>

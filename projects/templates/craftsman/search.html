@@ -1,0 +1,235 @@
+{% extends "projects/base.html" %}
+
+{% block title %}職人検索 - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-search me-2"></i>職人検索</h2>
+    <a href="{% url 'craftsman_dashboard' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-1"></i>ダッシュボードに戻る
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-filter me-1"></i>検索条件</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" id="searchForm">
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i>検索
+                    </button>
+                    <a href="{% url 'craftsman_search' %}" class="btn btn-outline-secondary w-100 mt-2">
+                        <i class="fas fa-times me-1"></i>条件をクリア
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        {% if search_performed %}
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users me-1"></i>検索結果 ({{ craftsmen|length }}件)
+                    </h5>
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="viewMode" id="gridView" autocomplete="off" checked>
+                        <label class="btn btn-outline-primary" for="gridView">
+                            <i class="fas fa-th"></i>
+                        </label>
+                        <input type="radio" class="btn-check" name="viewMode" id="listView" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="listView">
+                            <i class="fas fa-list"></i>
+                        </label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if craftsmen %}
+                        <div id="craftsmenGrid" class="row">
+                            {% for item in craftsmen %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="card-title mb-0">{{ item.craftsman.name }}</h6>
+                                                <span class="badge bg-{% if item.craftsman.is_active %}success{% else %}secondary{% endif %}">
+                                                    {% if item.craftsman.is_active %}稼働中{% else %}休止中{% endif %}
+                                                </span>
+                                            </div>
+
+                                            <p class="card-text small text-muted mb-2">
+                                                <i class="fas fa-tools me-1"></i>{{ item.craftsman.skill_category }}
+                                            </p>
+
+                                            <div class="mb-2">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <small class="text-muted">稼働率</small>
+                                                    <small class="fw-bold">{{ item.workload.workload_percentage|floatformat:1 }}%</small>
+                                                </div>
+                                                <div class="progress" style="height: 5px;">
+                                                    <div class="progress-bar
+                                                        {% if item.workload.workload_percentage < 30 %}bg-success
+                                                        {% elif item.workload.workload_percentage < 70 %}bg-warning
+                                                        {% else %}bg-danger{% endif %}"
+                                                        style="width: {{ item.workload.workload_percentage }}%">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row text-center small mb-3">
+                                                <div class="col-4">
+                                                    <div class="text-muted">時給</div>
+                                                    <div class="fw-bold">¥{{ item.craftsman.hourly_rate|floatformat:0 }}</div>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="text-muted">経験年数</div>
+                                                    <div class="fw-bold">{{ item.craftsman.experience_years }}年</div>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="text-muted">評価</div>
+                                                    <div class="fw-bold">
+                                                        {% if item.craftsman.average_rating %}
+                                                            {{ item.craftsman.average_rating|floatformat:1 }}
+                                                            <small class="text-muted">★</small>
+                                                        {% else %}
+                                                            <small class="text-muted">未評価</small>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex gap-1">
+                                                <a href="{% url 'craftsman_detail' item.craftsman.id %}"
+                                                   class="btn btn-outline-primary btn-sm flex-fill">
+                                                    <i class="fas fa-eye me-1"></i>詳細
+                                                </a>
+                                                <a href="{% url 'assignment_create_craftsman' item.craftsman.id %}"
+                                                   class="btn btn-primary btn-sm flex-fill">
+                                                    <i class="fas fa-plus me-1"></i>アサイン
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div id="craftsmenList" class="d-none">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>職人名</th>
+                                            <th>スキル</th>
+                                            <th>時給</th>
+                                            <th>経験年数</th>
+                                            <th>稼働率</th>
+                                            <th>評価</th>
+                                            <th>ステータス</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in craftsmen %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ item.craftsman.name }}</strong>
+                                                    {% if item.craftsman.phone %}
+                                                        <br><small class="text-muted">{{ item.craftsman.phone }}</small>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ item.craftsman.skill_category }}</td>
+                                                <td>¥{{ item.craftsman.hourly_rate|floatformat:0 }}</td>
+                                                <td>{{ item.craftsman.experience_years }}年</td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="progress me-2" style="width: 60px; height: 8px;">
+                                                            <div class="progress-bar
+                                                                {% if item.workload.workload_percentage < 30 %}bg-success
+                                                                {% elif item.workload.workload_percentage < 70 %}bg-warning
+                                                                {% else %}bg-danger{% endif %}"
+                                                                style="width: {{ item.workload.workload_percentage }}%">
+                                                            </div>
+                                                        </div>
+                                                        <small>{{ item.workload.workload_percentage|floatformat:1 }}%</small>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {% if item.craftsman.average_rating %}
+                                                        {{ item.craftsman.average_rating|floatformat:1 }} ★
+                                                    {% else %}
+                                                        <small class="text-muted">未評価</small>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-{% if item.craftsman.is_active %}success{% else %}secondary{% endif %}">
+                                                        {% if item.craftsman.is_active %}稼働中{% else %}休止中{% endif %}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="{% url 'craftsman_detail' item.craftsman.id %}"
+                                                           class="btn btn-outline-primary">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a href="{% url 'assignment_create_craftsman' item.craftsman.id %}"
+                                                           class="btn btn-primary">
+                                                            <i class="fas fa-plus"></i>
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">検索条件に該当する職人が見つかりませんでした</h5>
+                            <p class="text-muted">検索条件を変更して再度お試しください。</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">職人を検索してください</h5>
+                <p class="text-muted">左側の検索条件を入力して、適切な職人を見つけましょう。</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const gridViewBtn = document.getElementById('gridView');
+    const listViewBtn = document.getElementById('listView');
+    const craftsmenGrid = document.getElementById('craftsmenGrid');
+    const craftsmenList = document.getElementById('craftsmenList');
+
+    gridViewBtn.addEventListener('change', function() {
+        if (this.checked) {
+            craftsmenGrid.classList.remove('d-none');
+            craftsmenList.classList.add('d-none');
+        }
+    });
+
+    listViewBtn.addEventListener('change', function() {
+        if (this.checked) {
+            craftsmenGrid.classList.add('d-none');
+            craftsmenList.classList.remove('d-none');
+        }
+    });
+});
+</script>
+{% endblock %}

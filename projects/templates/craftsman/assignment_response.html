@@ -1,0 +1,317 @@
+{% extends "projects/base.html" %}
+
+{% block title %}案件返答処理 - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-reply me-2"></i>案件返答処理</h2>
+    <a href="{% url 'assignment_detail' assignment.id %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-1"></i>詳細に戻る
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-edit me-1"></i>返答内容</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label for="{{ form.status.id_for_label }}" class="form-label">
+                            <i class="fas fa-check-circle me-1"></i>返答ステータス <span class="text-danger">*</span>
+                        </label>
+                        <div class="row">
+                            {% for choice in form.status %}
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        {{ choice.tag }}
+                                        <label class="form-check-label" for="{{ choice.id_for_label }}">
+                                            {% if choice.choice_value == 'confirmed' %}
+                                                <span class="badge bg-success me-1">承諾</span>
+                                                {{ choice.choice_label }}
+                                            {% elif choice.choice_value == 'declined' %}
+                                                <span class="badge bg-danger me-1">辞退</span>
+                                                {{ choice.choice_label }}
+                                            {% elif choice.choice_value == 'pending' %}
+                                                <span class="badge bg-warning me-1">保留</span>
+                                                {{ choice.choice_label }}
+                                            {% else %}
+                                                {{ choice.choice_label }}
+                                            {% endif %}
+                                        </label>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.status.errors %}
+                            <div class="text-danger small">{{ form.status.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.response_message.id_for_label }}" class="form-label">
+                            <i class="fas fa-comment me-1"></i>返答メッセージ
+                        </label>
+                        {{ form.response_message }}
+                        {% if form.response_message.errors %}
+                            <div class="text-danger small">{{ form.response_message.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">職人からの返答内容やコメントを記載してください</div>
+                    </div>
+
+                    <div id="conditionalFields" class="d-none">
+                        <div class="row mb-3" id="confirmedFields">
+                            <div class="col-md-6">
+                                <label for="{{ form.confirmed_rate.id_for_label }}" class="form-label">
+                                    <i class="fas fa-yen-sign me-1"></i>承諾単価
+                                </label>
+                                {{ form.confirmed_rate }}
+                                {% if form.confirmed_rate.errors %}
+                                    <div class="text-danger small">{{ form.confirmed_rate.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">職人が承諾した時間単価（円）</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.confirmed_hours.id_for_label }}" class="form-label">
+                                    <i class="fas fa-clock me-1"></i>承諾作業時間
+                                </label>
+                                {{ form.confirmed_hours }}
+                                {% if form.confirmed_hours.errors %}
+                                    <div class="text-danger small">{{ form.confirmed_hours.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">1日あたりの作業時間</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="declinedFields">
+                            <label for="{{ form.decline_reason.id_for_label }}" class="form-label">
+                                <i class="fas fa-times-circle me-1"></i>辞退理由
+                            </label>
+                            {{ form.decline_reason }}
+                            {% if form.decline_reason.errors %}
+                                <div class="text-danger small">{{ form.decline_reason.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3" id="pendingFields">
+                            <label for="{{ form.pending_reason.id_for_label }}" class="form-label">
+                                <i class="fas fa-pause-circle me-1"></i>保留理由・検討事項
+                            </label>
+                            {{ form.pending_reason }}
+                            {% if form.pending_reason.errors %}
+                                <div class="text-danger small">{{ form.pending_reason.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">返答までに必要な検討時間や条件など</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>返答を記録
+                        </button>
+                        <a href="{% url 'assignment_detail' assignment.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>キャンセル
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-info-circle me-1"></i>アサイン情報</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>案件:</strong>
+                    <div class="mt-1">{{ assignment.project.title }}</div>
+                </div>
+
+                <div class="mb-3">
+                    <strong>職人:</strong>
+                    <div class="mt-1">{{ assignment.craftsman.name }}</div>
+                </div>
+
+                <div class="mb-3">
+                    <strong>期間:</strong>
+                    <div class="mt-1">
+                        {{ assignment.scheduled_start_date|date:"Y/m/d" }} -
+                        {{ assignment.scheduled_end_date|date:"Y/m/d" }}
+                        <small class="text-muted">({{ assignment.duration_days }}日間)</small>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <strong>提示条件:</strong>
+                    <div class="mt-1">
+                        ¥{{ assignment.offered_rate|floatformat:0 }}/時
+                        <small class="text-muted">({{ assignment.estimated_hours }}時間/日)</small>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <strong>優先度:</strong>
+                    <div class="mt-1">
+                        <span class="badge bg-{{ assignment.priority|yesno:'high:danger,medium:warning,low:secondary' }}">
+                            {{ assignment.get_priority_display }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <strong>打診日時:</strong>
+                    <div class="mt-1 small text-muted">{{ assignment.created_at|date:"Y/m/d H:i" }}</div>
+                </div>
+
+                {% if assignment.inquiry_message %}
+                    <div class="mb-3">
+                        <strong>打診メッセージ:</strong>
+                        <div class="mt-1 p-2 bg-light rounded small">
+                            {{ assignment.inquiry_message|linebreaks }}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-phone me-1"></i>連絡先</h6>
+            </div>
+            <div class="card-body">
+                {% if assignment.craftsman.phone %}
+                    <div class="mb-2">
+                        <a href="tel:{{ assignment.craftsman.phone }}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="fas fa-phone me-1"></i>{{ assignment.craftsman.phone }}
+                        </a>
+                    </div>
+                {% endif %}
+
+                {% if assignment.craftsman.line_id %}
+                    <div class="mb-2">
+                        <a href="https://line.me/ti/p/{{ assignment.craftsman.line_id }}" class="btn btn-outline-success btn-sm w-100" target="_blank">
+                            <i class="fab fa-line me-1"></i>LINE で連絡
+                        </a>
+                    </div>
+                {% endif %}
+
+                {% if assignment.craftsman.email %}
+                    <div class="mb-2">
+                        <a href="mailto:{{ assignment.craftsman.email }}" class="btn btn-outline-info btn-sm w-100">
+                            <i class="fas fa-envelope me-1"></i>メール送信
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-lightbulb me-1"></i>返答処理のポイント</h6>
+            </div>
+            <div class="card-body">
+                <ul class="small mb-0">
+                    <li><strong>承諾時:</strong> 条件確認と次のステップを明確に</li>
+                    <li><strong>辞退時:</strong> 理由を記録して今後の参考に</li>
+                    <li><strong>保留時:</strong> 回答期限と検討事項を確認</li>
+                    <li><strong>条件変更:</strong> 単価や時間の調整があれば記録</li>
+                    <li><strong>コミュニケーション:</strong> 職人との良好な関係維持</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusRadios = document.querySelectorAll('input[name="status"]');
+    const conditionalFields = document.getElementById('conditionalFields');
+    const confirmedFields = document.getElementById('confirmedFields');
+    const declinedFields = document.getElementById('declinedFields');
+    const pendingFields = document.getElementById('pendingFields');
+
+    // ステータス変更時の表示制御
+    statusRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            conditionalFields.classList.remove('d-none');
+
+            // 全フィールドを非表示
+            confirmedFields.classList.add('d-none');
+            declinedFields.classList.add('d-none');
+            pendingFields.classList.add('d-none');
+
+            // 選択されたステータスに応じてフィールドを表示
+            if (this.value === 'confirmed') {
+                confirmedFields.classList.remove('d-none');
+
+                // 承諾時のデフォルト値設定
+                const offeredRate = {{ assignment.offered_rate|default:0 }};
+                const estimatedHours = {{ assignment.estimated_hours|default:8 }};
+
+                const confirmedRateInput = document.querySelector('input[name="confirmed_rate"]');
+                const confirmedHoursInput = document.querySelector('input[name="confirmed_hours"]');
+
+                if (confirmedRateInput && !confirmedRateInput.value) {
+                    confirmedRateInput.value = offeredRate;
+                }
+                if (confirmedHoursInput && !confirmedHoursInput.value) {
+                    confirmedHoursInput.value = estimatedHours;
+                }
+
+            } else if (this.value === 'declined') {
+                declinedFields.classList.remove('d-none');
+            } else if (this.value === 'pending') {
+                pendingFields.classList.remove('d-none');
+            }
+        });
+    });
+
+    // 初期状態で選択済みの場合
+    const checkedRadio = document.querySelector('input[name="status"]:checked');
+    if (checkedRadio) {
+        checkedRadio.dispatchEvent(new Event('change'));
+    }
+
+    // フォーム送信前のバリデーション
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const selectedStatus = document.querySelector('input[name="status"]:checked');
+
+        if (!selectedStatus) {
+            e.preventDefault();
+            alert('返答ステータスを選択してください');
+            return;
+        }
+
+        if (selectedStatus.value === 'confirmed') {
+            const confirmedRate = document.querySelector('input[name="confirmed_rate"]').value;
+            const confirmedHours = document.querySelector('input[name="confirmed_hours"]').value;
+
+            if (!confirmedRate || !confirmedHours) {
+                e.preventDefault();
+                alert('承諾の場合は単価と作業時間を入力してください');
+                return;
+            }
+        }
+
+        if (selectedStatus.value === 'declined') {
+            const declineReason = document.querySelector('textarea[name="decline_reason"]').value;
+
+            if (!declineReason.trim()) {
+                e.preventDefault();
+                alert('辞退の場合は理由を入力してください');
+                return;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

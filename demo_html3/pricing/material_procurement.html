@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>材料発注・原材料費入力 - 建築派遣SaaS</title>
+    <link rel="stylesheet" href="../css/simple_theme.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Bootstrap互換性のため一部保持 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+            padding-bottom: 120px;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+        }
+        .procurement-method-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-left: 5px solid #ff6b35;
+        }
+        .method-option {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            position: relative;
+        }
+        .method-option:hover {
+            border-color: #ff6b35;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.2);
+            transform: translateY(-2px);
+        }
+        .method-option.selected {
+            border-color: #ff6b35;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+        }
+        .method-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .material-input-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .material-category {
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            background: #f8f9fa;
+        }
+        .material-item {
+            border-bottom: 1px solid #e9ecef;
+            padding: 15px 0;
+            margin-bottom: 15px;
+        }
+        .material-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .cost-input {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 10px;
+            transition: border-color 0.3s ease;
+        }
+        .cost-input:focus {
+            border-color: #ff6b35;
+            box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+        }
+        .labor-cost-section {
+            background: #e8f4fd;
+            border: 1px solid #2196f3;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .total-calculation {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.3);
+        }
+        .submit-section {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 107, 53, 0.3);
+            color: white;
+        }
+        .project-info {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .supplier-select {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .cost-breakdown {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+        }
+        .auto-suggestion {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-section">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-truck"></i> 材料発注・原材料費入力</h2>
+                    <p class="mb-0">工事に必要な材料の調達方法と費用入力</p>
+                </div>
+                <div>
+                    <span class="badge bg-light text-dark fs-6" id="userRoleBadge">アクセス権限</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Project Information -->
+        <div class="project-info">
+            <h6><i class="bi bi-info-circle text-primary"></i> 案件情報</h6>
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>案件番号:</strong>
+                    <div id="projectNumber">PRJ0001</div>
+                </div>
+                <div class="col-md-3">
+                    <strong>顧客名:</strong>
+                    <div id="customerName">田中建設(株)</div>
+                </div>
+                <div class="col-md-3">
+                    <strong>工事種別:</strong>
+                    <div id="constructionType">キッチンリフォーム</div>
+                </div>
+                <div class="col-md-3">
+                    <strong>調査日:</strong>
+                    <div id="surveyDate">2024-01-15</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Procurement Method Selection -->
+        <div class="procurement-method-section">
+            <h5><i class="bi bi-box-seam"></i> 材料調達方法選択</h5>
+            <p class="text-muted mb-4">材料の調達方法を選択してください</p>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="method-option" data-method="company" onclick="selectProcurementMethod('company')">
+                        <div class="method-icon bg-primary text-white">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <h6>当社発注</h6>
+                        <p class="mb-0">当社が材料を発注・調達<br>詳細な材料費を入力</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="method-option" data-method="customer" onclick="selectProcurementMethod('customer')">
+                        <div class="method-icon bg-success text-white">
+                            <i class="bi bi-person-check"></i>
+                        </div>
+                        <h6>顧客支給</h6>
+                        <p class="mb-0">顧客が材料を用意<br>材料費は計上なし</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="method-option" data-method="contractor" onclick="selectProcurementMethod('contractor')">
+                        <div class="method-icon bg-warning text-white">
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <h6>協力会社調達</h6>
+                        <p class="mb-0">協力会社が材料調達<br>外注費として計上</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Company Procurement Form -->
+        <div class="material-input-section" id="companyProcurementForm">
+            <h5><i class="bi bi-list-ul"></i> 当社発注 - 材料費詳細入力</h5>
+
+            <!-- Material Categories -->
+            <div class="material-category">
+                <h6><i class="bi bi-hammer"></i> 主要材料・設備</h6>
+
+                <div class="material-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="form-label">材料名</label>
+                            <input type="text" class="form-control" id="main_material_1_name" placeholder="例: システムキッチン">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">数量</label>
+                            <input type="number" class="form-control cost-input" id="main_material_1_qty" placeholder="1" step="0.1">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">単位</label>
+                            <select class="form-control" id="main_material_1_unit">
+                                <option value="式">式</option>
+                                <option value="個">個</option>
+                                <option value="台">台</option>
+                                <option value="㎡">㎡</option>
+                                <option value="m">m</option>
+                                <option value="L">L</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">単価 (円)</label>
+                            <input type="number" class="form-control cost-input" id="main_material_1_price" placeholder="280000">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">小計</label>
+                            <div class="fw-bold text-primary" id="main_material_1_total">¥0</div>
+                        </div>
+                    </div>
+                    <div class="auto-suggestion" id="main_material_1_suggestion" style="display: none;">
+                        <i class="bi bi-lightbulb text-success"></i>
+                        <span id="main_material_1_suggestion_text"></span>
+                    </div>
+                </div>
+
+                <div class="material-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="main_material_2_name" placeholder="例: 食器洗い乾燥機">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control cost-input" id="main_material_2_qty" placeholder="1" step="0.1">
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-control" id="main_material_2_unit">
+                                <option value="台">台</option>
+                                <option value="個">個</option>
+                                <option value="式">式</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control cost-input" id="main_material_2_price" placeholder="85000">
+                        </div>
+                        <div class="col-md-2">
+                            <div class="fw-bold text-primary" id="main_material_2_total">¥0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="addMaterialItem('main')">
+                        <i class="bi bi-plus"></i> 材料追加
+                    </button>
+                </div>
+            </div>
+
+            <div class="material-category">
+                <h6><i class="bi bi-tools"></i> 施工材料・消耗品</h6>
+
+                <div class="material-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="sub_material_1_name" placeholder="例: 接着剤・コーキング材">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control cost-input" id="sub_material_1_qty" placeholder="5" step="0.1">
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-control" id="sub_material_1_unit">
+                                <option value="本">本</option>
+                                <option value="L">L</option>
+                                <option value="kg">kg</option>
+                                <option value="式">式</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control cost-input" id="sub_material_1_price" placeholder="800">
+                        </div>
+                        <div class="col-md-2">
+                            <div class="fw-bold text-primary" id="sub_material_1_total">¥0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="material-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="sub_material_2_name" placeholder="例: ビス・釘・金具類">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control cost-input" id="sub_material_2_qty" placeholder="1" step="0.1">
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-control" id="sub_material_2_unit">
+                                <option value="式">式</option>
+                                <option value="箱">箱</option>
+                                <option value="kg">kg</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control cost-input" id="sub_material_2_price" placeholder="3500">
+                        </div>
+                        <div class="col-md-2">
+                            <div class="fw-bold text-primary" id="sub_material_2_total">¥0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="addMaterialItem('sub')">
+                        <i class="bi bi-plus"></i> 材料追加
+                    </button>
+                </div>
+            </div>
+
+            <!-- Supplier Selection -->
+            <div class="supplier-select">
+                <h6><i class="bi bi-shop"></i> 仕入先・配送情報</h6>
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label">主要仕入先</label>
+                        <select class="form-control" id="main_supplier">
+                            <option value="">選択してください</option>
+                            <option value="山田商事">山田商事</option>
+                            <option value="建材センター">建材センター</option>
+                            <option value="リフォーム材料店">リフォーム材料店</option>
+                            <option value="メーカー直販">メーカー直販</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">配送費</label>
+                        <input type="number" class="form-control cost-input" id="delivery_cost" placeholder="5000">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">納期 (日)</label>
+                        <input type="number" class="form-control" id="delivery_days" placeholder="7">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Supply Form -->
+        <div class="material-input-section" id="customerSupplyForm">
+            <h5><i class="bi bi-person-check"></i> 顧客支給 - 支給材料確認</h5>
+
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                <strong>顧客支給材料</strong><br>
+                顧客が材料を用意するため、材料費は計上されません。支給予定の材料を確認してください。
+            </div>
+
+            <div class="material-category">
+                <h6>支給材料リスト</h6>
+
+                <div class="material-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <label class="form-label">支給材料名</label>
+                            <input type="text" class="form-control" id="customer_material_1" placeholder="例: システムキッチン（顧客購入済み）">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">数量・仕様</label>
+                            <input type="text" class="form-control" id="customer_spec_1" placeholder="1式">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">受領予定日</label>
+                            <input type="date" class="form-control" id="customer_delivery_1">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="material-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" id="customer_material_2" placeholder="例: 食器洗い乾燥機">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="customer_spec_2" placeholder="1台">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" class="form-control" id="customer_delivery_2">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="addCustomerMaterial()">
+                        <i class="bi bi-plus"></i> 支給材料追加
+                    </button>
+                </div>
+            </div>
+
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>注意事項</strong><br>
+                ・支給材料の納期遅延は工期に影響します<br>
+                ・材料に不具合があった場合の責任所在を事前に確認してください<br>
+                ・施工に必要な消耗品（接着剤等）は別途当社で用意します
+            </div>
+        </div>
+
+        <!-- Contractor Procurement Form -->
+        <div class="material-input-section" id="contractorProcurementForm">
+            <h5><i class="bi bi-people"></i> 協力会社調達 - 外注費入力</h5>
+
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                <strong>協力会社による材料調達</strong><br>
+                協力会社が材料調達から施工まで一括で行います。外注費として計上してください。
+            </div>
+
+            <div class="material-category">
+                <h6>協力会社・外注費詳細</h6>
+
+                <div class="material-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="form-label">協力会社名</label>
+                            <input type="text" class="form-control" id="contractor_name_1" placeholder="例: ABC工務店">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">作業内容</label>
+                            <input type="text" class="form-control" id="contractor_work_1" placeholder="例: キッチン設置工事一式">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">外注費 (円)</label>
+                            <input type="number" class="form-control cost-input" id="contractor_cost_1" placeholder="450000">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">材料費込み</label>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="contractor_material_1" checked>
+                                <label class="form-check-label" for="contractor_material_1">込み</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="material-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="contractor_name_2" placeholder="例: 電気工事サービス">
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="contractor_work_2" placeholder="例: 電気配線工事">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control cost-input" id="contractor_cost_2" placeholder="85000">
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="contractor_material_2" checked>
+                                <label class="form-check-label" for="contractor_material_2">込み</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <button type="button" class="btn btn-outline-warning btn-sm" onclick="addContractorItem()">
+                        <i class="bi bi-plus"></i> 外注先追加
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Labor Cost Section -->
+        <div class="labor-cost-section" id="laborCostSection">
+            <h5><i class="bi bi-person-workspace"></i> 人件費・工賃入力</h5>
+            <p class="text-muted">工事に必要な人件費を入力してください</p>
+
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">職種</label>
+                    <select class="form-control" id="labor_type_1">
+                        <option value="">選択してください</option>
+                        <option value="大工">大工</option>
+                        <option value="電気工事士">電気工事士</option>
+                        <option value="配管工">配管工</option>
+                        <option value="内装工">内装工</option>
+                        <option value="クリーニング">クリーニング</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">作業日数</label>
+                    <input type="number" class="form-control cost-input" id="labor_days_1" placeholder="3" step="0.5">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">日当 (円)</label>
+                    <input type="number" class="form-control cost-input" id="labor_daily_1" placeholder="35000">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">人数</label>
+                    <input type="number" class="form-control cost-input" id="labor_people_1" placeholder="2">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">小計</label>
+                    <div class="fw-bold text-primary" id="labor_total_1">¥0</div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-3">
+                    <select class="form-control" id="labor_type_2">
+                        <option value="">職種選択</option>
+                        <option value="大工">大工</option>
+                        <option value="電気工事士">電気工事士</option>
+                        <option value="配管工">配管工</option>
+                        <option value="内装工">内装工</option>
+                        <option value="クリーニング">クリーニング</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control cost-input" id="labor_days_2" placeholder="1" step="0.5">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control cost-input" id="labor_daily_2" placeholder="28000">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control cost-input" id="labor_people_2" placeholder="1">
+                </div>
+                <div class="col-md-3">
+                    <div class="fw-bold text-primary" id="labor_total_2">¥0</div>
+                </div>
+            </div>
+
+            <div class="text-end mt-3">
+                <button type="button" class="btn btn-outline-info btn-sm" onclick="addLaborItem()">
+                    <i class="bi bi-plus"></i> 職種追加
+                </button>
+            </div>
+        </div>
+
+        <!-- Total Calculation -->
+        <div class="total-calculation">
+            <h4><i class="bi bi-calculator"></i> 原価合計</h4>
+            <div class="row">
+                <div class="col-md-4">
+                    <h3 id="totalMaterialCost">¥0</h3>
+                    <small>材料費合計</small>
+                </div>
+                <div class="col-md-4">
+                    <h3 id="totalLaborCost">¥0</h3>
+                    <small>人件費合計</small>
+                </div>
+                <div class="col-md-4">
+                    <h2 id="grandTotalCost">¥0</h2>
+                    <small>総原価</small>
+                </div>
+            </div>
+            <hr class="border-light mt-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>調達方法:</strong> <span id="selectedMethod">未選択</span>
+                </div>
+                <div class="col-md-6">
+                    <strong>次のステップ:</strong> SaaS自動見積生成
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Section -->
+    <div class="submit-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-outline-secondary w-100" onclick="saveDraft()">
+                        <i class="bi bi-save"></i> 下書き保存
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-outline-primary w-100" onclick="previewData()">
+                        <i class="bi bi-eye"></i> 入力確認
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-warning w-100" id="submitCosts" disabled>
+                        <i class="bi bi-gear"></i> 自動見積生成
+                    </button>
+                </div>
+            </div>
+            <div class="text-center mt-2">
+                <small class="text-muted">原価確定後、システムが自動でマージンを適用して見積を生成します</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="modal fade" id="previewModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-eye"></i> 原材料費確認</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="previewContent">
+                    <!-- Preview content will be inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">修正する</button>
+                    <button type="button" class="btn btn-warning" onclick="submitFromPreview()">自動見積生成実行</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-check-circle"></i> 原材料費確定完了</h5>
+                </div>
+                <div class="modal-body">
+                    <p>原材料費の入力が完了しました。</p>
+                    <div class="alert alert-info">
+                        <strong>総原価:</strong> <span id="modalTotalCost">¥0</span>
+                    </div>
+                    <p>システムが自動でマージンを適用して見積を生成します。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="goToAutoQuotation()">自動見積画面へ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/simple_ui.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/quotation_workflow.js"></script>
+    <script>
+        class MaterialProcurement {
+            constructor() {
+                this.selectedMethod = null;
+                this.projectData = {};
+                this.workflow = new QuotationWorkflow();
+                this.materialItems = [];
+                this.laborItems = [];
+                this.initializeApp();
+            }
+
+            initializeApp() {
+                this.validateAccess();
+                this.loadProjectData();
+                this.setupEventListeners();
+                this.loadSavedData();
+            }
+
+            validateAccess() {
+                const userRole = this.workflow.getUserRole();
+                if (!['employee', 'temporary'].includes(userRole)) {
+                    alert('アクセス権限がありません。');
+                    window.location.href = '../index_manager.html';
+                    return;
+                }
+
+                // Display user role
+                const badge = document.getElementById('userRoleBadge');
+                if (userRole === 'employee') {
+                    badge.textContent = '社員';
+                    badge.className = 'badge bg-success fs-6';
+                } else {
+                    badge.textContent = '派遣スタッフ';
+                    badge.className = 'badge bg-info fs-6';
+                }
+            }
+
+            loadProjectData() {
+                // Get project ID from URL or load sample data
+                const urlParams = new URLSearchParams(window.location.search);
+                const projectId = urlParams.get('id');
+
+                if (projectId) {
+                    // Load specific project data
+                    const projects = JSON.parse(localStorage.getItem('completedConstructionSurveys') || '[]');
+                    this.projectData = projects.find(p => p.surveyId === projectId) || this.getSampleProjectData();
+                } else {
+                    // Load sample project data
+                    this.projectData = this.getSampleProjectData();
+                }
+
+                this.displayProjectInfo();
+            }
+
+            getSampleProjectData() {
+                return {
+                    surveyId: 'PRJ0001',
+                    projectNumber: '2024-001',
+                    customerName: '田中建設(株)',
+                    constructionTypeName: 'キッチンリフォーム',
+                    completedAt: new Date().toISOString()
+                };
+            }
+
+            displayProjectInfo() {
+                document.getElementById('projectNumber').textContent = this.projectData.projectNumber || 'PRJ0001';
+                document.getElementById('customerName').textContent = this.projectData.customerName || '田中建設(株)';
+                document.getElementById('constructionType').textContent = this.projectData.constructionTypeName || 'キッチンリフォーム';
+                document.getElementById('surveyDate').textContent =
+                    new Date(this.projectData.completedAt || new Date()).toLocaleDateString('ja-JP');
+            }
+
+            setupEventListeners() {
+                // Material and labor cost calculation
+                ['main_material_1', 'main_material_2', 'sub_material_1', 'sub_material_2'].forEach(prefix => {
+                    ['qty', 'price'].forEach(suffix => {
+                        const element = document.getElementById(`${prefix}_${suffix}`);
+                        if (element) {
+                            element.addEventListener('input', () => {
+                                this.calculateItemTotal(prefix);
+                                this.calculateTotalCosts();
+                            });
+                        }
+                    });
+                });
+
+                // Labor cost calculation
+                ['labor_days_1', 'labor_daily_1', 'labor_people_1', 'labor_days_2', 'labor_daily_2', 'labor_people_2'].forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.addEventListener('input', () => {
+                            const index = id.includes('_1') ? '1' : '2';
+                            this.calculateLaborTotal(index);
+                            this.calculateTotalCosts();
+                        });
+                    }
+                });
+
+                // Contractor costs
+                ['contractor_cost_1', 'contractor_cost_2'].forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.addEventListener('input', () => {
+                            this.calculateTotalCosts();
+                        });
+                    }
+                });
+
+                // Submit button
+                document.getElementById('submitCosts').addEventListener('click', () => {
+                    this.showPreview();
+                });
+
+                // Auto-save
+                setInterval(() => {
+                    this.autoSave();
+                }, 30000);
+            }
+
+            selectProcurementMethod(method) {
+                // Remove previous selection
+                document.querySelectorAll('.method-option').forEach(option => {
+                    option.classList.remove('selected');
+                });
+
+                // Hide all forms
+                document.querySelectorAll('.material-input-section').forEach(section => {
+                    section.style.display = 'none';
+                });
+
+                // Select new method
+                this.selectedMethod = method;
+                document.querySelector(`[data-method="${method}"]`).classList.add('selected');
+
+                // Show relevant form
+                document.getElementById(`${method}ProcurementForm`).style.display = 'block';
+                document.getElementById('laborCostSection').style.display = 'block';
+
+                // Update method display
+                const methodNames = {
+                    company: '当社発注',
+                    customer: '顧客支給',
+                    contractor: '協力会社調達'
+                };
+                document.getElementById('selectedMethod').textContent = methodNames[method];
+
+                this.calculateTotalCosts();
+                this.validateSubmission();
+            }
+
+            calculateItemTotal(prefix) {
+                const qtyElement = document.getElementById(`${prefix}_qty`);
+                const priceElement = document.getElementById(`${prefix}_price`);
+                const totalElement = document.getElementById(`${prefix}_total`);
+
+                if (qtyElement && priceElement && totalElement) {
+                    const qty = parseFloat(qtyElement.value) || 0;
+                    const price = parseFloat(priceElement.value) || 0;
+                    const total = qty * price;
+
+                    totalElement.textContent = `¥${total.toLocaleString()}`;
+                }
+            }
+
+            calculateLaborTotal(index) {
+                const days = parseFloat(document.getElementById(`labor_days_${index}`).value) || 0;
+                const daily = parseFloat(document.getElementById(`labor_daily_${index}`).value) || 0;
+                const people = parseFloat(document.getElementById(`labor_people_${index}`).value) || 0;
+                const total = days * daily * people;
+
+                document.getElementById(`labor_total_${index}`).textContent = `¥${total.toLocaleString()}`;
+            }
+
+            calculateTotalCosts() {
+                let totalMaterial = 0;
+                let totalLabor = 0;
+
+                if (this.selectedMethod === 'company') {
+                    // Calculate material costs for company procurement
+                    ['main_material_1', 'main_material_2', 'sub_material_1', 'sub_material_2'].forEach(prefix => {
+                        const qtyElement = document.getElementById(`${prefix}_qty`);
+                        const priceElement = document.getElementById(`${prefix}_price`);
+                        if (qtyElement && priceElement) {
+                            const qty = parseFloat(qtyElement.value) || 0;
+                            const price = parseFloat(priceElement.value) || 0;
+                            totalMaterial += qty * price;
+                        }
+                    });
+
+                    // Add delivery cost
+                    const deliveryCost = parseFloat(document.getElementById('delivery_cost').value) || 0;
+                    totalMaterial += deliveryCost;
+
+                } else if (this.selectedMethod === 'contractor') {
+                    // Calculate contractor costs
+                    ['contractor_cost_1', 'contractor_cost_2'].forEach(id => {
+                        const element = document.getElementById(id);
+                        if (element) {
+                            totalMaterial += parseFloat(element.value) || 0;
+                        }
+                    });
+                }
+
+                // Calculate labor costs (only for company and customer methods)
+                if (this.selectedMethod !== 'contractor') {
+                    ['1', '2'].forEach(index => {
+                        const days = parseFloat(document.getElementById(`labor_days_${index}`).value) || 0;
+                        const daily = parseFloat(document.getElementById(`labor_daily_${index}`).value) || 0;
+                        const people = parseFloat(document.getElementById(`labor_people_${index}`).value) || 0;
+                        totalLabor += days * daily * people;
+                    });
+                }
+
+                const grandTotal = totalMaterial + totalLabor;
+
+                document.getElementById('totalMaterialCost').textContent = `¥${totalMaterial.toLocaleString()}`;
+                document.getElementById('totalLaborCost').textContent = `¥${totalLabor.toLocaleString()}`;
+                document.getElementById('grandTotalCost').textContent = `¥${grandTotal.toLocaleString()}`;
+
+                this.validateSubmission();
+            }
+
+            validateSubmission() {
+                const hasMethod = this.selectedMethod !== null;
+                const hasValidTotal = parseFloat(document.getElementById('grandTotalCost').textContent.replace(/[¥,]/g, '')) > 0;
+
+                document.getElementById('submitCosts').disabled = !(hasMethod && hasValidTotal);
+            }
+
+            collectProcurementData() {
+                const data = {
+                    procurementId: `proc_${Date.now()}`,
+                    projectId: this.projectData.surveyId,
+                    procurementType: this.selectedMethod,
+                    materials: this.collectMaterials(),
+                    laborCosts: this.collectLaborCosts(),
+                    totalMaterialCost: this.getTotalMaterialCost(),
+                    totalLaborCost: this.getTotalLaborCost(),
+                    totalCost: this.getGrandTotal(),
+                    timestamp: new Date().toISOString(),
+                    inputBy: this.workflow.getCurrentUser().name || '担当者',
+                    inputById: this.workflow.getCurrentUser().id
+                };
+
+                return data;
+            }
+
+            collectMaterials() {
+                const materials = [];
+
+                if (this.selectedMethod === 'company') {
+                    ['main_material_1', 'main_material_2', 'sub_material_1', 'sub_material_2'].forEach(prefix => {
+                        const name = document.getElementById(`${prefix}_name`).value;
+                        const qty = parseFloat(document.getElementById(`${prefix}_qty`).value) || 0;
+                        const unit = document.getElementById(`${prefix}_unit`).value;
+                        const price = parseFloat(document.getElementById(`${prefix}_price`).value) || 0;
+
+                        if (name && qty > 0 && price > 0) {
+                            materials.push({
+                                name,
+                                quantity: qty,
+                                unit,
+                                unitPrice: price,
+                                totalPrice: qty * price
+                            });
+                        }
+                    });
+
+                    // Add delivery cost
+                    const deliveryCost = parseFloat(document.getElementById('delivery_cost').value) || 0;
+                    if (deliveryCost > 0) {
+                        materials.push({
+                            name: '配送費',
+                            quantity: 1,
+                            unit: '式',
+                            unitPrice: deliveryCost,
+                            totalPrice: deliveryCost
+                        });
+                    }
+
+                } else if (this.selectedMethod === 'customer') {
+                    // Customer supplied materials
+                    ['customer_material_1', 'customer_material_2'].forEach((id, index) => {
+                        const name = document.getElementById(id).value;
+                        const spec = document.getElementById(`customer_spec_${index + 1}`).value;
+                        const delivery = document.getElementById(`customer_delivery_${index + 1}`).value;
+
+                        if (name) {
+                            materials.push({
+                                name,
+                                specification: spec,
+                                deliveryDate: delivery,
+                                cost: 0,
+                                suppliedBy: 'customer'
+                            });
+                        }
+                    });
+
+                } else if (this.selectedMethod === 'contractor') {
+                    // Contractor procurement
+                    ['contractor_name_1', 'contractor_name_2'].forEach((id, index) => {
+                        const name = document.getElementById(id).value;
+                        const work = document.getElementById(`contractor_work_${index + 1}`).value;
+                        const cost = parseFloat(document.getElementById(`contractor_cost_${index + 1}`).value) || 0;
+                        const materialIncluded = document.getElementById(`contractor_material_${index + 1}`).checked;
+
+                        if (name && cost > 0) {
+                            materials.push({
+                                contractorName: name,
+                                workDescription: work,
+                                totalCost: cost,
+                                materialIncluded
+                            });
+                        }
+                    });
+                }
+
+                return materials;
+            }
+
+            collectLaborCosts() {
+                const laborCosts = [];
+
+                if (this.selectedMethod !== 'contractor') {
+                    ['1', '2'].forEach(index => {
+                        const type = document.getElementById(`labor_type_${index}`).value;
+                        const days = parseFloat(document.getElementById(`labor_days_${index}`).value) || 0;
+                        const daily = parseFloat(document.getElementById(`labor_daily_${index}`).value) || 0;
+                        const people = parseFloat(document.getElementById(`labor_people_${index}`).value) || 0;
+
+                        if (type && days > 0 && daily > 0 && people > 0) {
+                            laborCosts.push({
+                                type,
+                                days,
+                                dailyRate: daily,
+                                people,
+                                totalCost: days * daily * people
+                            });
+                        }
+                    });
+                }
+
+                return laborCosts;
+            }
+
+            getTotalMaterialCost() {
+                return parseFloat(document.getElementById('totalMaterialCost').textContent.replace(/[¥,]/g, '')) || 0;
+            }
+
+            getTotalLaborCost() {
+                return parseFloat(document.getElementById('totalLaborCost').textContent.replace(/[¥,]/g, '')) || 0;
+            }
+
+            getGrandTotal() {
+                return parseFloat(document.getElementById('grandTotalCost').textContent.replace(/[¥,]/g, '')) || 0;
+            }
+
+            showPreview() {
+                const data = this.collectProcurementData();
+                const previewContent = this.generatePreviewContent(data);
+                document.getElementById('previewContent').innerHTML = previewContent;
+
+                const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+                modal.show();
+            }
+
+            generatePreviewContent(data) {
+                return `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>調達方法</h6>
+                            <p>${this.getProcurementMethodName(data.procurementType)}</p>
+
+                            <h6>材料・外注費</h6>
+                            <ul>
+                                ${data.materials.map(material =>
+                                    `<li>${material.name || material.contractorName}: ¥${(material.totalPrice || material.totalCost || 0).toLocaleString()}</li>`
+                                ).join('')}
+                            </ul>
+
+                            <h6>人件費</h6>
+                            <ul>
+                                ${data.laborCosts.map(labor =>
+                                    `<li>${labor.type}: ${labor.days}日 × ${labor.people}名 = ¥${labor.totalCost.toLocaleString()}</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>費用合計</h6>
+                            <table class="table table-sm">
+                                <tr><td>材料費合計</td><td class="text-end">¥${data.totalMaterialCost.toLocaleString()}</td></tr>
+                                <tr><td>人件費合計</td><td class="text-end">¥${data.totalLaborCost.toLocaleString()}</td></tr>
+                                <tr class="table-warning"><td><strong>総原価</strong></td><td class="text-end"><strong>¥${data.totalCost.toLocaleString()}</strong></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            getProcurementMethodName(method) {
+                const names = {
+                    company: '当社発注',
+                    customer: '顧客支給',
+                    contractor: '協力会社調達'
+                };
+                return names[method] || method;
+            }
+
+            autoSave() {
+                if (this.selectedMethod) {
+                    const data = this.collectProcurementData();
+                    localStorage.setItem('materialProcurementDraft', JSON.stringify(data));
+                }
+            }
+
+            loadSavedData() {
+                const saved = localStorage.getItem('materialProcurementDraft');
+                if (saved) {
+                    try {
+                        const data = JSON.parse(saved);
+
+                        if (data.procurementType) {
+                            this.selectProcurementMethod(data.procurementType);
+                        }
+
+                        // Restore materials and labor costs
+                        // Implementation details would go here...
+
+                    } catch (e) {
+                        console.error('Failed to load saved data:', e);
+                    }
+                }
+            }
+
+            async submitProcurement() {
+                try {
+                    const procurementData = this.collectProcurementData();
+
+                    // Submit to workflow system
+                    await this.workflow.submitProcurementData(procurementData);
+
+                    // Save to localStorage
+                    const existingData = JSON.parse(localStorage.getItem('procurementData') || '[]');
+                    existingData.push(procurementData);
+                    localStorage.setItem('procurementData', JSON.stringify(existingData));
+
+                    // Clear draft
+                    localStorage.removeItem('materialProcurementDraft');
+
+                    // Log activity
+                    this.workflow.logActivity('procurement_completed', {
+                        procurementId: procurementData.procurementId,
+                        procurementType: procurementData.procurementType,
+                        totalCost: procurementData.totalCost
+                    });
+
+                    // Show success modal
+                    document.getElementById('modalTotalCost').textContent = `¥${procurementData.totalCost.toLocaleString()}`;
+                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    successModal.show();
+
+                } catch (error) {
+                    alert('原材料費データの送信に失敗しました。再度お試しください。');
+                    console.error('Procurement submission failed:', error);
+                }
+            }
+        }
+
+        // Global functions
+        function selectProcurementMethod(method) {
+            app.selectProcurementMethod(method);
+        }
+
+        function addMaterialItem(category) {
+            // Implementation for adding material items
+            console.log(`Add material item for category: ${category}`);
+        }
+
+        function addCustomerMaterial() {
+            // Implementation for adding customer materials
+            console.log('Add customer material');
+        }
+
+        function addContractorItem() {
+            // Implementation for adding contractor items
+            console.log('Add contractor item');
+        }
+
+        function addLaborItem() {
+            // Implementation for adding labor items
+            console.log('Add labor item');
+        }
+
+        function saveDraft() {
+            app.autoSave();
+            alert('下書きを保存しました。');
+        }
+
+        function previewData() {
+            app.showPreview();
+        }
+
+        function submitFromPreview() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
+            modal.hide();
+            app.submitProcurement();
+        }
+
+        function goToAutoQuotation() {
+            window.location.href = 'auto_quotation.html?id=' + app.projectData.surveyId;
+        }
+
+        // Initialize app
+        let app;
+        document.addEventListener('DOMContentLoaded', () => {
+            app = new MaterialProcurement();
+        });
+    </script>
+</body>
+</html>

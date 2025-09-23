@@ -1,0 +1,336 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}問題管理 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-exclamation-triangle me-2"></i>問題管理</h2>
+                <div class="btn-group">
+                    <a href="{% url 'construction_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>ダッシュボード
+                    </a>
+                </div>
+            </div>
+
+            <!-- フィルター -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-filter me-2"></i>フィルター</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="status" class="form-label">対応状況</label>
+                                <select name="status" class="form-select">
+                                    <option value="">全て</option>
+                                    {% for value, label in status_choices %}
+                                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="priority" class="form-label">優先度</label>
+                                <select name="priority" class="form-select">
+                                    <option value="">全て</option>
+                                    {% for value, label in priority_choices %}
+                                    <option value="{{ value }}" {% if priority_filter == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="project" class="form-label">案件</label>
+                                <select name="project" class="form-select">
+                                    <option value="">全て</option>
+                                    {% for project in projects %}
+                                    <option value="{{ project.id }}" {% if project_filter == project.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ project.title }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search me-1"></i>検索
+                                    </button>
+                                    <a href="{% url 'issues_list' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-1"></i>クリア
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 問題一覧 -->
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>問題一覧 ({{ page_obj.paginator.count }}件)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if page_obj %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>問題</th>
+                                        <th>案件</th>
+                                        <th>種別</th>
+                                        <th>優先度</th>
+                                        <th>状況</th>
+                                        <th>担当者</th>
+                                        <th>報告日</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for issue in page_obj %}
+                                    <tr {% if issue.is_overdue %}class="table-danger"{% elif issue.priority == 'critical' %}class="table-warning"{% endif %}>
+                                        <td>
+                                            <div>
+                                                <strong>{{ issue.title }}</strong>
+                                                {% if issue.is_overdue %}
+                                                    <span class="badge bg-danger ms-2">期限超過</span>
+                                                {% endif %}
+                                            </div>
+                                            <small class="text-muted">{{ issue.description|truncatechars:60 }}</small>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'project_progress_detail' issue.project.id %}" class="text-decoration-none">
+                                                {{ issue.project.title }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                {{ issue.get_issue_type_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{% if issue.priority == 'critical' %}danger{% elif issue.priority == 'high' %}warning{% elif issue.priority == 'medium' %}info{% else %}secondary{% endif %}">
+                                                {{ issue.get_priority_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{% if issue.status == 'resolved' %}success{% elif issue.status == 'in_progress' %}info{% elif issue.status == 'escalated' %}warning{% else %}secondary{% endif %}">
+                                                {{ issue.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if issue.assigned_to %}
+                                                {{ issue.assigned_to.first_name }} {{ issue.assigned_to.last_name }}
+                                            {% else %}
+                                                <span class="text-muted">未割当</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ issue.created_at|date:"m/d H:i" }}</td>
+                                        <td>
+                                            <div class="btn-group-sm">
+                                                <a href="{% url 'issue_update' issue.id %}" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-edit"></i> 更新
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- ページネーション -->
+                        {% if page_obj.has_other_pages %}
+                        <nav class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if project_filter %}&project={{ project_filter }}{% endif %}">最初</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if project_filter %}&project={{ project_filter }}{% endif %}">前へ</a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if project_filter %}&project={{ project_filter }}{% endif %}">次へ</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if project_filter %}&project={{ project_filter }}{% endif %}">最後</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                            <h5 class="text-muted">該当する問題はありません</h5>
+                            <p class="text-muted">フィルター条件を変更するか、すべての問題が解決済みです。</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 統計情報 -->
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-fire fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">
+                                        {{ page_obj.object_list|length }}
+                                    </h5>
+                                    <small>緊急対応必要</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-clock fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">
+                                        {% for issue in page_obj %}{% if issue.is_overdue %}1{% else %}0{% endif %}{% endfor %}
+                                    </h5>
+                                    <small>期限超過</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user-cog fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">
+                                        {% for issue in page_obj %}{% if not issue.assigned_to %}1{% else %}0{% endif %}{% endfor %}
+                                    </h5>
+                                    <small>未割当</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">
+                                        {% for issue in page_obj %}{% if issue.status == 'resolved' %}1{% else %}0{% endif %}{% endfor %}
+                                    </h5>
+                                    <small>解決済み</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.table th {
+    border-top: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.btn-group-sm .btn {
+    font-size: 0.8rem;
+}
+
+.text-decoration-none:hover {
+    text-decoration: underline !important;
+}
+</style>
+
+<script>
+// 自動リフレッシュ（5分間隔）
+setInterval(() => {
+    location.reload();
+}, 300000);
+
+// 統計カウンターの更新
+document.addEventListener('DOMContentLoaded', function() {
+    const issues = document.querySelectorAll('tbody tr');
+    let criticalCount = 0;
+    let overdueCount = 0;
+    let unassignedCount = 0;
+    let resolvedCount = 0;
+
+    issues.forEach(row => {
+        const priorityBadge = row.querySelector('td:nth-child(4) .badge');
+        const statusBadge = row.querySelector('td:nth-child(5) .badge');
+        const assignedCell = row.querySelector('td:nth-child(6)');
+        const isOverdue = row.classList.contains('table-danger');
+
+        if (priorityBadge && priorityBadge.classList.contains('bg-danger')) {
+            criticalCount++;
+        }
+
+        if (isOverdue) {
+            overdueCount++;
+        }
+
+        if (assignedCell && assignedCell.textContent.includes('未割当')) {
+            unassignedCount++;
+        }
+
+        if (statusBadge && statusBadge.classList.contains('bg-success')) {
+            resolvedCount++;
+        }
+    });
+
+    // カウンターを更新
+    const cards = document.querySelectorAll('.row.mt-4 .card');
+    if (cards.length >= 4) {
+        cards[0].querySelector('h5').textContent = criticalCount;
+        cards[1].querySelector('h5').textContent = overdueCount;
+        cards[2].querySelector('h5').textContent = unassignedCount;
+        cards[3].querySelector('h5').textContent = resolvedCount;
+    }
+});
+</script>
+{% endblock %}

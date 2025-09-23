@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>見積承認履歴 - 社員専用</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/role-separation.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body data-user-role="employee">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="approval_center.html">
+                <i class="fas fa-history me-2"></i>見積承認履歴
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link text-white" href="approval_center.html">
+                    <i class="fas fa-list me-1"></i>承認センター
+                </a>
+                <a class="nav-link text-white" href="approval_urgent.html">
+                    <i class="fas fa-exclamation-triangle me-1"></i>緊急承認
+                </a>
+                <a href="../index_manager.html" class="btn btn-outline-light btn-sm ms-3">
+                    <i class="fas fa-home me-1"></i>ダッシュボード
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- 期間別統計 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="mb-0">48</h4>
+                                <p class="mb-0">総承認件数</p>
+                            </div>
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                        <small>今月</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="mb-0">¥5,240万</h4>
+                                <p class="mb-0">承認総額</p>
+                            </div>
+                            <i class="fas fa-yen-sign fa-2x"></i>
+                        </div>
+                        <small>今月累計</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="mb-0">3.2日</h4>
+                                <p class="mb-0">平均承認期間</p>
+                            </div>
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                        <small>前月: 4.1日</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="mb-0">94%</h4>
+                                <p class="mb-0">承認率</p>
+                            </div>
+                            <i class="fas fa-chart-pie fa-2x"></i>
+                        </div>
+                        <small>差戻率: 6%</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- フィルター・検索パネル -->
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-filter me-2"></i>検索・フィルター</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">期間</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <input type="date" class="form-control form-control-sm" id="dateFrom" value="2024-11-01">
+                                </div>
+                                <div class="col-6">
+                                    <input type="date" class="form-control form-control-sm" id="dateTo" value="2024-12-21">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">承認結果</label>
+                            <select class="form-select form-select-sm" id="approvalResult">
+                                <option value="">全て</option>
+                                <option value="approved">承認済み</option>
+                                <option value="rejected">差戻し</option>
+                                <option value="revised">修正要求</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">承認者</label>
+                            <select class="form-select form-select-sm" id="approver">
+                                <option value="">全て</option>
+                                <option value="yamada">山田部長</option>
+                                <option value="tanaka">田中課長</option>
+                                <option value="suzuki">鈴木主任</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">金額範囲</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <input type="number" class="form-control form-control-sm" placeholder="最小" id="amountMin">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" class="form-control form-control-sm" placeholder="最大" id="amountMax">
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-sm w-100" onclick="applyFilters()">
+                            <i class="fas fa-search me-1"></i>検索実行
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm w-100 mt-2" onclick="exportHistory()">
+                            <i class="fas fa-download me-1"></i>履歴エクスポート
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 統計チャート -->
+                <div class="card mt-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>月別承認状況</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="monthlyChart" width="300" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- メイン履歴テーブル -->
+            <div class="col-md-9">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-list me-2"></i>承認履歴一覧</h5>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="refreshHistory()">
+                                <i class="fas fa-sync-alt me-1"></i>更新
+                            </button>
+                            <button class="btn btn-outline-success" onclick="generateReport()">
+                                <i class="fas fa-file-alt me-1"></i>レポート生成
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0" id="historyTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>日時</th>
+                                        <th>案件情報</th>
+                                        <th>見積金額</th>
+                                        <th>利益率</th>
+                                        <th>承認者</th>
+                                        <th>結果</th>
+                                        <th>所要時間</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyTableBody">
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">2024-12-21</div>
+                                            <small class="text-muted">10:30</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">田中アパート1K原状回復</div>
+                                            <small class="text-muted">案件#H2024-156</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-success">¥280,000</div>
+                                            <small class="text-muted">見積作成: 12/19</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">23%</span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">山田部長</div>
+                                            <small class="text-muted">緊急承認</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">承認済み</span>
+                                        </td>
+                                        <td>
+                                            <div class="text-success">2.5時間</div>
+                                            <small class="text-muted">平均以下</small>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewHistoryDetail('H2024-156')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">2024-12-20</div>
+                                            <small class="text-muted">16:45</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">佐藤マンション1DK水道設備工事</div>
+                                            <small class="text-muted">案件#B2024-143</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-success">¥380,000</div>
+                                            <small class="text-muted">見積作成: 12/18</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">28%</span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">田中課長</div>
+                                            <small class="text-muted">通常承認</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">承認済み</span>
+                                        </td>
+                                        <td>
+                                            <div class="text-info">1.8日</div>
+                                            <small class="text-muted">標準的</small>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewHistoryDetail('B2024-143')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">2024-12-20</div>
+                                            <small class="text-muted">14:20</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">山田アパート1DK原状回復</div>
+                                            <small class="text-muted">案件#P2024-128</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-warning">¥320,000</div>
+                                            <small class="text-muted">見積作成: 12/17</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-warning">15%</span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">山田部長</div>
+                                            <small class="text-muted">修正後承認</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-warning">修正要求</span>
+                                        </td>
+                                        <td>
+                                            <div class="text-warning">4.2日</div>
+                                            <small class="text-muted">要修正</small>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewHistoryDetail('P2024-128')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">2024-12-19</div>
+                                            <small class="text-muted">11:30</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">鈴木アパート2DK水道設備修理</div>
+                                            <small class="text-muted">案件#W2024-134</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-danger">¥450,000</div>
+                                            <small class="text-muted">見積作成: 12/15</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-danger">12%</span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">田中課長</div>
+                                            <small class="text-muted">差戻し</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-danger">差戻し</span>
+                                        </td>
+                                        <td>
+                                            <div class="text-danger">3.8日</div>
+                                            <small class="text-muted">利益率不足</small>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewHistoryDetail('W2024-134')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">2024-12-18</div>
+                                            <small class="text-muted">15:15</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">高橋ビル2DK原状回復</div>
+                                            <small class="text-muted">案件#I2024-119</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-success">¥480,000</div>
+                                            <small class="text-muted">見積作成: 12/16</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">31%</span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">山田部長</div>
+                                            <small class="text-muted">優先承認</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">承認済み</span>
+                                        </td>
+                                        <td>
+                                            <div class="text-success">1.2日</div>
+                                            <small class="text-muted">高速承認</small>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewHistoryDetail('I2024-119')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">2024-12-17</div>
+                                            <small class="text-muted">13:45</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">伊藤アパート2DK原状回復</div>
+                                            <small class="text-muted">案件#B2024-105</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-success">¥520,000</div>
+                                            <small class="text-muted">見積作成: 12/14</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">26%</span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">鈴木主任</div>
+                                            <small class="text-muted">通常承認</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">承認済み</span>
+                                        </td>
+                                        <td>
+                                            <div class="text-info">2.8日</div>
+                                            <small class="text-muted">標準的</small>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewHistoryDetail('B2024-105')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0 justify-content-center">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">前へ</a>
+                                </li>
+                                <li class="page-item active">
+                                    <a class="page-link" href="#">1</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">2</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">3</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">次へ</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- 承認傾向分析 -->
+                <div class="card mt-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>承認傾向分析</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <canvas id="approvalTrendChart" width="400" height="200"></canvas>
+                            </div>
+                            <div class="col-md-6">
+                                <canvas id="approvalTimeChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <div class="card border-success">
+                                    <div class="card-body text-center">
+                                        <h5 class="text-success">改善点</h5>
+                                        <ul class="list-unstyled text-start">
+                                            <li><i class="fas fa-arrow-up text-success me-2"></i>承認速度 22%向上</li>
+                                            <li><i class="fas fa-arrow-up text-success me-2"></i>承認率 94%達成</li>
+                                            <li><i class="fas fa-arrow-up text-success me-2"></i>高利益案件増加</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-warning">
+                                    <div class="card-body text-center">
+                                        <h5 class="text-warning">注意点</h5>
+                                        <ul class="list-unstyled text-start">
+                                            <li><i class="fas fa-exclamation-triangle text-warning me-2"></i>低利益案件の増加</li>
+                                            <li><i class="fas fa-exclamation-triangle text-warning me-2"></i>修正要求率 6%</li>
+                                            <li><i class="fas fa-exclamation-triangle text-warning me-2"></i>大型案件の承認遅延</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-info">
+                                    <div class="card-body text-center">
+                                        <h5 class="text-info">推奨アクション</h5>
+                                        <ul class="list-unstyled text-start">
+                                            <li><i class="fas fa-lightbulb text-info me-2"></i>見積精度の向上</li>
+                                            <li><i class="fas fa-lightbulb text-info me-2"></i>事前レビュー強化</li>
+                                            <li><i class="fas fa-lightbulb text-info me-2"></i>承認基準の見直し</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 履歴詳細モーダル -->
+    <div class="modal fade" id="historyDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">承認履歴詳細</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="historyDetailContent">
+                    <!-- 履歴詳細情報がここに表示される -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                    <button type="button" class="btn btn-primary" onclick="downloadHistoryPDF()">
+                        <i class="fas fa-download me-1"></i>PDF出力
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 役割制御の強制実行
+            if (typeof window.roleManager !== 'undefined') {
+                window.roleManager.enforceRoleSeparation();
+                window.roleManager.hideFinancialInfo();
+            }
+
+            // 法令遵守のための監査ログ記録
+            logAuditEvent('APPROVAL_HISTORY_ACCESS', 'approval_history.html', 'APPROVAL_ANALYTICS');
+
+            // チャート初期化
+            initializeMonthlyChart();
+            initializeApprovalTrendChart();
+            initializeApprovalTimeChart();
+        });
+
+        function initializeMonthlyChart() {
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['10月', '11月', '12月'],
+                    datasets: [{
+                        label: '承認件数',
+                        data: [42, 38, 48],
+                        backgroundColor: '#007bff',
+                        borderColor: '#0056b3',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeApprovalTrendChart() {
+            const ctx = document.getElementById('approvalTrendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [{
+                        label: '承認率',
+                        data: [89, 92, 94, 96],
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: '差戻率',
+                        data: [11, 8, 6, 4],
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '週別承認傾向'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeApprovalTimeChart() {
+            const ctx = document.getElementById('approvalTimeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['即日', '1-2日', '3-5日', '5日以上'],
+                    datasets: [{
+                        data: [15, 45, 30, 10],
+                        backgroundColor: [
+                            '#28a745',
+                            '#ffc107',
+                            '#fd7e14',
+                            '#dc3545'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '承認所要時間分布'
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function applyFilters() {
+            const filters = {
+                dateFrom: document.getElementById('dateFrom').value,
+                dateTo: document.getElementById('dateTo').value,
+                approvalResult: document.getElementById('approvalResult').value,
+                approver: document.getElementById('approver').value,
+                amountMin: document.getElementById('amountMin').value,
+                amountMax: document.getElementById('amountMax').value
+            };
+
+            logAuditEvent('HISTORY_FILTER_APPLIED', JSON.stringify(filters), 'APPROVAL_ANALYTICS');
+
+            // フィルター適用処理（実際の実装ではサーバーサイドで処理）
+            console.log('フィルター適用:', filters);
+            alert('フィルターが適用されました。');
+        }
+
+        function viewHistoryDetail(caseId) {
+            const historyData = {
+                'H2024-156': {
+                    caseId: 'H2024-156',
+                    name: '田中アパート1K原状回復',
+                    amount: '¥280,000',
+                    profit: '23%',
+                    approver: '山田部長',
+                    result: '承認済み',
+                    duration: '2.5時間',
+                    timeline: [
+                        { time: '2024-12-19 08:00', action: '見積作成', user: '鈴木一郎', status: 'completed' },
+                        { time: '2024-12-19 09:30', action: '技術レビュー', user: '田中二郎', status: 'completed' },
+                        { time: '2024-12-21 08:00', action: '承認申請', user: '鈴木一郎', status: 'completed' },
+                        { time: '2024-12-21 10:30', action: '最終承認', user: '山田部長', status: 'completed' }
+                    ],
+                    comments: [
+                        { user: '山田部長', time: '2024-12-21 10:30', comment: '利益率が適正で、顧客も既存のお客様なので承認します。' },
+                        { user: '田中二郎', time: '2024-12-19 09:30', comment: '技術的に問題なし。標準的な原状回復作業です。' }
+                    ]
+                }
+            };
+
+            const data = historyData[caseId] || historyData['H2024-156'];
+
+            const detailContent = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>基本情報</h6>
+                        <table class="table table-sm">
+                            <tr><td>案件ID</td><td>${data.caseId}</td></tr>
+                            <tr><td>案件名</td><td>${data.name}</td></tr>
+                            <tr><td>見積金額</td><td class="text-success fw-bold">${data.amount}</td></tr>
+                            <tr><td>利益率</td><td>${data.profit}</td></tr>
+                            <tr><td>承認者</td><td>${data.approver}</td></tr>
+                            <tr><td>最終結果</td><td><span class="badge bg-success">${data.result}</span></td></tr>
+                            <tr><td>所要時間</td><td>${data.duration}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>承認プロセス</h6>
+                        <div class="timeline">
+                            ${data.timeline.map(item => `
+                                <div class="timeline-item mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <div class="timeline-marker bg-success rounded-circle me-2" style="width: 12px; height: 12px;"></div>
+                                        <div>
+                                            <div class="fw-bold">${item.action}</div>
+                                            <small class="text-muted">${item.time} - ${item.user}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="col-12 mt-3">
+                        <h6>承認コメント</h6>
+                        ${data.comments.map(comment => `
+                            <div class="card mb-2">
+                                <div class="card-body p-2">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>${comment.user}</strong>
+                                        <small class="text-muted">${comment.time}</small>
+                                    </div>
+                                    <p class="mb-0 mt-1">${comment.comment}</p>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('historyDetailContent').innerHTML = detailContent;
+            new bootstrap.Modal(document.getElementById('historyDetailModal')).show();
+
+            logAuditEvent('HISTORY_DETAIL_VIEWED', `Case ID: ${caseId}`, 'APPROVAL_ANALYTICS');
+        }
+
+        function refreshHistory() {
+            logAuditEvent('HISTORY_REFRESH', 'Manual refresh triggered', 'APPROVAL_ANALYTICS');
+            location.reload();
+        }
+
+        function exportHistory() {
+            logAuditEvent('HISTORY_EXPORT_REQUESTED', 'History export requested', 'REPORT_GENERATION');
+            alert('承認履歴をエクスポート中...\n\n以下の形式で出力できます:\n・CSV形式（Excel対応）\n・PDF形式（印刷用）\n・JSON形式（システム連携用）');
+        }
+
+        function generateReport() {
+            logAuditEvent('APPROVAL_REPORT_GENERATED', 'Approval analysis report requested', 'REPORT_GENERATION');
+            alert('承認分析レポートを生成中...\n\n以下の内容が含まれます:\n・承認傾向分析\n・効率性指標\n・改善提案\n・月次比較データ');
+        }
+
+        function downloadHistoryPDF() {
+            logAuditEvent('HISTORY_PDF_DOWNLOAD', 'PDF download requested', 'REPORT_GENERATION');
+            alert('履歴詳細をPDF形式でダウンロード中...');
+        }
+
+        function logAuditEvent(action, details, category) {
+            const auditLog = {
+                timestamp: new Date().toISOString(),
+                action: action,
+                details: details,
+                category: category,
+                userId: 'current_user',
+                userRole: 'employee',
+                module: 'approval_history'
+            };
+
+            console.log('承認履歴監査ログ:', auditLog);
+        }
+    </script>
+</body>
+</html>

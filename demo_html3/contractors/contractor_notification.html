@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>決定事項伝達 - 建築派遣SaaS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .notification-card {
+            background: white;
+            border-radius: 12px;
+            margin: 15px 0;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+        }
+        .notification-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            padding: 20px;
+            margin: -20px -20px 20px -20px;
+        }
+        .approved-badge {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .decision-details {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .contact-action {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .completion-tracking {
+            background: #f3e5f5;
+            border: 1px solid #9c27b0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .timeline-step {
+            position: relative;
+            padding-left: 40px;
+            margin: 20px 0;
+            padding-bottom: 20px;
+        }
+        .timeline-step::before {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 0;
+            bottom: -20px;
+            width: 2px;
+            background: #dee2e6;
+        }
+        .timeline-step::after {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 6px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #28a745;
+        }
+        .timeline-step.completed::after {
+            background: #28a745;
+        }
+        .timeline-step.current::after {
+            background: #ffc107;
+            box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.3);
+        }
+        .timeline-step.pending::after {
+            background: #6c757d;
+        }
+        .contact-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .contact-method {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .contact-method:hover {
+            border-color: #007bff;
+            transform: translateY(-2px);
+        }
+        .contact-method.selected {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .message-template {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .send-confirmation {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <h5 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>派遣スタッフメニュー</span>
+                    </h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="../index.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="contractor_coordination.html">
+                                <i class="fas fa-phone me-2"></i>協力会社連絡
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="contractor_notification.html">
+                                <i class="fas fa-bell me-2"></i>決定事項伝達
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="contractor_tasks.html">
+                                <i class="fas fa-tasks me-2"></i>割り当てタスク
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../surveys/survey_mobile.html">
+                                <i class="fas fa-mobile-alt me-2"></i>現地調査
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">
+                        <i class="fas fa-bell me-3"></i>決定事項伝達
+                        <small class="text-muted">STEP 5</small>
+                    </h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button class="btn btn-outline-secondary" onclick="refreshNotifications()">
+                            <i class="fas fa-sync me-1"></i>更新
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 承認済み案件一覧 -->
+                <div class="notification-card">
+                    <div class="notification-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0">
+                                    <i class="fas fa-check-circle me-2"></i>承認完了通知
+                                </h4>
+                                <p class="mb-0 mt-2">社員から協力会社手配の承認が完了しました</p>
+                            </div>
+                            <span class="badge bg-light text-dark">2分前</span>
+                        </div>
+                    </div>
+
+                    <!-- 承認された案件情報 -->
+                    <div class="approved-badge">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5 class="text-success mb-0">
+                                    <i class="fas fa-project-diagram me-2"></i>港区ワンルーム原状回復
+                                </h5>
+                                <p class="mb-0 mt-1">
+                                    <strong>協力会社:</strong> 東京クロス工業株式会社 (山田部長)<br>
+                                    <strong>承認金額:</strong> ¥180,000 | <strong>工期:</strong> 2025年1月20日〜22日
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <span class="badge bg-success fs-6 px-3 py-2">
+                                    <i class="fas fa-check me-1"></i>承認済み
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 社員からの承認コメント -->
+                    <div class="decision-details">
+                        <h6><i class="fas fa-comment me-2"></i>社員からの承認コメント</h6>
+                        <div class="border-start border-4 border-primary ps-3">
+                            <p class="mb-2">協力会社の実績と見積内容を確認しました。予算内で適切な工程が組まれており、承認いたします。</p>
+                            <p class="mb-0"><strong>承認条件:</strong></p>
+                            <ul class="mb-0 mt-1">
+                                <li>作業開始前に詳細な作業手順書の提出</li>
+                                <li>進捗報告を毎日16:00に実施</li>
+                                <li>入居者立会いの時間厳守</li>
+                            </ul>
+                        </div>
+                        <small class="text-muted">承認者: 山田課長 | 承認日時: 2025年1月16日 15:45</small>
+                    </div>
+
+                    <!-- 実行タイムライン -->
+                    <div class="mb-4">
+                        <h6><i class="fas fa-clock me-2"></i>実行タイムライン</h6>
+                        <div class="timeline-step completed">
+                            <strong>STEP 1:</strong> 工程表作成・タスク発行 <span class="text-muted">(完了)</span>
+                        </div>
+                        <div class="timeline-step completed">
+                            <strong>STEP 2:</strong> 協力会社連絡・調整 <span class="text-muted">(完了)</span>
+                        </div>
+                        <div class="timeline-step completed">
+                            <strong>STEP 3:</strong> 自動情報共有・通知 <span class="text-muted">(完了)</span>
+                        </div>
+                        <div class="timeline-step completed">
+                            <strong>STEP 4:</strong> 社員確認・承認 <span class="text-muted">(完了)</span>
+                        </div>
+                        <div class="timeline-step current">
+                            <strong>STEP 5:</strong> 決定事項伝達 <span class="text-warning">(実行中)</span>
+                        </div>
+                    </div>
+
+                    <!-- 連絡方法選択 -->
+                    <div class="contact-action">
+                        <h5><i class="fas fa-phone me-2"></i>協力会社への最終確認連絡</h5>
+                        <p class="text-muted">承認された内容を協力会社の責任者に伝達し、最終確認を行ってください。</p>
+
+                        <div class="contact-methods">
+                            <div class="contact-method" onclick="selectContactMethod('phone')">
+                                <i class="fas fa-phone fa-2x text-primary mb-2"></i>
+                                <h6>電話連絡</h6>
+                                <small class="text-muted">090-1234-5678</small>
+                            </div>
+                            <div class="contact-method" onclick="selectContactMethod('email')">
+                                <i class="fas fa-envelope fa-2x text-success mb-2"></i>
+                                <h6>メール送信</h6>
+                                <small class="text-muted">yamada@tokyo-cross.co.jp</small>
+                            </div>
+                            <div class="contact-method" onclick="selectContactMethod('both')">
+                                <i class="fas fa-comments fa-2x text-warning mb-2"></i>
+                                <h6>電話 + メール</h6>
+                                <small class="text-muted">推奨方法</small>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary btn-lg" onclick="startFinalContact()" id="contactBtn" disabled>
+                            <i class="fas fa-phone me-2"></i>最終確認連絡を開始
+                        </button>
+                    </div>
+
+                    <!-- メッセージテンプレート (初期は非表示) -->
+                    <div id="messageTemplate" class="message-template" style="display: none;">
+                        <h6><i class="fas fa-file-text me-2"></i>伝達内容テンプレート</h6>
+                        <div class="mb-3">
+                            <label class="form-label">電話用スクリプト</label>
+                            <textarea class="form-control" id="phoneScript" rows="6" readonly>お疲れ様です。建築派遣SaaSの田中です。
+
+港区ワンルーム原状回復の件でご連絡いたしました。
+社員による最終承認が完了いたしましたので、ご報告いたします。
+
+【確定事項】
+・工期: 2025年1月20日(月)〜22日(水) 3日間
+・作業時間: 9:00-17:00
+・承認金額: ¥180,000
+・作業内容: クロス貼り替え、水道設備修理、清掃・養生
+
+【承認条件】
+・作業開始前に詳細な作業手順書の提出をお願いします
+・進捗報告を毎日16:00に実施してください
+・入居者立会い(最終日16:00)の時間厳守をお願いします
+
+以上の内容で最終確定とさせていただきますが、ご確認をお願いいたします。</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">メール件名・本文</label>
+                            <input type="text" class="form-control mb-2" value="【確定通知】港区ワンルーム原状回復工事の件" readonly>
+                            <textarea class="form-control" id="emailContent" rows="8" readonly>山田部長
+
+いつもお世話になっております。
+建築派遣SaaSの田中太郎です。
+
+港区ワンルーム原状回復工事の件につきまして、
+社員による最終承認が完了いたしましたので、確定事項をご連絡いたします。
+
+■ 確定事項
+・案件名: 港区ワンルーム原状回復
+・工期: 2025年1月20日(月)〜22日(水) 3日間
+・作業時間: 9:00-17:00
+・承認金額: ¥180,000
+・作業内容: クロス貼り替え(25㎡)、水道設備修理、清掃・養生
+
+■ 承認条件
+1. 作業開始前に詳細な作業手順書の提出
+2. 進捗報告を毎日16:00に実施
+3. 入居者立会い(最終日16:00)の時間厳守
+
+以上の内容で最終確定とさせていただきます。
+ご不明な点がございましたら、お気軽にお申し付けください。
+
+よろしくお願いいたします。
+
+田中太郎
+建築派遣SaaS
+TEL: 03-1234-5678
+MAIL: tanaka@kenchiku-haken.co.jp</textarea>
+                        </div>
+                    </div>
+
+                    <!-- 連絡実行・完了報告 (初期は非表示) -->
+                    <div id="contactExecution" class="completion-tracking" style="display: none;">
+                        <h6><i class="fas fa-tasks me-2"></i>連絡実行・完了報告</h6>
+
+                        <!-- 電話連絡チェックリスト -->
+                        <div class="mb-3" id="phoneChecklist">
+                            <label class="form-label"><i class="fas fa-phone me-1"></i>電話連絡チェックリスト</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="phoneContact">
+                                <label class="form-check-label" for="phoneContact">
+                                    山田部長に電話で承認内容を伝達 (090-1234-5678)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="phoneConfirm">
+                                <label class="form-check-label" for="phoneConfirm">
+                                    承認条件についても了承を得られた
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="phoneSchedule">
+                                <label class="form-check-label" for="phoneSchedule">
+                                    作業スケジュールの最終確認完了
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- メール送信チェックリスト -->
+                        <div class="mb-3" id="emailChecklist">
+                            <label class="form-label"><i class="fas fa-envelope me-1"></i>メール送信チェックリスト</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="emailSent">
+                                <label class="form-check-label" for="emailSent">
+                                    確定通知メールを送信 (yamada@tokyo-cross.co.jp)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="emailReply">
+                                <label class="form-check-label" for="emailReply">
+                                    相手からの返信確認 (了承の返事)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 特記事項入力 -->
+                        <div class="mb-3">
+                            <label for="finalNotes" class="form-label">特記事項・相手からの要望</label>
+                            <textarea class="form-control" id="finalNotes" rows="3" placeholder="協力会社からの追加要望や確認事項があれば記入してください..."></textarea>
+                        </div>
+
+                        <!-- 完了報告ボタン -->
+                        <div class="text-center">
+                            <button class="btn btn-success btn-lg" onclick="completeFinalNotification()" id="completeBtn" disabled>
+                                <i class="fas fa-check-circle me-2"></i>最終確認完了報告
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 完了確認 (初期は非表示) -->
+                    <div id="completionConfirmation" class="send-confirmation" style="display: none;">
+                        <h5 class="text-success">
+                            <i class="fas fa-check-circle me-2"></i>協力会社手配フロー完了
+                        </h5>
+                        <p class="mb-0">全ての手配が完了しました。プロジェクトの進行準備が整いました。</p>
+                        <div class="mt-3">
+                            <button class="btn btn-primary" onclick="returnToDashboard()">
+                                <i class="fas fa-tachometer-alt me-1"></i>ダッシュボードに戻る
+                            </button>
+                            <button class="btn btn-outline-secondary ms-2" onclick="viewProjectSchedule()">
+                                <i class="fas fa-calendar me-1"></i>工程表を確認
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // STEP 5: 派遣用決定事項伝達機能の実装
+
+        let selectedContactMethod = null;
+        let allChecklistCompleted = false;
+
+        // 連絡方法選択
+        function selectContactMethod(method) {
+            console.log('STEP 5: 連絡方法選択:', method);
+
+            selectedContactMethod = method;
+
+            // 全ての連絡方法の選択状態をリセット
+            document.querySelectorAll('.contact-method').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // 選択した方法をハイライト
+            event.target.closest('.contact-method').classList.add('selected');
+
+            // 連絡開始ボタンを有効化
+            document.getElementById('contactBtn').disabled = false;
+        }
+
+        // 最終確認連絡開始
+        function startFinalContact() {
+            console.log('STEP 5: 最終確認連絡開始:', selectedContactMethod);
+
+            if (!selectedContactMethod) {
+                alert('連絡方法を選択してください。');
+                return;
+            }
+
+            // メッセージテンプレートを表示
+            document.getElementById('messageTemplate').style.display = 'block';
+
+            // 連絡実行チェックリストを表示
+            document.getElementById('contactExecution').style.display = 'block';
+
+            // 選択した連絡方法に応じてチェックリストを調整
+            updateChecklistVisibility();
+
+            // スムーズスクロール
+            document.getElementById('messageTemplate').scrollIntoView({
+                behavior: 'smooth'
+            });
+
+            // 連絡開始ボタンを無効化
+            document.getElementById('contactBtn').disabled = true;
+            document.getElementById('contactBtn').innerHTML = '<i class="fas fa-check me-2"></i>連絡開始済み';
+            document.getElementById('contactBtn').classList.remove('btn-primary');
+            document.getElementById('contactBtn').classList.add('btn-secondary');
+        }
+
+        // チェックリストの表示調整
+        function updateChecklistVisibility() {
+            const phoneChecklist = document.getElementById('phoneChecklist');
+            const emailChecklist = document.getElementById('emailChecklist');
+
+            switch (selectedContactMethod) {
+                case 'phone':
+                    phoneChecklist.style.display = 'block';
+                    emailChecklist.style.display = 'none';
+                    break;
+                case 'email':
+                    phoneChecklist.style.display = 'none';
+                    emailChecklist.style.display = 'block';
+                    break;
+                case 'both':
+                    phoneChecklist.style.display = 'block';
+                    emailChecklist.style.display = 'block';
+                    break;
+            }
+
+            // チェックボックスの監視を設定
+            setupChecklistMonitoring();
+        }
+
+        // チェックリスト監視設定
+        function setupChecklistMonitoring() {
+            const checkboxes = document.querySelectorAll('#contactExecution input[type="checkbox"]');
+
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    checkCompletionStatus();
+                });
+            });
+        }
+
+        // 完了ステータスチェック
+        function checkCompletionStatus() {
+            const requiredCheckboxes = getRequiredCheckboxes();
+            const checkedBoxes = requiredCheckboxes.filter(checkbox => checkbox.checked);
+
+            const allCompleted = checkedBoxes.length === requiredCheckboxes.length;
+
+            // 完了ボタンの有効化/無効化
+            document.getElementById('completeBtn').disabled = !allCompleted;
+
+            allChecklistCompleted = allCompleted;
+
+            console.log('チェックリスト完了状況:', {
+                completed: checkedBoxes.length,
+                total: requiredCheckboxes.length,
+                allCompleted: allCompleted
+            });
+        }
+
+        // 必要なチェックボックスを取得
+        function getRequiredCheckboxes() {
+            const allCheckboxes = document.querySelectorAll('#contactExecution input[type="checkbox"]');
+            const visibleCheckboxes = [];
+
+            allCheckboxes.forEach(checkbox => {
+                const container = checkbox.closest('.mb-3');
+                if (container && container.style.display !== 'none') {
+                    visibleCheckboxes.push(checkbox);
+                }
+            });
+
+            return visibleCheckboxes;
+        }
+
+        // 最終確認完了報告
+        function completeFinalNotification() {
+            console.log('STEP 5: 最終確認完了報告');
+
+            if (!allChecklistCompleted) {
+                alert('すべてのチェックリストを完了してください。');
+                return;
+            }
+
+            const finalNotes = document.getElementById('finalNotes').value;
+
+            // 完了データの収集
+            const completionData = {
+                selectedContactMethod: selectedContactMethod,
+                phoneContact: document.getElementById('phoneContact')?.checked || false,
+                phoneConfirm: document.getElementById('phoneConfirm')?.checked || false,
+                phoneSchedule: document.getElementById('phoneSchedule')?.checked || false,
+                emailSent: document.getElementById('emailSent')?.checked || false,
+                emailReply: document.getElementById('emailReply')?.checked || false,
+                finalNotes: finalNotes,
+                completionTime: new Date().toISOString()
+            };
+
+            console.log('完了データ:', completionData);
+
+            // 完了確認画面を表示
+            document.getElementById('completionConfirmation').style.display = 'block';
+
+            // 実行セクションを非表示
+            document.getElementById('contactExecution').style.display = 'none';
+
+            // スムーズスクロール
+            document.getElementById('completionConfirmation').scrollIntoView({
+                behavior: 'smooth'
+            });
+
+            // 完了通知をSaaSシステムに送信 (シミュレーション)
+            setTimeout(() => {
+                console.log('協力会社手配フロー完全完了');
+                console.log('全5ステップのフローが正常に完了しました');
+
+                // 成功メッセージ
+                alert('協力会社手配フローが完了しました！\n\n' +
+                      '✓ STEP 1: 工程表作成・タスク発行\n' +
+                      '✓ STEP 2: 派遣用連絡・調整\n' +
+                      '✓ STEP 3: 自動情報共有・通知\n' +
+                      '✓ STEP 4: 社員確認・承認\n' +
+                      '✓ STEP 5: 決定事項伝達\n\n' +
+                      'プロジェクトの実行準備が整いました。');
+            }, 1000);
+        }
+
+        // ダッシュボードに戻る
+        function returnToDashboard() {
+            console.log('ダッシュボードに戻る');
+            window.location.href = '../index.html';
+        }
+
+        // 工程表確認
+        function viewProjectSchedule() {
+            console.log('工程表確認');
+            window.location.href = 'project_schedule_create.html';
+        }
+
+        // 通知更新
+        function refreshNotifications() {
+            console.log('通知更新中...');
+
+            // 更新アニメーション
+            const refreshBtn = event.target.closest('button');
+            const icon = refreshBtn.querySelector('i');
+            icon.classList.add('fa-spin');
+
+            setTimeout(() => {
+                icon.classList.remove('fa-spin');
+                alert('通知リストを更新しました');
+            }, 1000);
+        }
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('STEP 5: 派遣用決定事項伝達画面初期化完了');
+
+            // URLパラメータから案件IDを取得（オプション）
+            const urlParams = new URLSearchParams(window.location.search);
+            const projectId = urlParams.get('project');
+            if (projectId) {
+                console.log('案件ID:', projectId);
+            }
+
+            // 自動スクロールでフォーカスを設定
+            setTimeout(() => {
+                document.querySelector('.contact-action').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }, 500);
+        });
+    </script>
+</body>
+</html>

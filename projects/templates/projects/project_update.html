@@ -1,0 +1,93 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}案件編集 - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>案件編集: {{ object.title }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="id_customer" class="form-label">顧客</label>
+                        <select name="customer" class="form-control" id="id_customer">
+                            {% for customer in form.customer.field.queryset %}
+                                <option value="{{ customer.id }}" {% if customer.id == object.customer.id %}selected{% endif %}>
+                                    {{ customer.name }} ({{ customer.phone }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_title" class="form-label">案件名</label>
+                        <input type="text" name="title" value="{{ object.title }}" class="form-control" id="id_title" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_address" class="form-label">作業場所</label>
+                        <textarea name="address" class="form-control" rows="3" id="id_address" required>{{ object.address }}</textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_start_date" class="form-label">開始予定日</label>
+                                <input type="date" name="start_date" value="{{ object.start_date|date:'Y-m-d' }}" class="form-control" id="id_start_date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_end_date" class="form-label">終了予定日</label>
+                                <input type="date" name="end_date" value="{{ object.end_date|date:'Y-m-d' }}" class="form-control" id="id_end_date" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_amount" class="form-label">金額</label>
+                                <input type="number" name="amount" value="{{ object.amount }}" class="form-control" id="id_amount" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_status" class="form-label">ステータス</label>
+                                <select name="status" class="form-control" id="id_status">
+                                    {% for status_key, status_label in object.STATUS_CHOICES %}
+                                        <option value="{{ status_key }}" {% if status_key == object.status %}selected{% endif %}>
+                                            {{ status_label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_notes" class="form-label">備考</label>
+                        <textarea name="notes" class="form-control" rows="4" id="id_notes">{{ object.notes }}</textarea>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'project_detail' object.pk %}" class="btn btn-secondary me-md-2">
+                            キャンセル
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            更新する
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

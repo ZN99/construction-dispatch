@@ -1,0 +1,300 @@
+{% extends "order_management/base.html" %}
+{% load humanize %}
+
+{% block title %}{{ project.site_name }} - 調査一覧{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid">
+    <!-- ヘッダー -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <div>
+            <h1 class="h2">
+                <i class="fas fa-search me-2"></i>調査一覧
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'order_management:dashboard' %}">ダッシュボード</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'order_management:project_list' %}">案件一覧</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'order_management:project_detail' project.pk %}">{{ project.site_name }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">調査一覧</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{% url 'surveys:project_survey_create' project.pk %}" class="btn btn-primary">
+                    <i class="fas fa-calendar-plus me-1"></i>調査追加
+                </a>
+                <a href="{% url 'order_management:project_detail' project.pk %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>案件詳細に戻る
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- プロジェクト情報カード -->
+    <div class="card mb-4 border-primary">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-building me-2"></i>案件情報
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <h6 class="fw-bold">{{ project.site_name }}</h6>
+                    <p class="text-muted mb-2">
+                        <i class="fas fa-map-marker-alt me-1"></i>{{ project.site_address }}
+                    </p>
+                    <p class="mb-0">
+                        <strong>管理番号:</strong> {{ project.management_number }}
+                        {% if project.client_name %}
+                        | <strong>発注者:</strong> {{ project.client_name }}
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex flex-column gap-2">
+                        <span class="badge bg-{% if project.status == 'active' %}success{% elif project.status == 'completed' %}primary{% else %}secondary{% endif %} fs-6">
+                            {{ project.get_status_display }}
+                        </span>
+                        {% if project.survey_date %}
+                        <small class="text-muted">
+                            <i class="fas fa-calendar me-1"></i>{{ project.survey_date|date:"Y年m月d日" }}
+                        </small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 調査統計カード -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-info">{{ stats.total }}</h5>
+                    <p class="card-text">総調査数</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-warning">{{ stats.in_progress }}</h5>
+                    <p class="card-text">進行中</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-secondary">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-secondary">{{ stats.scheduled }}</h5>
+                    <p class="card-text">予定</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success">{{ stats.completed }}</h5>
+                    <p class="card-text">完了済み</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 調査一覧 -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>調査リスト
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if surveys %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>予定日時</th>
+                                <th>調査員</th>
+                                <th>ステータス</th>
+                                <th>実施状況</th>
+                                <th>進捗</th>
+                                <th class="text-center">アクション</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for survey in surveys %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">{{ survey.scheduled_date|date:"Y年m月d日" }}</div>
+                                    {% if survey.scheduled_start_time %}
+                                        <small class="text-muted">
+                                            {{ survey.scheduled_start_time|time:"H:i" }}
+                                            {% if survey.estimated_duration %}
+                                                - {{ survey.get_estimated_end_time|time:"H:i" }}
+                                                <span class="badge bg-light text-dark ms-1">{{ survey.estimated_duration }}h</span>
+                                            {% endif %}
+                                        </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if survey.surveyor %}
+                                        <div class="fw-bold">{{ survey.surveyor.name }}</div>
+                                        <small class="text-muted">{{ survey.surveyor.employee_id }}</small>
+                                    {% else %}
+                                        <span class="text-muted">未割り当て</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge
+                                        {% if survey.status == 'scheduled' %}bg-secondary
+                                        {% elif survey.status == 'in_progress' %}bg-warning text-dark
+                                        {% elif survey.status == 'completed' %}bg-success
+                                        {% elif survey.status == 'cancelled' %}bg-danger
+                                        {% else %}bg-light text-dark
+                                        {% endif %}">
+                                        {{ survey.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if survey.actual_start_time %}
+                                        <div class="text-success">
+                                            <i class="fas fa-play me-1"></i>{{ survey.actual_start_time|time:"H:i" }}開始
+                                        </div>
+                                        {% if survey.actual_end_time %}
+                                            <div class="text-primary">
+                                                <i class="fas fa-stop me-1"></i>{{ survey.actual_end_time|time:"H:i" }}終了
+                                            </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">未開始</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if survey.status == 'completed' %}
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-success" style="width: 100%">100%</div>
+                                        </div>
+                                    {% elif survey.status == 'in_progress' %}
+                                        {% with progress=survey.get_progress_percentage %}
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-warning" style="width: {{ progress }}%">{{ progress }}%</div>
+                                        </div>
+                                        {% endwith %}
+                                    {% else %}
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-light" style="width: 0%">0%</div>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'surveys:survey_detail' survey.pk %}"
+                                           class="btn btn-outline-primary" title="詳細表示">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if survey.status == 'scheduled' %}
+                                            <a href="{% url 'surveys:survey_start' survey.pk %}"
+                                               class="btn btn-success" title="調査開始">
+                                                <i class="fas fa-play"></i>
+                                            </a>
+                                        {% elif survey.status == 'in_progress' %}
+                                            <a href="{% url 'surveys:survey_form' survey.pk %}"
+                                               class="btn btn-warning" title="調査続行">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        {% elif survey.status == 'completed' %}
+                                            <a href="{% url 'surveys:survey_report' survey.pk %}"
+                                               class="btn btn-info" title="報告書表示">
+                                                <i class="fas fa-file-alt"></i>
+                                            </a>
+                                        {% endif %}
+                                        {% if user.is_staff %}
+                                            <a href="{% url 'surveys:survey_edit' survey.pk %}"
+                                               class="btn btn-outline-secondary" title="編集">
+                                                <i class="fas fa-cog"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger" title="削除"
+                                                    onclick="confirmDeleteSurvey({{ survey.pk }}, '{{ survey.scheduled_date|date:"Y年m月d日" }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">この案件に関連する調査がありません</h5>
+                    <p class="text-muted">調査スケジュールを追加してください。</p>
+                    <a href="{% url 'surveys:project_survey_create' project.pk %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>最初の調査を追加
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // テーブルの行をクリックで詳細表示
+    const tableRows = document.querySelectorAll('tbody tr');
+    tableRows.forEach(row => {
+        row.addEventListener('click', function(e) {
+            // ボタンクリック時は無視
+            if (e.target.closest('.btn-group')) return;
+
+            const detailLink = this.querySelector('a[href*="survey_detail"]');
+            if (detailLink) {
+                window.location.href = detailLink.href;
+            }
+        });
+
+        // ホバー効果
+        row.style.cursor = 'pointer';
+    });
+});
+
+// 調査削除確認
+function confirmDeleteSurvey(surveyId, surveyDate) {
+    if (confirm(`${surveyDate}の調査を削除しますか？\n\nこの操作は取り消すことができません。`)) {
+        deleteSurvey(surveyId);
+    }
+}
+
+// 調査削除実行
+function deleteSurvey(surveyId) {
+    fetch(`/surveys/${surveyId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            // 成功時はページをリロード
+            location.reload();
+        } else {
+            throw new Error('削除に失敗しました');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('削除に失敗しました: ' + error.message);
+    });
+}
+</script>
+{% endblock %}

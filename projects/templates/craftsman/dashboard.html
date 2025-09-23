@@ -1,0 +1,265 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}職人選定ダッシュボード - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-users me-2"></i>職人選定ダッシュボード</h2>
+                <div class="btn-group">
+                    <a href="{% url 'craftsman_search' %}" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>職人検索
+                    </a>
+                    <a href="{% url 'project_matching' %}" class="btn btn-success">
+                        <i class="fas fa-handshake me-1"></i>マッチング
+                    </a>
+                </div>
+            </div>
+
+            <!-- 統計カード -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-hard-hat fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ stats.total_craftsmen }}</h5>
+                                    <small>稼働中職人</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-hourglass-half fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ stats.pending_assignments }}</h5>
+                                    <small>打診中案件</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ stats.confirmed_today }}</h5>
+                                    <small>今日開始予定</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ stats.busy_craftsmen }}</h5>
+                                    <small>稼働中職人</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 打診中案件 -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-warning text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-hourglass-half me-2"></i>打診中案件
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if pending_assignments %}
+                                <div class="list-group list-group-flush">
+                                    {% for assignment in pending_assignments %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ assignment.project.title }}</h6>
+                                            <small class="text-muted">
+                                                {{ assignment.craftsman.name }} |
+                                                {{ assignment.created_at|date:"m/d H:i" }}打診
+                                            </small>
+                                            <br>
+                                            <span class="badge bg-{{ assignment.priority }} text-white">
+                                                {{ assignment.get_priority_display }}
+                                            </span>
+                                        </div>
+                                        <div class="btn-group-vertical btn-group-sm">
+                                            <a href="{% url 'assignment_detail' assignment.id %}" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye"></i> 詳細
+                                            </a>
+                                            <div class="dropdown">
+                                                <button class="btn btn-outline-success btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-phone"></i> 連絡
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" href="{% url 'contact_craftsman' assignment.id 'phone' %}">
+                                                        <i class="fas fa-phone me-1"></i>電話
+                                                    </a></li>
+                                                    <li><a class="dropdown-item" href="{% url 'contact_craftsman' assignment.id 'line' %}">
+                                                        <i class="fab fa-line me-1"></i>LINE
+                                                    </a></li>
+                                                    <li><a class="dropdown-item" href="{% url 'contact_craftsman' assignment.id 'email' %}">
+                                                        <i class="fas fa-envelope me-1"></i>メール
+                                                    </a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="text-center mt-3">
+                                    <a href="{% url 'assignment_list' %}?status=inquiry" class="btn btn-outline-warning">
+                                        すべて見る
+                                    </a>
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center">打診中の案件はありません。</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 今日開始予定 -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-calendar-day me-2"></i>今日開始予定
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if today_assignments %}
+                                <div class="list-group list-group-flush">
+                                    {% for assignment in today_assignments %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ assignment.project.title }}</h6>
+                                            <small class="text-muted">
+                                                {{ assignment.craftsman.name }} |
+                                                {{ assignment.estimated_hours }}時間予定
+                                            </small>
+                                            <br>
+                                            <span class="badge bg-success">確定済み</span>
+                                        </div>
+                                        <div class="btn-group-vertical btn-group-sm">
+                                            <a href="{% url 'assignment_detail' assignment.id %}" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye"></i> 詳細
+                                            </a>
+                                            <a href="{% url 'craftsman_detail' assignment.craftsman.id %}" class="btn btn-outline-info btn-sm">
+                                                <i class="fas fa-user"></i> 職人
+                                            </a>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center">今日開始予定の案件はありません。</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 稼働率の高い職人 -->
+            {% if busy_craftsmen %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-line me-2"></i>稼働率の高い職人
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for item in busy_craftsmen %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card border-{{ item.workload.status.color }}">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h6 class="card-title mb-0">{{ item.craftsman.name }}</h6>
+                                                <span class="badge bg-{{ item.workload.status.color }}">
+                                                    {{ item.workload.status.label }}
+                                                </span>
+                                            </div>
+                                            <div class="progress mb-2">
+                                                <div class="progress-bar bg-{{ item.workload.status.color }}"
+                                                     role="progressbar"
+                                                     style="width: {{ item.workload.workload_percentage }}%"
+                                                     aria-valuenow="{{ item.workload.workload_percentage }}"
+                                                     aria-valuemin="0"
+                                                     aria-valuemax="100">
+                                                    {{ item.workload.workload_percentage|floatformat:0 }}%
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">
+                                                稼働: {{ item.workload.busy_days }}日 / 空き: {{ item.workload.available_days }}日
+                                            </small>
+                                            <div class="mt-2">
+                                                <a href="{% url 'craftsman_detail' item.craftsman.id %}" class="btn btn-outline-primary btn-sm">
+                                                    詳細を見る
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.btn-group-vertical .btn {
+    margin-bottom: 2px;
+}
+
+.progress {
+    height: 8px;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+</style>
+{% endblock %}

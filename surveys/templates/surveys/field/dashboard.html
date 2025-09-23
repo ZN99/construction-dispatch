@@ -1,0 +1,413 @@
+{% extends 'surveys/field/base.html' %}
+
+{% block title %}現場調査員ダッシュボード{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- ユーザー情報カード -->
+    <div class="col-12 mb-4">
+        <div class="card bg-field-primary text-white">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <i class="fas fa-user-circle fa-3x opacity-75"></i>
+                    </div>
+                    <div class="col">
+                        <h4 class="mb-1">{{ request.surveyor.name }}さん</h4>
+                        <p class="mb-1">{{ request.surveyor.department|default:"現場調査部" }} • {{ request.surveyor.get_experience_level }}</p>
+                        <small class="opacity-75">
+                            <i class="fas fa-calendar me-1"></i>
+                            {% now "Y年n月j日 (D)" %}
+                        </small>
+                    </div>
+                    <div class="col-auto text-end">
+                        <div class="d-flex flex-column">
+                            <small class="opacity-75">調査実績</small>
+                            <h5 class="mb-0">{{ stats.completed_this_month }}件/月</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 統計カード -->
+<div class="row mb-4">
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-calendar-day fa-2x text-danger mb-2"></i>
+                <h4 class="mb-1 text-danger">{{ stats.today_count }}</h4>
+                <small class="text-muted">今日の調査</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                <h4 class="mb-1 text-warning">{{ stats.week_count }}</h4>
+                <small class="text-muted">今週の予定</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-play-circle fa-2x text-info mb-2"></i>
+                <h4 class="mb-1 text-info">{{ stats.in_progress_count }}</h4>
+                <small class="text-muted">進行中</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h4 class="mb-1 text-success">{{ stats.completed_this_month }}</h4>
+                <small class="text-muted">月間完了</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 承認状況カード -->
+<div class="row mb-4">
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-hourglass-half fa-2x text-warning mb-2"></i>
+                <h4 class="mb-1 text-warning">{{ stats.pending_approval_count }}</h4>
+                <small class="text-muted">承認待ち</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-thumbs-up fa-2x text-success mb-2"></i>
+                <h4 class="mb-1 text-success">{{ stats.approved_count }}</h4>
+                <small class="text-muted">承認済み</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-undo fa-2x text-danger mb-2"></i>
+                <h4 class="mb-1 text-danger">{{ stats.rejected_count }}</h4>
+                <small class="text-muted">差し戻し</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                <h4 class="mb-1 text-info">{{ stats.approved_count|add:stats.rejected_count|add:stats.pending_approval_count }}</h4>
+                <small class="text-muted">総承認対象</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 承認待ち調査一覧 -->
+{% if pending_approval_surveys %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-hourglass-half me-2"></i>承認待ち調査
+                    <span class="badge bg-dark text-warning ms-2">{{ stats.pending_approval_count }}件</span>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% for survey in pending_approval_surveys %}
+                <div class="border-bottom p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="mb-1 text-field-primary">{{ survey.project.site_name }}</h6>
+                        <span class="badge bg-warning text-dark">承認待ち</span>
+                    </div>
+                    <div class="row text-muted small mb-2">
+                        <div class="col-6">
+                            <i class="fas fa-calendar text-warning"></i> {{ survey.scheduled_date|date:"m/d" }}実施
+                        </div>
+                        <div class="col-6">
+                            <i class="fas fa-clock"></i> {{ survey.updated_at|date:"m/d H:i" }}提出
+                        </div>
+                    </div>
+                    <small class="text-muted d-block">
+                        <i class="fas fa-info-circle"></i> 本部による承認審査中です
+                    </small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 今日の調査 -->
+{% if today_surveys %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-day me-2"></i>今日の調査
+                    <span class="badge bg-light text-danger ms-2">{{ stats.today_count }}件</span>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% for survey in today_surveys %}
+                <div class="border-bottom p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="mb-1 text-field-primary">{{ survey.project.site_name }}</h6>
+                        <span class="badge status-today">
+                            {% if survey.status == 'scheduled' %}予定
+                            {% elif survey.status == 'in_progress' %}進行中
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div class="row text-muted small mb-2">
+                        <div class="col-6">
+                            <i class="fas fa-clock text-danger"></i> {{ survey.scheduled_start_time|time:"H:i" }}開始
+                        </div>
+                        <div class="col-6">
+                            <i class="fas fa-stopwatch"></i> 約{{ survey.estimated_duration }}分
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <small class="text-muted d-block">
+                            <i class="fas fa-map-marker-alt"></i> {{ survey.project.site_address|default:"住所未登録" }}
+                        </small>
+                        {% if survey.project.contractor_company %}
+                        <small class="text-muted d-block">
+                            <i class="fas fa-building"></i> {{ survey.project.contractor_company }}
+                        </small>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        {% if survey.status == 'scheduled' %}
+                        <a href="{% url 'surveys:field_survey_checklist' survey.pk %}"
+                           class="btn btn-success btn-sm flex-grow-1">
+                            <i class="fas fa-play"></i> 調査開始
+                        </a>
+                        {% elif survey.status == 'in_progress' %}
+                        <a href="{% url 'surveys:field_survey_checklist' survey.pk %}"
+                           class="btn btn-warning btn-sm flex-grow-1">
+                            <i class="fas fa-edit"></i> 調査続行
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'surveys:field_survey_checklist' survey.pk %}"
+                           class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-eye"></i> 詳細
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 進行中の調査 -->
+{% if in_progress_surveys %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0 text-dark">
+                    <i class="fas fa-play-circle me-2"></i>進行中の調査
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% for survey in in_progress_surveys %}
+                <div class="border-bottom p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="mb-1">{{ survey.project.site_name }}</h6>
+                        <span class="badge bg-warning text-dark">進行中</span>
+                    </div>
+
+                    <div class="text-muted small mb-2">
+                        <i class="fas fa-calendar"></i> {{ survey.scheduled_date }}
+                        <span class="ms-2">
+                            <i class="fas fa-clock"></i> {{ survey.scheduled_start_time|time:"H:i" }}
+                        </span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'surveys:field_survey_checklist' survey.pk %}"
+                           class="btn btn-warning btn-sm flex-grow-1">
+                            <i class="fas fa-edit"></i> 調査続行
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- 今週の予定 -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-week me-2"></i>今週の予定
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if week_surveys %}
+                    {% for survey in week_surveys %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ survey.project.site_name|truncatechars:25 }}</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar"></i> {{ survey.scheduled_date|date:"n/j (D)" }}
+                                <i class="fas fa-clock ms-2"></i> {{ survey.scheduled_start_time|time:"H:i" }}
+                            </small>
+                        </div>
+                        <a href="{% url 'surveys:field_survey_checklist' survey.pk %}"
+                           class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-calendar-check fa-2x mb-2"></i>
+                        <p class="mb-0">今週の予定はありません</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 最近完了した調査 -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>最近完了した調査
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_completed %}
+                    {% for survey in recent_completed %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ survey.project.site_name|truncatechars:25 }}</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar"></i> {{ survey.scheduled_date|date:"n/j" }}
+                                <i class="fas fa-check-circle ms-2 text-success"></i> 完了
+                            </small>
+                        </div>
+                        <a href="{% url 'surveys:field_survey_checklist' survey.pk %}"
+                           class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-clipboard-check fa-2x mb-2"></i>
+                        <p class="mb-0">完了した調査はありません</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- クイックアクションボタン -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>クイックアクション
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6 col-md-3">
+                        <a href="{% url 'surveys:field_survey_list' %}" class="btn btn-outline-primary btn-lg w-100">
+                            <i class="fas fa-clipboard-list d-block mb-1"></i>
+                            <small>調査一覧</small>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <a href="{% url 'surveys:field_profile' %}" class="btn btn-outline-secondary btn-lg w-100">
+                            <i class="fas fa-user d-block mb-1"></i>
+                            <small>プロファイル</small>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success btn-lg w-100" onclick="updateLocation()">
+                            <i class="fas fa-map-marker-alt d-block mb-1"></i>
+                            <small>位置更新</small>
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <a href="{% url 'surveys:field_logout' %}" class="btn btn-outline-danger btn-lg w-100">
+                            <i class="fas fa-sign-out-alt d-block mb-1"></i>
+                            <small>ログアウト</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 位置情報更新機能
+    function updateLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                // 位置情報をサーバーに送信
+                fetch('/surveys/field/location-update/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        latitude: lat,
+                        longitude: lng
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('位置情報を更新しました');
+                    }
+                });
+            }, function(error) {
+                alert('位置情報の取得に失敗しました');
+            });
+        } else {
+            alert('このブラウザは位置情報に対応していません');
+        }
+    }
+
+    // 自動更新機能（5分間隔）
+    setInterval(function() {
+        location.reload();
+    }, 300000); // 5分
+</script>
+{% endblock %}

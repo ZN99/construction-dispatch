@@ -1,0 +1,251 @@
+{% extends "surveys/base.html" %}
+
+{% block title %}調査一覧{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">調査管理</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'surveys:survey_create' %}" class="btn btn-primary">
+                <i class="fas fa-calendar-plus me-1"></i>調査スケジュール
+            </a>
+        </div>
+        <div class="btn-group me-2">
+            <a href="{% url 'surveys:demo_survey_list' %}" class="btn btn-success">
+                <i class="fas fa-flask me-1"></i>デモ調査
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Status Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <h5 class="card-title text-info">{{ total_surveys }}</h5>
+                <p class="card-text">総調査数</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <h5 class="card-title text-warning">{{ in_progress_surveys }}</h5>
+                <p class="card-text">進行中</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-secondary">
+            <div class="card-body text-center">
+                <h5 class="card-title text-secondary">{{ scheduled_surveys }}</h5>
+                <p class="card-text">予定</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <h5 class="card-title text-success">{{ completed_surveys }}</h5>
+                <p class="card-text">完了済み</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Today's Schedule -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-calendar-day me-2"></i>今日の調査スケジュール
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if today_surveys %}
+            <div class="row">
+                {% for survey in today_surveys %}
+                <div class="col-md-6">
+                    <div class="survey-card border rounded p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="fw-bold">{{ survey.scheduled_start_time|time:"H:i" }} - {{ survey.get_estimated_end_time|time:"H:i" }}</h6>
+                                <p class="mb-1">{{ survey.project.site_name }}</p>
+                                <small class="text-muted">
+                                    <i class="fas fa-user me-1"></i>{{ survey.surveyor.name }}
+                                    <i class="fas fa-map-marker-alt ms-2 me-1"></i>{{ survey.project.site_address }}
+                                </small>
+                            </div>
+                            <span class="badge {% if survey.status == 'in_progress' %}bg-warning{% elif survey.status == 'completed' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ survey.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="mt-2 d-flex gap-1">
+                            <a href="{% url 'surveys:survey_detail' survey.pk %}" class="btn btn-outline-primary btn-sm">詳細</a>
+                            {% if survey.status == 'scheduled' %}
+                                <a href="{% url 'surveys:survey_start' survey.pk %}" class="btn btn-secondary btn-sm">開始</a>
+                            {% elif survey.status == 'in_progress' %}
+                                <a href="{% url 'surveys:survey_start' survey.pk %}" class="btn btn-warning btn-sm">続行</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted">今日の調査予定はありません。</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- All Surveys -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-list me-2"></i>すべての調査
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Filter -->
+        <form method="get" class="mb-3">
+            <div class="row">
+                <div class="col-md-3">
+                    <select class="form-select" name="status">
+                        <option value="">すべてのステータス</option>
+                        <option value="scheduled" {% if request.GET.status == 'scheduled' %}selected{% endif %}>予定</option>
+                        <option value="in_progress" {% if request.GET.status == 'in_progress' %}selected{% endif %}>進行中</option>
+                        <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>完了</option>
+                        <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>キャンセル</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="surveyor">
+                        <option value="">すべての調査員</option>
+                        {% for surveyor in surveyors %}
+                            <option value="{{ surveyor.id }}" {% if request.GET.surveyor == surveyor.id|stringformat:"s" %}selected{% endif %}>
+                                {{ surveyor.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <input type="date" class="form-control" name="date" value="{{ request.GET.date }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">絞り込み</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>案件名</th>
+                        <th>調査員</th>
+                        <th>予定日時</th>
+                        <th>所要時間</th>
+                        <th>ステータス</th>
+                        <th>進捗</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for survey in surveys %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'surveys:survey_detail' survey.pk %}" class="text-decoration-none fw-bold">
+                                {{ survey.project.site_name }}
+                            </a>
+                            <br><small class="text-muted">{{ survey.project.work_type }}</small>
+                        </td>
+                        <td>{{ survey.surveyor.name }}</td>
+                        <td>
+                            {{ survey.scheduled_date|date:"Y-m-d" }}
+                            <br><small class="text-muted">{{ survey.scheduled_start_time|time:"H:i" }}-{{ survey.get_estimated_end_time|time:"H:i" }}</small>
+                        </td>
+                        <td>{{ survey.estimated_duration }}分</td>
+                        <td>
+                            <span class="badge {% if survey.status == 'in_progress' %}bg-warning{% elif survey.status == 'completed' %}bg-success{% elif survey.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ survey.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% with progress=survey.get_progress_percentage %}
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar {% if survey.status == 'in_progress' %}bg-warning{% elif survey.status == 'completed' %}bg-success{% else %}bg-secondary{% endif %}" style="width: {{ progress }}%"></div>
+                            </div>
+                            <small class="text-muted">{{ progress }}%</small>
+                            {% endwith %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'surveys:survey_detail' survey.pk %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if survey.status == 'scheduled' %}
+                                    <a href="{% url 'surveys:survey_start' survey.pk %}" class="btn btn-outline-warning">
+                                        <i class="fas fa-play"></i>
+                                    </a>
+                                    <a href="{% url 'surveys:survey_edit' survey.pk %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                {% elif survey.status == 'in_progress' %}
+                                    <a href="{% url 'surveys:survey_complete' survey.pk %}" class="btn btn-outline-success">
+                                        <i class="fas fa-check"></i>
+                                    </a>
+                                {% elif survey.status == 'completed' %}
+                                    <a href="{% url 'surveys:survey_report' survey.pk %}" class="btn btn-outline-info">
+                                        <i class="fas fa-file-alt"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">調査データがありません。</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="調査ページネーション">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.surveyor %}&surveyor={{ request.GET.surveyor }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}">前へ</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1">前へ</a>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <a class="page-link" href="#">{{ num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.surveyor %}&surveyor={{ request.GET.surveyor }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.surveyor %}&surveyor={{ request.GET.surveyor }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}">次へ</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

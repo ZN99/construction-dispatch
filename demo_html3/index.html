@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建築派遣SaaS - ダッシュボード</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <h5 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>メインメニュー</span>
+                    </h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="index.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="projects/project_list.html">
+                                <i class="fas fa-project-diagram me-2"></i>案件管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="surveys/survey_list.html">
+                                <i class="fas fa-clipboard-list me-2"></i>調査管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="craftsman/craftsman_list.html">
+                                <i class="fas fa-users me-2"></i>職人管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="material/supplier_list.html">
+                                <i class="fas fa-building me-2"></i>資材業者
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="pricing/pricing_list.html">
+                                <i class="fas fa-yen-sign me-2"></i>見積管理
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <div>
+                        <h1 class="h2">ダッシュボード</h1>
+                        <div class="mb-2">
+                            <small class="text-muted me-3">役職: <span id="currentRole" class="fw-bold text-primary">社員</span></small>
+                            <button class="btn btn-sm btn-outline-primary" onclick="toggleRole()">
+                                <i class="fas fa-user-tag me-1"></i>役職切替
+                            </button>
+                        </div>
+                    </div>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-download me-1"></i>エクスポート
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards - 社員用 -->
+                <div class="row mb-4" id="employeeStats">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">総案件数</h6>
+                                        <h3 class="mb-0">24</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-project-diagram fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">完了案件</h6>
+                                        <h3 class="mb-0">12</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-check-circle fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">進行中</h6>
+                                        <h3 class="mb-0">8</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-clock fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">粗利率(概算)</h6>
+                                        <h3 class="mb-0">22.5%</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-chart-line fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards - 派遣スタッフ用 -->
+                <div class="row mb-4" id="temporaryStats" style="display: none;">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">担当案件</h6>
+                                        <h3 class="mb-0">3</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-tasks fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">今日のタスク</h6>
+                                        <h3 class="mb-0">5</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-clipboard-list fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">完了タスク</h6>
+                                        <h3 class="mb-0">2</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-check-double fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">調査予定</h6>
+                                        <h3 class="mb-0">1</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-calendar-check fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Projects -->
+                <div class="row">
+                    <div class="col-md-8">
+                        <!-- 社員用案件表示 -->
+                        <div class="card" id="employeeProjects">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-project-diagram me-2"></i>最近の案件
+                                    </h5>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="filterProjects('all')">
+                                            全て
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="filterProjects('progress')">
+                                            進行中
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="filterProjects('completed')">
+                                            完了
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <input type="text" class="form-control form-control-sm" id="projectSearch" placeholder="案件名・顧客名で検索..." onkeyup="searchProjects()">
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>案件名</th>
+                                                <th>顧客</th>
+                                                <th>担当社員</th>
+                                                <th>ステータス</th>
+                                                <th>予算</th>
+                                                <th>粗利率</th>
+                                                <th>進捗</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="projectTableBody">
+                                            <tr data-status="progress">
+                                                <td>
+                                                    <a href="projects/project_detail.html" class="text-decoration-none">
+                                                        港区ワンルーム原状回復
+                                                    </a>
+                                                </td>
+                                                <td>港区賃貸管理株式会社</td>
+                                                <td>山田課長</td>
+                                                <td><span class="badge bg-warning">進行中</span></td>
+                                                <td>¥180,000</td>
+                                                <td class="text-success fw-bold">25.0%</td>
+                                                <td>
+                                                    <div class="progress" style="height: 12px;">
+                                                        <div class="progress-bar" style="width: 60%"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr data-status="progress">
+                                                <td>
+                                                    <a href="projects/project_detail.html" class="text-decoration-none">
+                                                        新宿1K原状回復（クロス・水道）
+                                                    </a>
+                                                </td>
+                                                <td>新宿不動産管理</td>
+                                                <td>佐藤主任</td>
+                                                <td><span class="badge bg-info">調査中</span></td>
+                                                <td>¥220,000</td>
+                                                <td class="text-primary fw-bold">22.5%</td>
+                                                <td>
+                                                    <div class="progress" style="height: 12px;">
+                                                        <div class="progress-bar" style="width: 30%"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr data-status="completed">
+                                                <td>
+                                                    <a href="projects/project_detail.html" class="text-decoration-none">
+                                                        渋谷1DK原状回復（フルパック）
+                                                    </a>
+                                                </td>
+                                                <td>渋谷プロパティ</td>
+                                                <td>田中課長</td>
+                                                <td><span class="badge bg-success">完了</span></td>
+                                                <td>¥380,000</td>
+                                                <td class="text-success fw-bold">28.5%</td>
+                                                <td>
+                                                    <div class="progress" style="height: 12px;">
+                                                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-end">
+                                    <a href="projects/project_list.html" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-arrow-right me-1"></i>すべて表示
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 派遣スタッフ用案件表示 -->
+                        <div class="card" id="temporaryProjects" style="display: none;">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-tasks me-2"></i>担当案件
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>お客様名</th>
+                                                <th>住所</th>
+                                                <th>ステータス</th>
+                                                <th>次のタスク</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <a href="projects/project_detail.html" class="text-decoration-none">
+                                                        港区賃貸管理株式会社
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">東京都港区○○1-2-3</small>
+                                                </td>
+                                                <td><span class="badge bg-warning">調査実施中</span></td>
+                                                <td>
+                                                    <small class="text-primary">現地調査（リビング・水道）</small>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <a href="projects/project_detail.html" class="text-decoration-none">
+                                                        新宿不動産管理
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">東京都新宿区△△2-3-4</small>
+                                                </td>
+                                                <td><span class="badge bg-secondary">待機中</span></td>
+                                                <td>
+                                                    <small class="text-muted">社員からの指示待ち</small>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <a href="projects/project_detail.html" class="text-decoration-none">
+                                                        品川マンション管理
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">東京都品川区□□3-4-5</small>
+                                                </td>
+                                                <td><span class="badge bg-info">協力会社連絡</span></td>
+                                                <td>
+                                                    <small class="text-primary">A建設への見積依頼</small>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-end">
+                                    <a href="task_management.html" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-arrow-right me-1"></i>タスク一覧
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-bolt me-2"></i>クイックアクション
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- 社員用アクション -->
+                                <div class="d-grid gap-2" id="employeeActions">
+                                    <a href="projects/project_create.html" class="btn btn-primary">
+                                        <i class="fas fa-plus me-2"></i>新規案件登録
+                                    </a>
+                                    <a href="surveys/survey_checklist_create.html" class="btn btn-success">
+                                        <i class="fas fa-tasks me-2"></i>調査チェックリスト作成
+                                    </a>
+                                    <a href="contractors/project_schedule_create.html" class="btn btn-info">
+                                        <i class="fas fa-project-diagram me-2"></i>工程表作成・タスク発行
+                                    </a>
+                                    <a href="surveys/survey_approval.html" class="btn btn-warning">
+                                        <i class="fas fa-check-double me-2"></i>調査結果確認・承認
+                                    </a>
+                                    <a href="pricing/pricing_create.html" class="btn btn-secondary">
+                                        <i class="fas fa-calculator me-2"></i>見積作成・修正
+                                    </a>
+                                </div>
+
+                                <!-- 派遣用アクション -->
+                                <div class="d-grid gap-2" id="temporaryActions" style="display: none;">
+                                    <a href="surveys/survey_mobile.html" class="btn btn-primary">
+                                        <i class="fas fa-mobile-alt me-2"></i>現地調査開始
+                                    </a>
+                                    <a href="task_management.html" class="btn btn-success">
+                                        <i class="fas fa-tasks me-2"></i>今日のタスク確認
+                                    </a>
+                                    <a href="contractors/contractor_coordination.html" class="btn btn-info">
+                                        <i class="fas fa-phone me-2"></i>協力会社連絡・調整
+                                    </a>
+                                    <a href="contractors/contractor_notification.html" class="btn btn-warning">
+                                        <i class="fas fa-bell me-2"></i>決定事項確認
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upcoming Surveys -->
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-calendar me-2"></i>今日の調査
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group list-group-flush">
+                                    <div class="list-group-item border-0 px-0">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">10:00 港区ワンルーム</h6>
+                                                <p class="mb-1 text-muted small">田中太郎</p>
+                                            </div>
+                                            <span class="badge bg-warning">進行中</span>
+                                        </div>
+                                    </div>
+                                    <div class="list-group-item border-0 px-0">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">14:30 新宿1K物件</h6>
+                                                <p class="mb-1 text-muted small">佐藤花子</p>
+                                            </div>
+                                            <span class="badge bg-secondary">予定</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end mt-2">
+                                    <a href="surveys/survey_list.html" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-arrow-right me-1"></i>すべて表示
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

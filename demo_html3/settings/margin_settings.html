@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マージン率事前設定画面 | 建築派遣SaaS</title>
+    <link rel="stylesheet" href="../css/simple_theme.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Bootstrap互換性のため一部保持 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .settings-card {
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        .settings-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .settings-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-bottom: 1px solid #dee2e6;
+            border-radius: 12px 12px 0 0;
+        }
+        .margin-input-group {
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+        .margin-input-group:hover {
+            border-color: #007bff;
+        }
+        .margin-input-group.active {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+        .margin-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #dee2e6;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .margin-slider:hover {
+            opacity: 1;
+        }
+        .margin-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #007bff;
+            cursor: pointer;
+        }
+        .margin-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .profit-preview {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        .construction-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #007bff;
+        }
+        .warning-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .history-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .history-item {
+            border-bottom: 1px solid #dee2e6;
+            padding: 10px 0;
+            display: flex;
+            justify-content: between;
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        .bulk-actions {
+            background: linear-gradient(135deg, #f1f3f4 0%, #e8eaf6 100%);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .preview-chart {
+            height: 200px;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .btn-apply {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            color: white;
+            font-weight: bold;
+        }
+        .btn-apply:hover {
+            background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+            color: white;
+        }
+        .btn-reset {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            border: none;
+            color: white;
+        }
+        .btn-reset:hover {
+            background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+            color: white;
+        }
+        .approval-required {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="../index_manager.html">
+                <i class="bi bi-building"></i> 建築派遣SaaS
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="bi bi-person-badge"></i> 管理者: <span id="currentUser">管理者</span>
+                </span>
+                <a class="nav-link" href="../index_manager.html">
+                    <i class="bi bi-house"></i> ホーム
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="bi bi-gear"></i> マージン率事前設定</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="../index_manager.html">ホーム</a></li>
+                            <li class="breadcrumb-item active">マージン設定</li>
+                        </ol>
+                    </nav>
+                </div>
+
+                <!-- 警告セクション -->
+                <div class="warning-section">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                        <div>
+                            <strong>重要:</strong> マージン率の変更は自動見積システムに即座に反映されます。
+                            変更前に利益予測を必ず確認してください。
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- マージン設定セクション -->
+                    <div class="col-md-8">
+                        <div class="settings-card">
+                            <div class="settings-header">
+                                <h4><i class="bi bi-sliders"></i> 工事種別別マージン率設定</h4>
+                                <small class="text-muted">
+                                    各工事種別に適用するマージン率を設定します。市場相場と競合他社を考慮して設定してください。
+                                </small>
+                            </div>
+                            <div class="p-3">
+                                <div id="marginSettings">
+                                    <!-- マージン設定項目がここに動的に表示される -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 一括操作 -->
+                        <div class="bulk-actions">
+                            <h5><i class="bi bi-lightning"></i> 一括操作</h5>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label for="bulkMarginValue" class="form-label">一括マージン率設定</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="bulkMarginValue"
+                                               min="5" max="50" step="0.5" placeholder="例: 22.5">
+                                        <span class="input-group-text">%</span>
+                                        <button class="btn btn-outline-primary" onclick="marginSettings.applyBulkMargin()">
+                                            一括適用
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">プリセット適用</label>
+                                    <div class="btn-group w-100" role="group">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="marginSettings.applyPreset('conservative')">
+                                            保守的
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="marginSettings.applyPreset('standard')">
+                                            標準
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="marginSettings.applyPreset('aggressive')">
+                                            積極的
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 利益予測 -->
+                        <div class="settings-card">
+                            <div class="settings-header">
+                                <h5><i class="bi bi-graph-up"></i> 利益予測シミュレーション</h5>
+                            </div>
+                            <div class="p-3">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="preview-chart">
+                                            <canvas id="profitPreviewChart"></canvas>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div id="profitSummary">
+                                            <!-- 利益サマリーがここに表示される -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- サイドバー -->
+                    <div class="col-md-4">
+                        <!-- 現在の設定サマリー -->
+                        <div class="settings-card">
+                            <div class="settings-header">
+                                <h5><i class="bi bi-info-circle"></i> 現在の設定</h5>
+                            </div>
+                            <div class="p-3">
+                                <div id="currentSettings">
+                                    <!-- 現在の設定がここに表示される -->
+                                </div>
+                                <hr>
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-apply" onclick="marginSettings.saveSettings()">
+                                        <i class="bi bi-check-circle"></i> 設定を保存
+                                    </button>
+                                    <button type="button" class="btn btn-reset" onclick="marginSettings.resetToDefaults()">
+                                        <i class="bi bi-arrow-counterclockwise"></i> デフォルトに戻す
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 承認が必要な変更 -->
+                        <div class="approval-required">
+                            <h6><i class="bi bi-shield-check"></i> 承認が必要な変更</h6>
+                            <div id="pendingChanges">
+                                <small class="text-muted">承認待ちの変更はありません</small>
+                            </div>
+                        </div>
+
+                        <!-- 変更履歴 -->
+                        <div class="settings-card">
+                            <div class="settings-header">
+                                <h5><i class="bi bi-clock-history"></i> 変更履歴</h5>
+                            </div>
+                            <div class="p-3">
+                                <div class="history-section" id="changeHistory">
+                                    <!-- 変更履歴がここに表示される -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 市場データ -->
+                        <div class="settings-card">
+                            <div class="settings-header">
+                                <h5><i class="bi bi-bar-chart"></i> 市場データ参考</h5>
+                            </div>
+                            <div class="p-3">
+                                <div id="marketData">
+                                    <!-- 市場データがここに表示される -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 確認モーダル -->
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">設定変更の確認</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="confirmContent">
+                        <!-- 確認内容がここに表示される -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-primary" onclick="marginSettings.confirmSave()">
+                        変更を保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/simple_ui.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        class MarginSettingsSystem {
+            constructor() {
+                this.currentUser = this.getCurrentUser();
+                this.marginData = this.loadMarginSettings();
+                this.originalMarginData = JSON.parse(JSON.stringify(this.marginData));
+                this.previewChart = null;
+                this.init();
+            }
+
+            getCurrentUser() {
+                return JSON.parse(localStorage.getItem('currentUser') || '{"name": "管理者", "role": "管理者", "id": "ADMIN001"}');
+            }
+
+            loadMarginSettings() {
+                const defaultSettings = {
+                    kitchen: {
+                        rate: 25.0,
+                        name: 'キッチン',
+                        icon: 'bi-hdd-stack',
+                        min: 20,
+                        max: 35,
+                        marketAvg: 23.5
+                    },
+                    bathroom: {
+                        rate: 23.0,
+                        name: 'バスルーム',
+                        icon: 'bi-droplet',
+                        min: 18,
+                        max: 30,
+                        marketAvg: 21.8
+                    },
+                    flooring: {
+                        rate: 20.0,
+                        name: 'フローリング',
+                        icon: 'bi-grid-3x3',
+                        min: 15,
+                        max: 28,
+                        marketAvg: 19.2
+                    },
+                    wallpaper: {
+                        rate: 18.0,
+                        name: 'クロス',
+                        icon: 'bi-paint-bucket',
+                        min: 12,
+                        max: 25,
+                        marketAvg: 16.5
+                    },
+                    electrical: {
+                        rate: 30.0,
+                        name: '電気工事',
+                        icon: 'bi-lightning',
+                        min: 25,
+                        max: 40,
+                        marketAvg: 28.3
+                    },
+                    plumbing: {
+                        rate: 22.0,
+                        name: '配管工事',
+                        icon: 'bi-wrench',
+                        min: 18,
+                        max: 32,
+                        marketAvg: 20.7
+                    }
+                };
+
+                return JSON.parse(localStorage.getItem('marginSettings')) || defaultSettings;
+            }
+
+            async init() {
+                document.getElementById('currentUser').textContent = this.currentUser.name;
+                this.renderMarginSettings();
+                this.renderCurrentSettings();
+                this.renderChangeHistory();
+                this.renderMarketData();
+                this.initProfitPreviewChart();
+                this.updateProfitSummary();
+                this.setupPermissions();
+            }
+
+            renderMarginSettings() {
+                const settingsHtml = Object.entries(this.marginData).map(([type, data]) => `
+                    <div class="margin-input-group" id="margin-${type}">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 text-center">
+                                <i class="${data.icon} construction-icon"></i>
+                                <h6 class="mb-0">${data.name}</h6>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="margin-value text-center">
+                                    <span id="value-${type}">${data.rate.toFixed(1)}</span>%
+                                </div>
+                                <small class="text-muted d-block text-center">
+                                    現在値
+                                </small>
+                            </div>
+                            <div class="col-md-5">
+                                <input type="range"
+                                       class="margin-slider"
+                                       id="slider-${type}"
+                                       min="${data.min}"
+                                       max="${data.max}"
+                                       step="0.5"
+                                       value="${data.rate}"
+                                       oninput="marginSettings.updateMargin('${type}', this.value)">
+                                <div class="d-flex justify-content-between mt-1">
+                                    <small class="text-muted">${data.min}%</small>
+                                    <small class="text-muted">${data.max}%</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="input-group input-group-sm">
+                                    <input type="number"
+                                           class="form-control"
+                                           id="input-${type}"
+                                           min="${data.min}"
+                                           max="${data.max}"
+                                           step="0.5"
+                                           value="${data.rate}"
+                                           onchange="marginSettings.updateMargin('${type}', this.value)">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <small class="text-muted">
+                                    市場平均: ${data.marketAvg}%
+                                </small>
+                            </div>
+                        </div>
+                        <div class="profit-preview mt-3">
+                            <div class="row">
+                                <div class="col-4">
+                                    <small class="text-muted">想定利益率</small>
+                                    <div class="fw-bold" id="profit-${type}">
+                                        ${((data.rate / (100 + data.rate)) * 100).toFixed(1)}%
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">100万円工事の利益</small>
+                                    <div class="fw-bold text-success" id="profit-amount-${type}">
+                                        ¥${Math.round(1000000 * (data.rate / (100 + data.rate))).toLocaleString()}
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">競合比較</small>
+                                    <div class="fw-bold ${data.rate > data.marketAvg ? 'text-success' : 'text-warning'}" id="competitive-${type}">
+                                        ${data.rate > data.marketAvg ? '優位' : '要検討'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                document.getElementById('marginSettings').innerHTML = settingsHtml;
+            }
+
+            updateMargin(type, value) {
+                const numValue = parseFloat(value);
+                this.marginData[type].rate = numValue;
+
+                // UI更新
+                document.getElementById(`value-${type}`).textContent = numValue.toFixed(1);
+                document.getElementById(`slider-${type}`).value = numValue;
+                document.getElementById(`input-${type}`).value = numValue;
+
+                // 利益計算更新
+                const profitRate = (numValue / (100 + numValue)) * 100;
+                const profitAmount = Math.round(1000000 * (numValue / (100 + numValue)));
+                const isCompetitive = numValue > this.marginData[type].marketAvg;
+
+                document.getElementById(`profit-${type}`).textContent = `${profitRate.toFixed(1)}%`;
+                document.getElementById(`profit-amount-${type}`).textContent = `¥${profitAmount.toLocaleString()}`;
+                document.getElementById(`competitive-${type}`).textContent = isCompetitive ? '優位' : '要検討';
+                document.getElementById(`competitive-${type}`).className = `fw-bold ${isCompetitive ? 'text-success' : 'text-warning'}`;
+
+                // アクティブ状態の表示
+                document.getElementById(`margin-${type}`).classList.add('active');
+                setTimeout(() => {
+                    document.getElementById(`margin-${type}`).classList.remove('active');
+                }, 1000);
+
+                this.renderCurrentSettings();
+                this.updateProfitSummary();
+                this.updateProfitPreviewChart();
+            }
+
+            applyBulkMargin() {
+                const bulkValue = parseFloat(document.getElementById('bulkMarginValue').value);
+                if (isNaN(bulkValue) || bulkValue < 5 || bulkValue > 50) {
+                    this.showNotification('有効なマージン率を入力してください (5-50%)', 'error');
+                    return;
+                }
+
+                Object.keys(this.marginData).forEach(type => {
+                    const constrainedValue = Math.max(
+                        this.marginData[type].min,
+                        Math.min(this.marginData[type].max, bulkValue)
+                    );
+                    this.updateMargin(type, constrainedValue);
+                });
+
+                this.showNotification('一括マージン率を適用しました', 'success');
+                document.getElementById('bulkMarginValue').value = '';
+            }
+
+            applyPreset(presetType) {
+                const presets = {
+                    conservative: { kitchen: 22, bathroom: 20, flooring: 18, wallpaper: 15, electrical: 27, plumbing: 20 },
+                    standard: { kitchen: 25, bathroom: 23, flooring: 20, wallpaper: 18, electrical: 30, plumbing: 22 },
+                    aggressive: { kitchen: 28, bathroom: 26, flooring: 23, wallpaper: 21, electrical: 33, plumbing: 25 }
+                };
+
+                const preset = presets[presetType];
+                if (!preset) return;
+
+                Object.entries(preset).forEach(([type, rate]) => {
+                    this.updateMargin(type, rate);
+                });
+
+                this.showNotification(`${presetType === 'conservative' ? '保守的' : presetType === 'standard' ? '標準' : '積極的'}プリセットを適用しました`, 'success');
+            }
+
+            renderCurrentSettings() {
+                const avgMargin = Object.values(this.marginData).reduce((sum, data) => sum + data.rate, 0) / Object.keys(this.marginData).length;
+                const hasChanges = JSON.stringify(this.marginData) !== JSON.stringify(this.originalMarginData);
+
+                const settingsHtml = `
+                    <div class="mb-3">
+                        <h6>設定サマリー</h6>
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted">平均マージン率</small>
+                                <div class="fw-bold text-primary">${avgMargin.toFixed(1)}%</div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">設定工事種別</small>
+                                <div class="fw-bold">${Object.keys(this.marginData).length}種別</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <h6>個別設定</h6>
+                        ${Object.entries(this.marginData).map(([type, data]) => `
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small>${data.name}</small>
+                                <span class="badge ${data.rate > data.marketAvg ? 'bg-success' : 'bg-warning'}">${data.rate.toFixed(1)}%</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${hasChanges ? `
+                        <div class="alert alert-info alert-sm">
+                            <i class="bi bi-info-circle"></i>
+                            未保存の変更があります
+                        </div>
+                    ` : ''}
+                `;
+
+                document.getElementById('currentSettings').innerHTML = settingsHtml;
+            }
+
+            initProfitPreviewChart() {
+                const ctx = document.getElementById('profitPreviewChart').getContext('2d');
+
+                const labels = Object.values(this.marginData).map(data => data.name);
+                const currentRates = Object.values(this.marginData).map(data => data.rate);
+                const marketAvgRates = Object.values(this.marginData).map(data => data.marketAvg);
+
+                this.previewChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '設定マージン率',
+                            data: currentRates,
+                            backgroundColor: 'rgba(0, 123, 255, 0.7)',
+                            borderColor: 'rgba(0, 123, 255, 1)',
+                            borderWidth: 1
+                        }, {
+                            label: '市場平均',
+                            data: marketAvgRates,
+                            backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                            borderColor: 'rgba(255, 193, 7, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'マージン率 (%)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            }
+                        }
+                    }
+                });
+            }
+
+            updateProfitPreviewChart() {
+                if (this.previewChart) {
+                    this.previewChart.data.datasets[0].data = Object.values(this.marginData).map(data => data.rate);
+                    this.previewChart.update();
+                }
+            }
+
+            updateProfitSummary() {
+                const totalProfit = Object.values(this.marginData).reduce((sum, data) => {
+                    return sum + (1000000 * (data.rate / (100 + data.rate)));
+                }, 0);
+
+                const avgProfitRate = Object.values(this.marginData).reduce((sum, data) => {
+                    return sum + ((data.rate / (100 + data.rate)) * 100);
+                }, 0) / Object.keys(this.marginData).length;
+
+                const competitiveCount = Object.values(this.marginData).filter(data => data.rate > data.marketAvg).length;
+
+                const summaryHtml = `
+                    <h6>月間予測利益 (工事費600万円想定)</h6>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="h4 text-success">¥${Math.round(totalProfit).toLocaleString()}</div>
+                            <small class="text-muted">6種別合計</small>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">平均利益率</small>
+                            <div class="fw-bold">${avgProfitRate.toFixed(1)}%</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">競合優位種別</small>
+                            <div class="fw-bold">${competitiveCount}/${Object.keys(this.marginData).length}</div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i>
+                            予測は過去3ヶ月の平均工事費に基づいています
+                        </small>
+                    </div>
+                `;
+
+                document.getElementById('profitSummary').innerHTML = summaryHtml;
+            }
+
+            renderChangeHistory() {
+                const history = JSON.parse(localStorage.getItem('marginChangeHistory')) || [];
+
+                const historyHtml = history.length > 0 ?
+                    history.slice(0, 10).map(item => `
+                        <div class="history-item">
+                            <div>
+                                <div class="fw-bold">${item.action}</div>
+                                <small class="text-muted">${item.user} - ${item.timestamp}</small>
+                                ${item.changes ? `<div class="mt-1">${item.changes}</div>` : ''}
+                            </div>
+                        </div>
+                    `).join('') :
+                    '<div class="text-center text-muted">変更履歴はありません</div>';
+
+                document.getElementById('changeHistory').innerHTML = historyHtml;
+            }
+
+            renderMarketData() {
+                const marketDataHtml = `
+                    <div class="mb-3">
+                        <h6>業界平均マージン率</h6>
+                        ${Object.entries(this.marginData).map(([type, data]) => `
+                            <div class="d-flex justify-content-between mb-2">
+                                <small>${data.name}</small>
+                                <span class="text-muted">${data.marketAvg}%</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="mb-3">
+                        <h6>推奨設定範囲</h6>
+                        <small class="text-muted">
+                            市場平均±2-3%の範囲での設定をお勧めします。
+                            過度に高い設定は受注率に影響する可能性があります。
+                        </small>
+                    </div>
+                    <div class="text-center">
+                        <small class="text-muted">
+                            データは業界調査に基づく
+                            <br>最終更新: ${new Date().toLocaleDateString('ja-JP')}
+                        </small>
+                    </div>
+                `;
+
+                document.getElementById('marketData').innerHTML = marketDataHtml;
+            }
+
+            saveSettings() {
+                if (this.currentUser.role !== '管理者') {
+                    this.showNotification('管理者権限が必要です', 'error');
+                    return;
+                }
+
+                const changes = [];
+                Object.entries(this.marginData).forEach(([type, data]) => {
+                    const original = this.originalMarginData[type].rate;
+                    if (Math.abs(data.rate - original) > 0.1) {
+                        changes.push(`${data.name}: ${original}% → ${data.rate}%`);
+                    }
+                });
+
+                if (changes.length === 0) {
+                    this.showNotification('変更がありません', 'info');
+                    return;
+                }
+
+                const confirmContent = `
+                    <p>以下の変更を保存しますか？</p>
+                    <ul class="list-unstyled">
+                        ${changes.map(change => `<li><i class="bi bi-arrow-right"></i> ${change}</li>`).join('')}
+                    </ul>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        変更は即座に自動見積システムに反映されます。
+                    </div>
+                `;
+
+                document.getElementById('confirmContent').innerHTML = confirmContent;
+                new bootstrap.Modal(document.getElementById('confirmModal')).show();
+            }
+
+            confirmSave() {
+                localStorage.setItem('marginSettings', JSON.stringify(this.marginData));
+
+                // 変更履歴に記録
+                const history = JSON.parse(localStorage.getItem('marginChangeHistory')) || [];
+                const changes = [];
+                Object.entries(this.marginData).forEach(([type, data]) => {
+                    const original = this.originalMarginData[type].rate;
+                    if (Math.abs(data.rate - original) > 0.1) {
+                        changes.push(`${data.name}: ${original}% → ${data.rate}%`);
+                    }
+                });
+
+                history.unshift({
+                    timestamp: new Date().toLocaleString('ja-JP'),
+                    user: this.currentUser.name,
+                    action: 'マージン率更新',
+                    changes: changes.join(', ')
+                });
+
+                localStorage.setItem('marginChangeHistory', JSON.stringify(history.slice(0, 50)));
+
+                this.originalMarginData = JSON.parse(JSON.stringify(this.marginData));
+                this.renderCurrentSettings();
+                this.renderChangeHistory();
+
+                bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+                this.showNotification('マージン設定を保存しました', 'success');
+            }
+
+            resetToDefaults() {
+                if (confirm('デフォルト設定に戻しますか？現在の設定は失われます。')) {
+                    this.marginData = this.loadMarginSettings();
+                    this.renderMarginSettings();
+                    this.renderCurrentSettings();
+                    this.updateProfitSummary();
+                    this.updateProfitPreviewChart();
+                    this.showNotification('デフォルト設定に戻しました', 'info');
+                }
+            }
+
+            setupPermissions() {
+                if (this.currentUser.role !== '管理者') {
+                    document.querySelectorAll('.margin-slider, .form-control').forEach(element => {
+                        element.disabled = true;
+                    });
+                    document.querySelectorAll('.btn-apply, .btn-reset').forEach(btn => {
+                        btn.disabled = true;
+                        btn.title = '管理者権限が必要です';
+                    });
+                }
+            }
+
+            showNotification(message, type = 'info') {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+                alertDiv.style.top = '20px';
+                alertDiv.style.right = '20px';
+                alertDiv.style.zIndex = '9999';
+                alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(alertDiv);
+
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.parentNode.removeChild(alertDiv);
+                    }
+                }, 5000);
+            }
+        }
+
+        const marginSettings = new MarginSettingsSystem();
+    </script>
+</body>
+</html>

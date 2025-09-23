@@ -1,0 +1,333 @@
+/* Bootstrap CDN + Custom Styles */
+.sidebar {
+    background: #f8f9fa;
+    min-height: 100vh;
+}
+
+.sidebar .nav-link {
+    color: #495057;
+    border-radius: 8px;
+    margin: 2px 0;
+}
+
+.sidebar .nav-link:hover {
+    background: #e9ecef;
+    color: #212529;
+}
+
+.sidebar .nav-link.active {
+    background: #007bff;
+    color: white;
+}
+
+.card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.badge {
+    font-size: 0.875em;
+}
+
+.table th {
+    border-top: none;
+    background: #f8f9fa;
+}
+
+.progress {
+    height: 12px;
+    border-radius: 8px;
+}
+
+.btn {
+    border-radius: 8px;
+}
+
+.alert {
+    border-radius: 12px;
+}
+
+/* Workflow Progress */
+.workflow-step {
+    position: relative;
+    padding: 20px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.workflow-step.completed {
+    border-color: #28a745;
+    background: #f8fff9;
+}
+
+.workflow-step.current {
+    border-color: #007bff;
+    background: #f8f9ff;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
+}
+
+/* Survey Cards */
+.survey-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.survey-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Status Badges */
+.status-scheduled { background: #17a2b8; }
+.status-in-progress { background: #ffc107; color: #212529; }
+.status-completed { background: #28a745; }
+.status-cancelled { background: #dc3545; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar {
+        min-height: auto;
+        position: relative !important;
+    }
+
+    .sidebar .nav {
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 10px 0;
+    }
+
+    .sidebar .nav-item {
+        white-space: nowrap;
+        margin-right: 10px;
+    }
+
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+
+    .card .card-body {
+        padding: 0.75rem;
+    }
+
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .progress {
+        height: 8px;
+    }
+
+    .form-control {
+        font-size: 16px; /* iOS zoom prevention */
+    }
+
+    .row .col-md-3,
+    .row .col-md-4,
+    .row .col-md-6 {
+        margin-bottom: 1rem;
+    }
+
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn-toolbar {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Hide less important columns on mobile */
+    .table th:nth-child(n+4),
+    .table td:nth-child(n+4) {
+        display: none;
+    }
+
+    .table th:last-child,
+    .table td:last-child {
+        display: table-cell; /* Always show actions */
+    }
+
+    /* Stack cards vertically on mobile */
+    .row .col-md-8,
+    .row .col-md-4 {
+        width: 100%;
+        max-width: 100%;
+        flex: 0 0 100%;
+    }
+
+    /* Compact survey cards */
+    .survey-card {
+        padding: 0.75rem !important;
+    }
+
+    /* Better mobile navigation */
+    .navbar-nav {
+        background: white;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+}
+
+@media (max-width: 576px) {
+    .container-fluid {
+        padding: 0;
+    }
+
+    main.px-md-4 {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    .card {
+        margin-bottom: 1rem;
+        border-radius: 8px;
+    }
+
+    .btn {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+    }
+
+    .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.25em 0.5em;
+    }
+
+    .form-control,
+    .form-select {
+        font-size: 16px;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .pagination {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .pagination .page-item {
+        margin: 2px;
+    }
+
+    /* Mobile-friendly tables */
+    .table {
+        font-size: 0.75rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.5rem 0.25rem;
+    }
+
+    /* Hide all but essential columns */
+    .table th:nth-child(2),
+    .table th:nth-child(3),
+    .table td:nth-child(2),
+    .table td:nth-child(3) {
+        display: none;
+    }
+
+    /* Show only name and actions */
+    .table th:first-child,
+    .table th:last-child,
+    .table td:first-child,
+    .table td:last-child {
+        display: table-cell;
+    }
+
+    /* Mobile stats cards */
+    .row .col-md-3 {
+        margin-bottom: 0.5rem;
+    }
+
+    .card-title {
+        font-size: 1.25rem;
+    }
+
+    .card-text {
+        font-size: 0.875rem;
+    }
+}
+
+/* Touch-friendly improvements */
+@media (max-width: 768px) and (pointer: coarse) {
+    .btn, .nav-link, .page-link {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .form-control, .form-select {
+        min-height: 44px;
+    }
+
+    .table-responsive {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .card {
+        background-color: #1a1a1a;
+        border-color: #333;
+        color: #fff;
+    }
+
+    .sidebar {
+        background-color: #2d2d2d;
+    }
+
+    .sidebar .nav-link {
+        color: #ccc;
+    }
+
+    .sidebar .nav-link:hover {
+        background-color: #333;
+        color: #fff;
+    }
+
+    .table {
+        color: #fff;
+    }
+
+    .table th {
+        background-color: #333;
+        border-color: #555;
+    }
+
+    .table td {
+        border-color: #555;
+    }
+
+    .form-control, .form-select {
+        background-color: #333;
+        border-color: #555;
+        color: #fff;
+    }
+}
+
+/* Custom Animations */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}

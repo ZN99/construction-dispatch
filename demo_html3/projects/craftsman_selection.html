@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>職人候補選択 - 建築派遣SaaS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        .craftsman-card {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            margin-bottom: 1.5rem;
+        }
+
+        .craftsman-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #007bff;
+        }
+
+        .craftsman-photo {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid #f8f9fa;
+        }
+
+        .rating-stars {
+            color: #ffc107;
+            font-size: 0.9em;
+        }
+
+        .skill-badge {
+            font-size: 0.8em;
+            margin-right: 0.3rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .schedule-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .schedule-available { background-color: #28a745; }
+        .schedule-busy { background-color: #ffc107; }
+        .schedule-unavailable { background-color: #dc3545; }
+
+        .work-sample {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            border: 2px solid #dee2e6;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .work-sample:hover {
+            border-color: #007bff;
+            transform: scale(1.05);
+        }
+
+        .project-info-sticky {
+            position: sticky;
+            top: 20px;
+        }
+
+        .filter-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .assign-btn {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .assign-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .assign-btn:hover::before {
+            left: 100%;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            color: white;
+        }
+
+        .review-item {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .price-range {
+            font-size: 1.1em;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .experience-badge {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .craftsman-card {
+                margin-bottom: 1rem;
+            }
+
+            .craftsman-photo {
+                width: 60px;
+                height: 60px;
+            }
+
+            .work-sample {
+                width: 45px;
+                height: 45px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ローディングオーバーレイ -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="mt-3">職人を選択中...</div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <h5 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>メインメニュー</span>
+                    </h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="../index.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="project_list.html">
+                                <i class="fas fa-project-diagram me-2"></i>案件管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../surveys/survey_list.html">
+                                <i class="fas fa-clipboard-list me-2"></i>調査管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../craftsman/craftsman_list.html">
+                                <i class="fas fa-users me-2"></i>職人管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../material/supplier_list.html">
+                                <i class="fas fa-building me-2"></i>資材業者
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../pricing/pricing_list.html">
+                                <i class="fas fa-yen-sign me-2"></i>見積管理
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">職人候補選択</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <a href="project_create.html" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>案件登録に戻る
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- 左カラム: 案件情報（固定） -->
+                    <div class="col-md-4">
+                        <div class="project-info-sticky">
+                            <!-- 案件情報カード -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>登録案件情報
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <small class="text-muted">案件名</small>
+                                        <div class="fw-bold" id="projectName">港区ワンルーム原状回復</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <small class="text-muted">顧客</small>
+                                        <div id="customerName">港区賃貸管理株式会社</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <small class="text-muted">工事内容</small>
+                                        <div id="workType">クロス張替え（約35㎡）</div>
+                                        <div>ハウスクリーニング</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <small class="text-muted">予算</small>
+                                        <div class="price-range" id="budget">¥180,000</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <small class="text-muted">希望工期</small>
+                                        <div id="workPeriod">3日間</div>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted">希望完了日</small>
+                                        <div class="text-danger fw-bold" id="deadline">2025年9月25日</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 条件絞り込み -->
+                            <div class="filter-section">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-filter me-2"></i>条件絞り込み
+                                </h6>
+
+                                <div class="mb-3">
+                                    <label class="form-label">対応エリア</label>
+                                    <select class="form-select form-select-sm" id="areaFilter">
+                                        <option value="">すべて</option>
+                                        <option value="23区内">東京23区内</option>
+                                        <option value="多摩地区">多摩地区</option>
+                                        <option value="神奈川">神奈川県</option>
+                                        <option value="埼玉">埼玉県</option>
+                                    </select>
+                                </div>
+
+
+                                <div class="mb-3">
+                                    <label class="form-label">最低評価</label>
+                                    <select class="form-select form-select-sm" id="ratingFilter">
+                                        <option value="">すべて</option>
+                                        <option value="4.5">4.5以上</option>
+                                        <option value="4.0">4.0以上</option>
+                                        <option value="3.5">3.5以上</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">スキル</label>
+                                    <select class="form-select form-select-sm" id="skillFilter">
+                                        <option value="">すべて</option>
+                                        <option value="クロス張り">クロス張り</option>
+                                        <option value="クリーニング">クリーニング</option>
+                                        <option value="水道設備">水道設備</option>
+                                        <option value="原状回復" selected>原状回復</option>
+                                    </select>
+                                </div>
+
+                                <button class="btn btn-primary btn-sm w-100" onclick="applyFilters()">
+                                    <i class="fas fa-search me-1"></i>絞り込み実行
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右カラム: 職人候補リスト -->
+                    <div class="col-md-8">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5>職人候補一覧 <span class="badge bg-secondary" id="craftmanCount">8名</span></h5>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-secondary" onclick="sortCraftsmen('rating')">
+                                    <i class="fas fa-star me-1"></i>評価順
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="sortCraftsmen('price')">
+                                    <i class="fas fa-yen-sign me-1"></i>料金順
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="sortCraftsmen('experience')">
+                                    <i class="fas fa-award me-1"></i>経験順
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 職人候補カード -->
+                        <div id="craftsmenList">
+                            <!-- 職人A: 田中太郎 -->
+                            <div class="card craftsman-card" data-area="23区内" data-price="mid" data-rating="4.8" data-skill="クロス張り">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3 text-center">
+                                            <img src="https://via.placeholder.com/80x80/4CAF50/white?text=田中"
+                                                 class="craftsman-photo mb-2" alt="田中太郎">
+                                            <div class="experience-badge">8年の経験</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5 class="card-title mb-2">田中 太郎 <span class="text-muted">(45歳)</span></h5>
+
+                                            <div class="rating-stars mb-2">
+                                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                                <span class="ms-1">4.8 (24件)</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <span class="skill-badge badge bg-primary">クロス張り専門</span>
+                                                <span class="skill-badge badge bg-info">原状回復</span>
+                                                <span class="skill-badge badge bg-success">早期対応可</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">得意工事・実績</small>
+                                                <div>・クロス張替え: 月平均15件</div>
+                                                <div>・原状回復工事: 累計200件以上</div>
+                                                <div>・顧客満足度: 98%</div>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">対応エリア</small>
+                                                <div>東京23区内全域</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-end mb-3">
+                                                <div class="price-range">¥18,000/日</div>
+                                                <small class="text-muted">（3日間: ¥54,000）</small>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <small class="text-muted">空きスケジュール</small>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-available"></span>
+                                                    9/20〜22 対応可能
+                                                </div>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-busy"></span>
+                                                    9/23〜25 一部空き
+                                                </div>
+                                            </div>
+
+                                            <button class="btn btn-primary assign-btn w-100"
+                                                    onclick="checkSchedule('田中太郎', 1)">
+                                                <i class="fas fa-calendar-check me-2"></i>田中さんの日程確認
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- 施工事例写真 -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最近の施工事例</small>
+                                        <div class="mt-2">
+                                            <img src="https://via.placeholder.com/60x60/4CAF50/white?text=事例1"
+                                                 class="work-sample" alt="施工事例1" onclick="showWorkSample('事例1')">
+                                            <img src="https://via.placeholder.com/60x60/2196F3/white?text=事例2"
+                                                 class="work-sample" alt="施工事例2" onclick="showWorkSample('事例2')">
+                                            <img src="https://via.placeholder.com/60x60/FF9800/white?text=事例3"
+                                                 class="work-sample" alt="施工事例3" onclick="showWorkSample('事例3')">
+                                        </div>
+                                    </div>
+
+                                    <!-- 顧客レビュー -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最新のレビュー</small>
+                                        <div class="review-item mt-2">
+                                            <div class="d-flex justify-content-between">
+                                                <strong>港区の不動産会社様</strong>
+                                                <span class="rating-stars">★★★★★</span>
+                                            </div>
+                                            <p class="mb-0 mt-1">"非常に丁寧で迅速な作業でした。クロスの仕上がりも完璧で、入居者様にも大変喜んでいただけました。"</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 職人B: 佐藤次郎 -->
+                            <div class="card craftsman-card" data-area="23区内" data-price="low" data-rating="4.6" data-skill="クリーニング">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3 text-center">
+                                            <img src="https://via.placeholder.com/80x80/2196F3/white?text=佐藤"
+                                                 class="craftsman-photo mb-2" alt="佐藤次郎">
+                                            <div class="experience-badge">5年の経験</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5 class="card-title mb-2">佐藤 次郎 <span class="text-muted">(38歳)</span></h5>
+
+                                            <div class="rating-stars mb-2">
+                                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i>
+                                                <span class="ms-1">4.6 (18件)</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <span class="skill-badge badge bg-success">クリーニング専門</span>
+                                                <span class="skill-badge badge bg-warning">原状回復</span>
+                                                <span class="skill-badge badge bg-info">低料金</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">得意工事・実績</small>
+                                                <div>・ハウスクリーニング: 月平均20件</div>
+                                                <div>・原状回復クリーニング: 累計150件</div>
+                                                <div>・リピート率: 85%</div>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">対応エリア</small>
+                                                <div>東京23区内、神奈川県東部</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-end mb-3">
+                                                <div class="price-range">¥12,000/日</div>
+                                                <small class="text-muted">（2日間: ¥24,000）</small>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <small class="text-muted">空きスケジュール</small>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-available"></span>
+                                                    9/21〜23 対応可能
+                                                </div>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-available"></span>
+                                                    9/26〜28 対応可能
+                                                </div>
+                                            </div>
+
+                                            <button class="btn btn-success assign-btn w-100"
+                                                    onclick="checkSchedule('佐藤次郎', 2)">
+                                                <i class="fas fa-calendar-check me-2"></i>佐藤さんの日程確認
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- 施工事例写真 -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最近の施工事例</small>
+                                        <div class="mt-2">
+                                            <img src="https://via.placeholder.com/60x60/4CAF50/white?text=清掃1"
+                                                 class="work-sample" alt="清掃事例1" onclick="showWorkSample('清掃事例1')">
+                                            <img src="https://via.placeholder.com/60x60/2196F3/white?text=清掃2"
+                                                 class="work-sample" alt="清掃事例2" onclick="showWorkSample('清掃事例2')">
+                                        </div>
+                                    </div>
+
+                                    <!-- 顧客レビュー -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最新のレビュー</small>
+                                        <div class="review-item mt-2">
+                                            <div class="d-flex justify-content-between">
+                                                <strong>新宿区の管理会社様</strong>
+                                                <span class="rating-stars">★★★★☆</span>
+                                            </div>
+                                            <p class="mb-0 mt-1">"コストパフォーマンスが良く、クリーニングの質も満足です。スケジュール調整も柔軟に対応してくれました。"</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 職人C: 鈴木三郎 -->
+                            <div class="card craftsman-card" data-area="多摩地区" data-price="high" data-rating="4.9" data-skill="水道設備">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3 text-center">
+                                            <img src="https://via.placeholder.com/80x80/FF9800/white?text=鈴木"
+                                                 class="craftsman-photo mb-2" alt="鈴木三郎">
+                                            <div class="experience-badge">12年の経験</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5 class="card-title mb-2">鈴木 三郎 <span class="text-muted">(52歳)</span></h5>
+
+                                            <div class="rating-stars mb-2">
+                                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                                <span class="ms-1">4.9 (31件)</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <span class="skill-badge badge bg-info">水道設備専門</span>
+                                                <span class="skill-badge badge bg-primary">原状回復</span>
+                                                <span class="skill-badge badge bg-warning">高品質</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">得意工事・実績</small>
+                                                <div>・水道設備修理: 月平均10件</div>
+                                                <div>・配管工事: 累計300件以上</div>
+                                                <div>・技能士1級保有</div>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">対応エリア</small>
+                                                <div>東京都全域、埼玉県南部</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-end mb-3">
+                                                <div class="price-range">¥25,000/日</div>
+                                                <small class="text-muted">（1日間: ¥25,000）</small>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <small class="text-muted">空きスケジュール</small>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-busy"></span>
+                                                    9/20〜21 調整中
+                                                </div>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-available"></span>
+                                                    9/24〜25 対応可能
+                                                </div>
+                                            </div>
+
+                                            <button class="btn btn-warning assign-btn w-100"
+                                                    onclick="checkSchedule('鈴木三郎', 3)">
+                                                <i class="fas fa-calendar-check me-2"></i>鈴木さんの日程確認
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- 施工事例写真 -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最近の施工事例</small>
+                                        <div class="mt-2">
+                                            <img src="https://via.placeholder.com/60x60/9C27B0/white?text=水道1"
+                                                 class="work-sample" alt="水道事例1" onclick="showWorkSample('水道事例1')">
+                                            <img src="https://via.placeholder.com/60x60/3F51B5/white?text=水道2"
+                                                 class="work-sample" alt="水道事例2" onclick="showWorkSample('水道事例2')">
+                                            <img src="https://via.placeholder.com/60x60/795548/white?text=水道3"
+                                                 class="work-sample" alt="水道事例3" onclick="showWorkSample('水道事例3')">
+                                        </div>
+                                    </div>
+
+                                    <!-- 顧客レビュー -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最新のレビュー</small>
+                                        <div class="review-item mt-2">
+                                            <div class="d-flex justify-content-between">
+                                                <strong>渋谷区の管理会社様</strong>
+                                                <span class="rating-stars">★★★★★</span>
+                                            </div>
+                                            <p class="mb-0 mt-1">"技術力が非常に高く、トラブルも迅速に解決してくれました。多少費用は高めですが、品質を考えると妥当だと思います。"</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 職人D: 高橋美咲 -->
+                            <div class="card craftsman-card" data-area="23区内" data-price="mid" data-rating="4.7" data-skill="原状回復">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3 text-center">
+                                            <img src="https://via.placeholder.com/80x80/E91E63/white?text=高橋"
+                                                 class="craftsman-photo mb-2" alt="高橋美咲">
+                                            <div class="experience-badge">6年の経験</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5 class="card-title mb-2">高橋 美咲 <span class="text-muted">(33歳)</span></h5>
+
+                                            <div class="rating-stars mb-2">
+                                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                                <span class="ms-1">4.7 (22件)</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <span class="skill-badge badge bg-primary">原状回復総合</span>
+                                                <span class="skill-badge badge bg-success">クロス張り</span>
+                                                <span class="skill-badge badge bg-info">女性職人</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">得意工事・実績</small>
+                                                <div>・原状回復総合: 月平均12件</div>
+                                                <div>・女性専用物件対応: 累計100件</div>
+                                                <div>・細かい作業が得意</div>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">対応エリア</small>
+                                                <div>東京23区内、川崎市</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-end mb-3">
+                                                <div class="price-range">¥16,000/日</div>
+                                                <small class="text-muted">（3日間: ¥48,000）</small>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <small class="text-muted">空きスケジュール</small>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-available"></span>
+                                                    9/19〜21 対応可能
+                                                </div>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-available"></span>
+                                                    9/24〜26 対応可能
+                                                </div>
+                                            </div>
+
+                                            <button class="btn btn-primary assign-btn w-100"
+                                                    onclick="checkSchedule('高橋美咲', 4)">
+                                                <i class="fas fa-calendar-check me-2"></i>高橋さんの日程確認
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- 施工事例写真 -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最近の施工事例</small>
+                                        <div class="mt-2">
+                                            <img src="https://via.placeholder.com/60x60/E91E63/white?text=総合1"
+                                                 class="work-sample" alt="総合事例1" onclick="showWorkSample('総合事例1')">
+                                            <img src="https://via.placeholder.com/60x60/9C27B0/white?text=総合2"
+                                                 class="work-sample" alt="総合事例2" onclick="showWorkSample('総合事例2')">
+                                        </div>
+                                    </div>
+
+                                    <!-- 顧客レビュー -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最新のレビュー</small>
+                                        <div class="review-item mt-2">
+                                            <div class="d-flex justify-content-between">
+                                                <strong>世田谷区の大家様</strong>
+                                                <span class="rating-stars">★★★★★</span>
+                                            </div>
+                                            <p class="mb-0 mt-1">"女性ならではの細やかな気配りと丁寧な作業で、女性の入居者様にも安心してお任せできました。"</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 職人E: 山田健一 -->
+                            <div class="card craftsman-card" data-area="神奈川" data-price="low" data-rating="4.4" data-skill="クロス張り">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3 text-center">
+                                            <img src="https://via.placeholder.com/80x80/795548/white?text=山田"
+                                                 class="craftsman-photo mb-2" alt="山田健一">
+                                            <div class="experience-badge">4年の経験</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5 class="card-title mb-2">山田 健一 <span class="text-muted">(29歳)</span></h5>
+
+                                            <div class="rating-stars mb-2">
+                                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i>
+                                                <span class="ms-1">4.4 (15件)</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <span class="skill-badge badge bg-primary">クロス張り</span>
+                                                <span class="skill-badge badge bg-warning">新人育成</span>
+                                                <span class="skill-badge badge bg-info">格安対応</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">得意工事・実績</small>
+                                                <div>・クロス張替え: 月平均8件</div>
+                                                <div>・格安プラン対応: 累計80件</div>
+                                                <div>・スピード施工が強み</div>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">対応エリア</small>
+                                                <div>神奈川県全域、東京南部</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-end mb-3">
+                                                <div class="price-range">¥13,000/日</div>
+                                                <small class="text-muted">（2日間: ¥26,000）</small>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <small class="text-muted">空きスケジュール</small>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-available"></span>
+                                                    9/18〜20 対応可能
+                                                </div>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-busy"></span>
+                                                    9/22〜24 一部空き
+                                                </div>
+                                            </div>
+
+                                            <button class="btn btn-primary assign-btn w-100"
+                                                    onclick="checkSchedule('山田健一', 5)">
+                                                <i class="fas fa-calendar-check me-2"></i>山田さんの日程確認
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- 施工事例写真 -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最近の施工事例</small>
+                                        <div class="mt-2">
+                                            <img src="https://via.placeholder.com/60x60/795548/white?text=格安1"
+                                                 class="work-sample" alt="格安事例1" onclick="showWorkSample('格安事例1')">
+                                            <img src="https://via.placeholder.com/60x60/607D8B/white?text=格安2"
+                                                 class="work-sample" alt="格安事例2" onclick="showWorkSample('格安事例2')">
+                                        </div>
+                                    </div>
+
+                                    <!-- 顧客レビュー -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最新のレビュー</small>
+                                        <div class="review-item mt-2">
+                                            <div class="d-flex justify-content-between">
+                                                <strong>川崎市の管理会社様</strong>
+                                                <span class="rating-stars">★★★★☆</span>
+                                            </div>
+                                            <p class="mb-0 mt-1">"価格の安さが魅力です。品質も十分で、コストを抑えたい案件にはとても助かっています。"</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 職人F: 吉田優子 -->
+                            <div class="card craftsman-card" data-area="埼玉" data-price="mid" data-rating="4.5" data-skill="クリーニング">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3 text-center">
+                                            <img src="https://via.placeholder.com/80x80/9C27B0/white?text=吉田"
+                                                 class="craftsman-photo mb-2" alt="吉田優子">
+                                            <div class="experience-badge">7年の経験</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5 class="card-title mb-2">吉田 優子 <span class="text-muted">(41歳)</span></h5>
+
+                                            <div class="rating-stars mb-2">
+                                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                                <span class="ms-1">4.5 (28件)</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <span class="skill-badge badge bg-success">クリーニング専門</span>
+                                                <span class="skill-badge badge bg-primary">エコ清掃</span>
+                                                <span class="skill-badge badge bg-info">女性職人</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">得意工事・実績</small>
+                                                <div>・ハウスクリーニング: 月平均18件</div>
+                                                <div>・エコ洗剤使用: 環境配慮型清掃</div>
+                                                <div>・アレルギー対応清掃</div>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">対応エリア</small>
+                                                <div>埼玉県全域、東京北部</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-end mb-3">
+                                                <div class="price-range">¥15,000/日</div>
+                                                <small class="text-muted">（2日間: ¥30,000）</small>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <small class="text-muted">空きスケジュール</small>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-available"></span>
+                                                    9/20〜22 対応可能
+                                                </div>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-available"></span>
+                                                    9/25〜27 対応可能
+                                                </div>
+                                            </div>
+
+                                            <button class="btn btn-primary assign-btn w-100"
+                                                    onclick="checkSchedule('吉田優子', 6)">
+                                                <i class="fas fa-calendar-check me-2"></i>吉田さんの日程確認
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- 施工事例写真 -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最近の施工事例</small>
+                                        <div class="mt-2">
+                                            <img src="https://via.placeholder.com/60x60/9C27B0/white?text=エコ1"
+                                                 class="work-sample" alt="エコ清掃1" onclick="showWorkSample('エコ清掃1')">
+                                            <img src="https://via.placeholder.com/60x60/673AB7/white?text=エコ2"
+                                                 class="work-sample" alt="エコ清掃2" onclick="showWorkSample('エコ清掃2')">
+                                        </div>
+                                    </div>
+
+                                    <!-- 顧客レビュー -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最新のレビュー</small>
+                                        <div class="review-item mt-2">
+                                            <div class="d-flex justify-content-between">
+                                                <strong>大宮市の個人オーナー様</strong>
+                                                <span class="rating-stars">★★★★★</span>
+                                            </div>
+                                            <p class="mb-0 mt-1">"エコ洗剤を使った清掃で、小さなお子様のいる入居者様にも安心です。丁寧で信頼できる職人さんです。"</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 職人G: 中村一樹 -->
+                            <div class="card craftsman-card" data-area="23区内" data-price="high" data-rating="4.8" data-skill="水道設備">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3 text-center">
+                                            <img src="https://via.placeholder.com/80x80/3F51B5/white?text=中村"
+                                                 class="craftsman-photo mb-2" alt="中村一樹">
+                                            <div class="experience-badge">15年の経験</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5 class="card-title mb-2">中村 一樹 <span class="text-muted">(48歳)</span></h5>
+
+                                            <div class="rating-stars mb-2">
+                                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                                <span class="ms-1">4.8 (35件)</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <span class="skill-badge badge bg-info">水道設備エキスパート</span>
+                                                <span class="skill-badge badge bg-warning">緊急対応</span>
+                                                <span class="skill-badge badge bg-danger">高難度工事</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">得意工事・実績</small>
+                                                <div>・水道設備工事: 月平均8件</div>
+                                                <div>・緊急修理対応: 24時間対応可</div>
+                                                <div>・配管技能士1級・給水装置工事主任</div>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">対応エリア</small>
+                                                <div>東京23区内、武蔵野市、三鷹市</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-end mb-3">
+                                                <div class="price-range">¥28,000/日</div>
+                                                <small class="text-muted">（1日間: ¥28,000）</small>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <small class="text-muted">空きスケジュール</small>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-busy"></span>
+                                                    9/19〜20 調整中
+                                                </div>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-available"></span>
+                                                    9/23〜24 対応可能
+                                                </div>
+                                            </div>
+
+                                            <button class="btn btn-primary assign-btn w-100"
+                                                    onclick="checkSchedule('中村一樹', 7)">
+                                                <i class="fas fa-calendar-check me-2"></i>中村さんの日程確認
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- 施工事例写真 -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最近の施工事例</small>
+                                        <div class="mt-2">
+                                            <img src="https://via.placeholder.com/60x60/3F51B5/white?text=配管1"
+                                                 class="work-sample" alt="配管事例1" onclick="showWorkSample('配管事例1')">
+                                            <img src="https://via.placeholder.com/60x60/1976D2/white?text=配管2"
+                                                 class="work-sample" alt="配管事例2" onclick="showWorkSample('配管事例2')">
+                                            <img src="https://via.placeholder.com/60x60/0277BD/white?text=配管3"
+                                                 class="work-sample" alt="配管事例3" onclick="showWorkSample('配管事例3')">
+                                        </div>
+                                    </div>
+
+                                    <!-- 顧客レビュー -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最新のレビュー</small>
+                                        <div class="review-item mt-2">
+                                            <div class="d-flex justify-content-between">
+                                                <strong>新宿区の建設会社様</strong>
+                                                <span class="rating-stars">★★★★★</span>
+                                            </div>
+                                            <p class="mb-0 mt-1">"15年の経験と豊富な資格を持つベテラン職人。難しい案件も確実にこなしてくれる頼りになる存在です。"</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 職人H: 小林秀雄 -->
+                            <div class="card craftsman-card" data-area="多摩地区" data-price="mid" data-rating="4.3" data-skill="原状回復">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3 text-center">
+                                            <img src="https://via.placeholder.com/80x80/607D8B/white?text=小林"
+                                                 class="craftsman-photo mb-2" alt="小林秀雄">
+                                            <div class="experience-badge">10年の経験</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5 class="card-title mb-2">小林 秀雄 <span class="text-muted">(44歳)</span></h5>
+
+                                            <div class="rating-stars mb-2">
+                                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i>
+                                                <span class="ms-1">4.3 (20件)</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <span class="skill-badge badge bg-primary">原状回復</span>
+                                                <span class="skill-badge badge bg-success">多摩地区専門</span>
+                                                <span class="skill-badge badge bg-info">大規模対応</span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">得意工事・実績</small>
+                                                <div>・原状回復工事: 月平均6件</div>
+                                                <div>・多摩地区エリア: 累計120件</div>
+                                                <div>・大規模物件対応経験豊富</div>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <small class="text-muted">対応エリア</small>
+                                                <div>多摩地区全域、八王子市、立川市</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-end mb-3">
+                                                <div class="price-range">¥17,000/日</div>
+                                                <small class="text-muted">（3日間: ¥51,000）</small>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <small class="text-muted">空きスケジュール</small>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-available"></span>
+                                                    9/21〜23 対応可能
+                                                </div>
+                                                <div>
+                                                    <span class="schedule-indicator schedule-busy"></span>
+                                                    9/26〜28 一部空き
+                                                </div>
+                                            </div>
+
+                                            <button class="btn btn-primary assign-btn w-100"
+                                                    onclick="checkSchedule('小林秀雄', 8)">
+                                                <i class="fas fa-calendar-check me-2"></i>小林さんの日程確認
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- 施工事例写真 -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最近の施工事例</small>
+                                        <div class="mt-2">
+                                            <img src="https://via.placeholder.com/60x60/607D8B/white?text=多摩1"
+                                                 class="work-sample" alt="多摩事例1" onclick="showWorkSample('多摩事例1')">
+                                            <img src="https://via.placeholder.com/60x60/455A64/white?text=多摩2"
+                                                 class="work-sample" alt="多摩事例2" onclick="showWorkSample('多摩事例2')">
+                                        </div>
+                                    </div>
+
+                                    <!-- 顧客レビュー -->
+                                    <div class="mt-3">
+                                        <small class="text-muted">最新のレビュー</small>
+                                        <div class="review-item mt-2">
+                                            <div class="d-flex justify-content-between">
+                                                <strong>立川市の不動産会社様</strong>
+                                                <span class="rating-stars">★★★★☆</span>
+                                            </div>
+                                            <p class="mb-0 mt-1">"多摩地区での実績が豊富で地域事情に詳しく、大型物件の原状回復工事も安心してお任せできます。"</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ページング -->
+                        <nav aria-label="職人候補ページネーション" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" tabindex="-1">前へ</a>
+                                </li>
+                                <li class="page-item active">
+                                    <a class="page-link" href="#">1</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">2</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">次へ</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- 確認ダイアログモーダル -->
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">職人の日程確認</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong id="selectedCraftsman"></strong>の日程を確認しますか？</p>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        職人の詳細なスケジュールと調整画面に進みます。
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-primary" id="confirmAssignBtn">
+                        <i class="fas fa-calendar-check me-2"></i>日程確認へ進む
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 施工事例モーダル -->
+    <div class="modal fade" id="workSampleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">施工事例詳細</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="workSampleImage" src="" class="img-fluid rounded" alt="施工事例">
+                    <p class="mt-3" id="workSampleDescription">施工事例の詳細説明がここに表示されます。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            // URLパラメータから案件情報を復元（実際の実装では）
+            loadProjectInfo();
+            updateCraftsmanCount();
+        });
+
+        // 案件情報の読み込み（localStorage等から）
+        function loadProjectInfo() {
+            // 実際の実装では、前ページで保存した案件情報を復元
+            const projectData = {
+                name: '港区ワンルーム原状回復',
+                customer: '港区賃貸管理株式会社',
+                workType: 'クロス張替え（約35㎡）',
+                budget: '¥180,000',
+                period: '3日間',
+                deadline: '2025年9月25日'
+            };
+
+            document.getElementById('projectName').textContent = projectData.name;
+            document.getElementById('customerName').textContent = projectData.customer;
+            document.getElementById('budget').textContent = projectData.budget;
+            document.getElementById('workPeriod').textContent = projectData.period;
+            document.getElementById('deadline').textContent = projectData.deadline;
+        }
+
+        // 職人候補数の更新
+        function updateCraftsmanCount() {
+            const visibleCards = document.querySelectorAll('.craftsman-card:not([style*="display: none"])');
+            document.getElementById('craftmanCount').textContent = `${visibleCards.length}名`;
+        }
+
+        // 条件絞り込み
+        function applyFilters() {
+            const areaFilter = document.getElementById('areaFilter').value;
+            const ratingFilter = document.getElementById('ratingFilter').value;
+            const skillFilter = document.getElementById('skillFilter').value;
+
+            const cards = document.querySelectorAll('.craftsman-card');
+
+            cards.forEach(card => {
+                let show = true;
+
+                // エリアフィルター
+                if (areaFilter && card.dataset.area !== areaFilter) {
+                    show = false;
+                }
+
+                // 評価フィルター
+                if (ratingFilter && parseFloat(card.dataset.rating) < parseFloat(ratingFilter)) {
+                    show = false;
+                }
+
+                // スキルフィルター
+                if (skillFilter && card.dataset.skill !== skillFilter) {
+                    show = false;
+                }
+
+                card.style.display = show ? 'block' : 'none';
+            });
+
+            updateCraftsmanCount();
+        }
+
+        // 職人のソート
+        function sortCraftsmen(criteria) {
+            const container = document.getElementById('craftsmenList');
+            const cards = Array.from(container.querySelectorAll('.craftsman-card'));
+
+            cards.sort((a, b) => {
+                switch(criteria) {
+                    case 'rating':
+                        return parseFloat(b.dataset.rating) - parseFloat(a.dataset.rating);
+                    case 'price':
+                        const priceOrder = { 'low': 1, 'mid': 2, 'high': 3 };
+                        return priceOrder[a.dataset.price] - priceOrder[b.dataset.price];
+                    case 'experience':
+                        const expA = parseInt(a.querySelector('.experience-badge').textContent);
+                        const expB = parseInt(b.querySelector('.experience-badge').textContent);
+                        return expB - expA;
+                    default:
+                        return 0;
+                }
+            });
+
+            // DOM要素を再配置
+            cards.forEach(card => container.appendChild(card));
+        }
+
+        // 職人の日程確認
+        function checkSchedule(craftsmanName, craftsmanId) {
+            document.getElementById('selectedCraftsman').textContent = craftsmanName;
+
+            const confirmBtn = document.getElementById('confirmAssignBtn');
+            confirmBtn.onclick = function() {
+                goToScheduleCheck(craftsmanName, craftsmanId);
+            };
+
+            const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            modal.show();
+        }
+
+        // 日程確認ページに遷移
+        function goToScheduleCheck(craftsmanName, craftsmanId) {
+            console.log('日程確認開始:', craftsmanName, craftsmanId);
+
+            // ローディング表示
+            const loadingElement = document.getElementById('loadingOverlay');
+            if (loadingElement) {
+                loadingElement.style.display = 'flex';
+            }
+
+            // モーダルを閉じる
+            const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+            if (modal) {
+                modal.hide();
+            }
+
+            // 案件情報と職人情報を保存
+            sessionStorage.setItem('selectedCraftsman', JSON.stringify({
+                name: craftsmanName,
+                id: craftsmanId
+            }));
+
+            sessionStorage.setItem('projectInfo', JSON.stringify({
+                name: '港区ワンルーム原状回復',
+                customer: '港区賃貸管理株式会社',
+                budget: '¥180,000',
+                workType: 'クロス工事・クリーニング'
+            }));
+
+            // 日程確認ページに遷移（待機時間を短縮）
+            setTimeout(() => {
+                console.log('遷移実行中...');
+                window.location.href = `../craftsman/schedule_check.html?craftsman=${craftsmanId}&project=new`;
+            }, 800);
+        }
+
+        // 施工事例表示
+        function showWorkSample(sampleName) {
+            document.getElementById('workSampleImage').src = `https://via.placeholder.com/400x300/4CAF50/white?text=${sampleName}`;
+            document.getElementById('workSampleDescription').textContent = `${sampleName}の詳細な施工内容と工程が表示されます。`;
+
+            const modal = new bootstrap.Modal(document.getElementById('workSampleModal'));
+            modal.show();
+        }
+
+        // ブラウザバック時の確認
+        window.addEventListener('beforeunload', function(e) {
+            e.preventDefault();
+            e.returnValue = '';
+        });
+
+        // フィルター変更時の自動適用
+        ['areaFilter', 'ratingFilter', 'skillFilter'].forEach(filterId => {
+            document.getElementById(filterId).addEventListener('change', applyFilters);
+        });
+    </script>
+</body>
+</html>

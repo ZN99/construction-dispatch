@@ -1,0 +1,223 @@
+{% extends "surveys/base.html" %}
+
+{% block title %}新規調査作成 - {{ project.site_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">新規調査作成</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'order_management:project_detail' project.pk %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>案件詳細に戻る
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <!-- 案件情報表示 -->
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-building me-2"></i>対象案件</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td class="text-muted" width="30%">案件名:</td>
+                                <td class="fw-bold">{{ project.site_name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">管理番号:</td>
+                                <td>{{ project.management_no }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">工事種別:</td>
+                                <td>{{ project.work_type }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td class="text-muted" width="30%">現場住所:</td>
+                                <td>{{ project.site_address }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">担当者:</td>
+                                <td>{{ project.project_manager }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">受注状況:</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ project.get_order_status_display }}</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 調査作成フォーム -->
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>調査スケジュール作成</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.surveyor.id_for_label }}" class="form-label">調査員 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="{{ form.surveyor.id_for_label }}" name="{{ form.surveyor.name }}" required>
+                                    <option value="">調査員を選択してください</option>
+                                    {% for surveyor in surveyors %}
+                                        <option value="{{ surveyor.id }}" {% if form.surveyor.value == surveyor.id %}selected{% endif %}>
+                                            {{ surveyor.name }} ({{ surveyor.employee_id }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.surveyor.errors %}
+                                    <div class="text-danger small">{{ form.surveyor.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.estimated_duration.id_for_label }}" class="form-label">予定所要時間（分） <span class="text-danger">*</span></label>
+                                <select class="form-select" id="{{ form.estimated_duration.id_for_label }}" name="{{ form.estimated_duration.name }}" required>
+                                    <option value="">時間を選択</option>
+                                    <option value="60" {% if form.estimated_duration.value == 60 %}selected{% endif %}>60分</option>
+                                    <option value="90" {% if form.estimated_duration.value == 90 %}selected{% endif %}>90分</option>
+                                    <option value="120" {% if form.estimated_duration.value == 120 %}selected{% endif %}>120分</option>
+                                    <option value="150" {% if form.estimated_duration.value == 150 %}selected{% endif %}>150分</option>
+                                    <option value="180" {% if form.estimated_duration.value == 180 %}selected{% endif %}>180分</option>
+                                    <option value="240" {% if form.estimated_duration.value == 240 %}selected{% endif %}>240分</option>
+                                </select>
+                                {% if form.estimated_duration.errors %}
+                                    <div class="text-danger small">{{ form.estimated_duration.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.scheduled_date.id_for_label }}" class="form-label">調査予定日 <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="{{ form.scheduled_date.id_for_label }}" name="{{ form.scheduled_date.name }}" value="{{ form.scheduled_date.value|default:'' }}" required>
+                                {% if form.scheduled_date.errors %}
+                                    <div class="text-danger small">{{ form.scheduled_date.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.scheduled_start_time.id_for_label }}" class="form-label">開始予定時刻 <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" id="{{ form.scheduled_start_time.id_for_label }}" name="{{ form.scheduled_start_time.name }}" value="{{ form.scheduled_start_time.value|default:'' }}" required>
+                                {% if form.scheduled_start_time.errors %}
+                                    <div class="text-danger small">{{ form.scheduled_start_time.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>調査作成について</h6>
+                        <ul class="mb-0">
+                            <li>この案件「{{ project.site_name }}」に関連付けられた調査が作成されます</li>
+                            <li>調査員には指定された日時に現地に向かってもらいます</li>
+                            <li>調査開始時に実際の開始時刻が記録されます</li>
+                            <li>調査データは自動保存され、完了後にレポートが生成されます</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'order_management:project_detail' project.pk %}" class="btn btn-secondary me-md-2">キャンセル</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>調査を作成
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 調査員のスケジュール確認 -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-calendar-check me-2"></i>調査員スケジュール確認</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">調査員と日付を選択すると、その調査員の既存スケジュールが表示されます。</p>
+                <div id="surveyorSchedule">
+                    <p class="text-muted">調査員と日付を選択してください。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const surveyorSelect = document.getElementById('{{ form.surveyor.id_for_label }}');
+    const dateInput = document.getElementById('{{ form.scheduled_date.id_for_label }}');
+    const timeInput = document.getElementById('{{ form.scheduled_start_time.id_for_label }}');
+    const durationSelect = document.getElementById('{{ form.estimated_duration.id_for_label }}');
+    const scheduleDiv = document.getElementById('surveyorSchedule');
+
+    function checkSurveyorSchedule() {
+        const surveyorId = surveyorSelect.value;
+        const selectedDate = dateInput.value;
+
+        if (surveyorId && selectedDate) {
+            scheduleDiv.innerHTML = `
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                調査員のスケジュールを確認中...
+            `;
+
+            // 実際のアプリケーションでは、ここでAJAXを使用して調査員のスケジュールを取得
+            // 今回は模擬的なスケジュール表示
+            setTimeout(() => {
+                const surveyorName = surveyorSelect.options[surveyorSelect.selectedIndex].text;
+                scheduleDiv.innerHTML = `
+                    <div class="alert alert-info">
+                        <h6>${surveyorName}のスケジュール (${selectedDate})</h6>
+                        <ul class="mb-0">
+                            <li>09:00-11:00: 渋谷オフィス調査</li>
+                            <li>14:00-16:00: 空き時間</li>
+                            <li>16:30-18:00: 品川マンション調査</li>
+                        </ul>
+                        <small class="text-muted">※ この情報は模擬データです</small>
+                    </div>
+                `;
+            }, 1000);
+        } else if (surveyorId) {
+            scheduleDiv.innerHTML = '<p class="text-muted">日付を選択してスケジュールを確認してください。</p>';
+        } else {
+            scheduleDiv.innerHTML = '<p class="text-muted">調査員を選択してください。</p>';
+        }
+    }
+
+    surveyorSelect.addEventListener('change', checkSurveyorSchedule);
+    dateInput.addEventListener('change', checkSurveyorSchedule);
+
+    // デフォルト値の設定
+    if (!dateInput.value) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        dateInput.value = tomorrow.toISOString().split('T')[0];
+    }
+
+    if (!timeInput.value) {
+        timeInput.value = '10:00';
+    }
+
+    if (!durationSelect.value) {
+        durationSelect.value = '120';
+    }
+});
+</script>
+{% endblock %}

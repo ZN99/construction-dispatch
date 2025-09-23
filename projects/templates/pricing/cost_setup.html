@@ -1,0 +1,329 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}{{ project.title }} - コスト積算 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-calculator me-2"></i>コスト積算</h2>
+                    <h4 class="text-muted">{{ project.title }}</h4>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'project_detail' project.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>案件詳細
+                    </a>
+                    {% if project_cost %}
+                    <a href="{% url 'project_pricing_setup' project.id %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-right me-1"></i>マージン設定
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- コスト積算フォーム -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-edit me-2"></i>コスト項目入力
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="costForm" method="post">
+                                {% csrf_token %}
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.craftsman_cost.id_for_label }}" class="form-label">職人費用（円）</label>
+                                        {{ form.craftsman_cost }}
+                                        {% if form.craftsman_cost.errors %}
+                                            <div class="text-danger small">{{ form.craftsman_cost.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.material_cost.id_for_label }}" class="form-label">資材費（円）</label>
+                                        {{ form.material_cost }}
+                                        {% if form.material_cost.errors %}
+                                            <div class="text-danger small">{{ form.material_cost.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="{{ form.transportation_cost.id_for_label }}" class="form-label">交通費（円）</label>
+                                        {{ form.transportation_cost }}
+                                        {% if form.transportation_cost.errors %}
+                                            <div class="text-danger small">{{ form.transportation_cost.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="{{ form.survey_cost.id_for_label }}" class="form-label">調査費（円）</label>
+                                        {{ form.survey_cost }}
+                                        {% if form.survey_cost.errors %}
+                                            <div class="text-danger small">{{ form.survey_cost.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="{{ form.other_cost.id_for_label }}" class="form-label">その他経費（円）</label>
+                                        {{ form.other_cost }}
+                                        {% if form.other_cost.errors %}
+                                            <div class="text-danger small">{{ form.other_cost.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- 総コスト表示 -->
+                                <div class="alert alert-info">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>総コスト</h5>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <h4 class="mb-0" id="totalCost">¥0</h4>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button type="button" class="btn btn-outline-primary" onclick="loadFromRelatedData()">
+                                        <i class="fas fa-sync me-1"></i>関連データから取得
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i>コスト保存
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 見積もりツール -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-tools me-2"></i>コスト見積もりツール
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="estimationForm">
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label for="{{ estimation_form.work_area.id_for_label }}" class="form-label">作業面積</label>
+                                        {{ estimation_form.work_area }}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="{{ estimation_form.work_days.id_for_label }}" class="form-label">作業日数</label>
+                                        {{ estimation_form.work_days }}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="{{ estimation_form.craftsman_count.id_for_label }}" class="form-label">職人数</label>
+                                        {{ estimation_form.craftsman_count }}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="{{ estimation_form.hourly_rate.id_for_label }}" class="form-label">時給</label>
+                                        {{ estimation_form.hourly_rate }}
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ estimation_form.daily_hours.id_for_label }}" class="form-label">1日作業時間</label>
+                                        {{ estimation_form.daily_hours }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ estimation_form.material_cost_per_sqm.id_for_label }}" class="form-label">材料費/m²</label>
+                                        {{ estimation_form.material_cost_per_sqm }}
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-success" onclick="calculateEstimation()">
+                                    <i class="fas fa-calculator me-1"></i>見積もり計算
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- サイドバー情報 -->
+                <div class="col-md-4">
+                    <!-- 案件情報 -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>案件情報</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>顧客:</strong> {{ project.customer.name }}</p>
+                            <p class="mb-1"><strong>工種:</strong> {{ project.project_type.name }}</p>
+                            <p class="mb-1"><strong>場所:</strong> {{ project.address }}</p>
+                            <p class="mb-1"><strong>期間:</strong> {{ project.start_date }} 〜 {{ project.end_date }}</p>
+                            <p class="mb-0"><strong>予算:</strong> {{ project.formatted_amount }}</p>
+                        </div>
+                    </div>
+
+                    <!-- 現在のコスト内訳 -->
+                    {% if project_cost %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-warning text-white">
+                            <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>コスト内訳</h6>
+                        </div>
+                        <div class="card-body">
+                            {% for key, item in project_cost.cost_breakdown.items %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>
+                                    {% if key == 'craftsman' %}職人費用
+                                    {% elif key == 'material' %}資材費
+                                    {% elif key == 'transportation' %}交通費
+                                    {% elif key == 'survey' %}調査費
+                                    {% else %}その他{% endif %}
+                                </span>
+                                <div class="text-end">
+                                    <div>¥{{ item.amount|floatformat:0 }}</div>
+                                    <small class="text-muted">{{ item.percentage }}%</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>総コスト</strong>
+                                <strong class="text-primary">{{ project_cost.formatted_total_cost }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 関連データ -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0"><i class="fas fa-link me-2"></i>関連データ</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>職人アサイン ({{ assignments|length }}件)</strong>
+                                {% for assignment in assignments %}
+                                <div class="d-flex justify-content-between small">
+                                    <span>{{ assignment.craftsman.name }}</span>
+                                    <span>¥{{ assignment.total_amount|default:0|floatformat:0 }}</span>
+                                </div>
+                                {% empty %}
+                                <small class="text-muted">アサインなし</small>
+                                {% endfor %}
+                            </div>
+
+                            <div>
+                                <strong>資材発注 ({{ material_orders|length }}件)</strong>
+                                {% for order in material_orders %}
+                                <div class="d-flex justify-content-between small">
+                                    <span>{{ order.supplier.name }}</span>
+                                    <span>¥{{ order.estimated_cost|default:0|floatformat:0 }}</span>
+                                </div>
+                                {% empty %}
+                                <small class="text-muted">発注なし</small>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- コスト積算のポイント -->
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>積算のポイント</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="small mb-0">
+                                <li>職人費用は時給×時間×人数で計算</li>
+                                <li>資材費は実際の発注額を反映</li>
+                                <li>交通費は距離と回数を考慮</li>
+                                <li>調査費は調査時間に応じて設定</li>
+                                <li>余裕を持った見積もりを心がける</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.cost-input {
+    text-align: right;
+}
+
+.form-label {
+    font-weight: bold;
+}
+</style>
+
+<script>
+// リアルタイム総コスト計算
+function updateTotalCost() {
+    const costInputs = document.querySelectorAll('.cost-input');
+    let total = 0;
+
+    costInputs.forEach(input => {
+        const value = parseFloat(input.value) || 0;
+        total += value;
+    });
+
+    document.getElementById('totalCost').textContent = '¥' + total.toLocaleString();
+}
+
+// 関連データからコスト自動取得
+function loadFromRelatedData() {
+    fetch(`/pricing/projects/{{ project.id }}/cost-from-related/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('id_craftsman_cost').value = data.craftsman_cost;
+                document.getElementById('id_material_cost').value = data.material_cost;
+                document.getElementById('id_survey_cost').value = data.survey_cost;
+                updateTotalCost();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+// 見積もり計算
+function calculateEstimation() {
+    const form = document.getElementById('estimationForm');
+    const formData = new FormData(form);
+
+    fetch('/pricing/api/cost-estimation/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const estimation = data.estimated_cost;
+            document.getElementById('id_craftsman_cost').value = estimation.craftsman_cost;
+            document.getElementById('id_material_cost').value = estimation.material_cost;
+            updateTotalCost();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// ページ読み込み時の初期設定
+document.addEventListener('DOMContentLoaded', function() {
+    // リアルタイム計算のイベントリスナー
+    const costInputs = document.querySelectorAll('.cost-input');
+    costInputs.forEach(input => {
+        input.addEventListener('input', updateTotalCost);
+    });
+
+    // 初期計算
+    updateTotalCost();
+});
+</script>
+{% endblock %}

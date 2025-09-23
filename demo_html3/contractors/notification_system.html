@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建築派遣SaaS - 通知管理システム</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        .notification-item {
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+        .notification-urgent {
+            border-left-color: #dc3545;
+            background-color: #ffeaa7;
+        }
+        .notification-info {
+            border-left-color: #17a2b8;
+            background-color: #e3f2fd;
+        }
+        .notification-success {
+            border-left-color: #28a745;
+            background-color: #e8f5e8;
+        }
+        .notification-read {
+            opacity: 0.7;
+            background-color: #f8f9fa;
+        }
+        .real-time-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #28a745;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .approval-required {
+            background: linear-gradient(45deg, #fff3cd, #ffeaa7);
+            border: 2px solid #ffcc02;
+        }
+        .auto-share-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+            min-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <h5 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>メインメニュー</span>
+                    </h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="../index.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../projects/project_list.html">
+                                <i class="fas fa-project-diagram me-2"></i>案件管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="notification_system.html">
+                                <i class="fas fa-bell me-2"></i>通知管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="project_schedule_create.html">
+                                <i class="fas fa-calendar-plus me-2"></i>工程表作成
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="contractor_coordination.html">
+                                <i class="fas fa-phone me-2"></i>協力会社連絡
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">
+                        <i class="fas fa-bell me-3"></i>通知管理システム
+                        <span class="real-time-indicator" title="リアルタイム更新中"></span>
+                    </h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button class="btn btn-outline-primary" onclick="markAllAsRead()">
+                            <i class="fas fa-check-double me-1"></i>全て既読
+                        </button>
+                        <button class="btn btn-outline-secondary ms-2" onclick="refreshNotifications()">
+                            <i class="fas fa-sync me-1"></i>更新
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Auto-share Status Alert -->
+                <div id="autoShareAlert" class="auto-share-status alert alert-info alert-dismissible fade show" style="display: none;">
+                    <strong><i class="fas fa-share-alt me-2"></i>自動情報共有中</strong>
+                    <div id="shareProgress" class="mt-2">
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" onclick="hideAutoShareAlert()"></button>
+                </div>
+
+                <!-- Notification Stats -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">承認待ち</h6>
+                                        <h3 class="mb-0" id="pendingApprovals">3</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">新着通知</h6>
+                                        <h3 class="mb-0" id="newNotifications">7</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-bell fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">共有済み</h6>
+                                        <h3 class="mb-0" id="sharedItems">15</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-share-alt fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">進行中案件</h6>
+                                        <h3 class="mb-0" id="activeProjects">8</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-clock fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-time Notifications -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-bolt me-2"></i>リアルタイム通知
+                            <span class="badge bg-danger ms-2" id="unreadCount">3</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="notificationsList">
+                            <!-- 承認依頼通知 -->
+                            <div class="notification-item approval-required p-3 mb-3 rounded">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="fw-bold text-warning">
+                                            <i class="fas fa-exclamation-circle me-2"></i>【承認依頼】協力会社調整完了
+                                        </h6>
+                                        <p class="mb-2">
+                                            <strong>案件:</strong> 港区ワンルーム原状回復<br>
+                                            <strong>派遣スタッフ:</strong> 田中太郎<br>
+                                            <strong>協力会社:</strong> 東京クロス工業 (責任者: 山田部長)
+                                        </p>
+                                        <div class="alert alert-light mb-2">
+                                            <strong>調整結果:</strong><br>
+                                            • 工期: 2025年1月20日〜22日 (3日間)<br>
+                                            • 作業時間: 9:00-17:00<br>
+                                            • 見積金額: ¥180,000<br>
+                                            • 特記事項: 入居者立会い必要 (最終日16:00)
+                                        </div>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>2分前に自動共有
+                                        </small>
+                                    </div>
+                                    <div class="ms-3">
+                                        <button class="btn btn-success btn-sm mb-2" onclick="approveRequest('approval_001')">
+                                            <i class="fas fa-check me-1"></i>承認
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm d-block" onclick="viewDetails('approval_001')">
+                                            詳細確認
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 情報共有通知 -->
+                            <div class="notification-item notification-info p-3 mb-3 rounded">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="fw-bold text-info">
+                                            <i class="fas fa-share-alt me-2"></i>【自動共有】協力会社からの回答
+                                        </h6>
+                                        <p class="mb-2">
+                                            <strong>案件:</strong> 新宿1K原状回復<br>
+                                            <strong>協力会社:</strong> 新宿水道設備<br>
+                                            <strong>回答内容:</strong> 水道工事対応可能、見積額¥45,000
+                                        </p>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>5分前
+                                        </small>
+                                    </div>
+                                    <div class="ms-3">
+                                        <span class="badge bg-info">共有済み</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 成功通知 -->
+                            <div class="notification-item notification-success p-3 mb-3 rounded">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="fw-bold text-success">
+                                            <i class="fas fa-check-circle me-2"></i>【完了報告】協力会社手配完了
+                                        </h6>
+                                        <p class="mb-2">
+                                            <strong>案件:</strong> 渋谷1DK原状回復<br>
+                                            <strong>担当:</strong> 佐藤花子<br>
+                                            <strong>結果:</strong> 全協力会社への連絡完了、工程確定
+                                        </p>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>10分前
+                                        </small>
+                                    </div>
+                                    <div class="ms-3">
+                                        <button class="btn btn-outline-success btn-sm" onclick="markAsRead(this)">
+                                            <i class="fas fa-eye me-1"></i>既読
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 自動情報共有設定 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cogs me-2"></i>自動情報共有設定
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>通知設定</h6>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="autoNotifyApproval" checked>
+                                    <label class="form-check-label" for="autoNotifyApproval">
+                                        承認依頼の自動通知
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="autoShareUpdates" checked>
+                                    <label class="form-check-label" for="autoShareUpdates">
+                                        進捗更新の自動共有
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="realTimeSync" checked>
+                                    <label class="form-check-label" for="realTimeSync">
+                                        リアルタイム同期
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>共有範囲設定</h6>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="shareToProjectMembers" checked>
+                                    <label class="form-check-label" for="shareToProjectMembers">
+                                        プロジェクトメンバー全員
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="shareToManagers" checked>
+                                    <label class="form-check-label" for="shareToManagers">
+                                        管理者・責任者
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="shareToClients">
+                                    <label class="form-check-label" for="shareToClients">
+                                        顧客 (承認後のみ)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end mt-3">
+                            <button class="btn btn-primary" onclick="saveNotificationSettings()">
+                                <i class="fas fa-save me-1"></i>設定保存
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Approval Modal -->
+    <div class="modal fade" id="approvalModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-check-circle me-2"></i>承認確認
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="approvalDetails">
+                        <!-- 承認内容の詳細がここに表示される -->
+                    </div>
+                    <div class="mt-3">
+                        <label for="approvalComment" class="form-label">承認コメント (任意)</label>
+                        <textarea class="form-control" id="approvalComment" rows="3" placeholder="承認に関するコメントがあれば入力してください..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-success" onclick="finalizeApproval()">
+                        <i class="fas fa-check me-1"></i>承認確定
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // STEP 3: 自動情報共有・通知機能の実装
+
+        // リアルタイム通知の管理
+        class NotificationSystem {
+            constructor() {
+                this.notifications = [];
+                this.unreadCount = 3;
+                this.autoShareEnabled = true;
+                this.init();
+            }
+
+            init() {
+                console.log('STEP 3: 自動情報共有・通知システム開始');
+                this.startRealTimeUpdates();
+                this.updateUnreadCounter();
+            }
+
+            // 自動情報共有機能
+            triggerAutoShare(data) {
+                console.log('自動情報共有開始:', data);
+
+                // 進捗表示
+                this.showAutoShareProgress();
+
+                // プロジェクトメンバーへの自動共有
+                this.shareToProjectMembers(data);
+
+                // 承認依頼の自動生成
+                if (data.requiresApproval) {
+                    this.generateApprovalRequest(data);
+                }
+
+                // 通知カウンターの更新
+                this.updateNotificationStats();
+            }
+
+            showAutoShareProgress() {
+                const alert = document.getElementById('autoShareAlert');
+                const progressBar = alert.querySelector('.progress-bar');
+
+                alert.style.display = 'block';
+
+                // プログレスバーのアニメーション
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 20;
+                    progressBar.style.width = progress + '%';
+
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            alert.style.display = 'none';
+                            progressBar.style.width = '0%';
+                        }, 2000);
+                    }
+                }, 300);
+            }
+
+            shareToProjectMembers(data) {
+                // プロジェクトメンバー全員への情報共有をシミュレート
+                const members = ['田中太郎', '佐藤花子', '山田課長', '鈴木部長'];
+
+                members.forEach(member => {
+                    console.log(`${member}に情報共有: ${data.projectName} - ${data.message}`);
+                });
+
+                // 共有済みカウンターを更新
+                const sharedElement = document.getElementById('sharedItems');
+                if (sharedElement) {
+                    const currentCount = parseInt(sharedElement.textContent);
+                    sharedElement.textContent = currentCount + 1;
+                }
+            }
+
+            generateApprovalRequest(data) {
+                console.log('承認依頼を自動生成:', data);
+
+                // 承認待ちカウンターを更新
+                const pendingElement = document.getElementById('pendingApprovals');
+                if (pendingElement) {
+                    const currentCount = parseInt(pendingElement.textContent);
+                    pendingElement.textContent = currentCount + 1;
+                }
+
+                // 新しい承認依頼通知を追加
+                this.addNotification({
+                    type: 'approval',
+                    title: '【承認依頼】協力会社調整完了',
+                    content: data,
+                    timestamp: new Date(),
+                    requiresAction: true
+                });
+            }
+
+            addNotification(notification) {
+                this.notifications.unshift(notification);
+                this.unreadCount++;
+                this.updateUnreadCounter();
+                this.renderNotifications();
+            }
+
+            updateUnreadCounter() {
+                const counter = document.getElementById('unreadCount');
+                if (counter) {
+                    counter.textContent = this.unreadCount;
+                }
+
+                const newNotificationsElement = document.getElementById('newNotifications');
+                if (newNotificationsElement) {
+                    newNotificationsElement.textContent = this.unreadCount;
+                }
+            }
+
+            updateNotificationStats() {
+                // 統計情報の更新をシミュレート
+                setTimeout(() => {
+                    const activeProjects = document.getElementById('activeProjects');
+                    if (activeProjects && Math.random() > 0.5) {
+                        const current = parseInt(activeProjects.textContent);
+                        activeProjects.textContent = current + 1;
+                    }
+                }, 1000);
+            }
+
+            renderNotifications() {
+                // 通知リストの動的更新（実装済みのHTMLを更新）
+                console.log('通知リストを更新:', this.notifications.length);
+            }
+
+            startRealTimeUpdates() {
+                // リアルタイム更新をシミュレート
+                setInterval(() => {
+                    if (Math.random() > 0.8) {
+                        this.simulateIncomingNotification();
+                    }
+                }, 30000); // 30秒ごとに新しい通知の可能性
+            }
+
+            simulateIncomingNotification() {
+                const notifications = [
+                    {
+                        type: 'info',
+                        title: '【自動共有】協力会社からの回答',
+                        message: '新規見積回答が届きました',
+                        projectName: 'サンプル案件'
+                    },
+                    {
+                        type: 'approval',
+                        title: '【承認依頼】工程表更新',
+                        message: '協力会社調整により工程変更が必要です',
+                        projectName: 'サンプル案件',
+                        requiresApproval: true
+                    }
+                ];
+
+                const randomNotification = notifications[Math.floor(Math.random() * notifications.length)];
+                this.triggerAutoShare(randomNotification);
+            }
+        }
+
+        // 通知システムの初期化
+        const notificationSystem = new NotificationSystem();
+
+        // UI イベントハンドラー
+        function markAllAsRead() {
+            notificationSystem.unreadCount = 0;
+            notificationSystem.updateUnreadCounter();
+
+            // 全ての通知を既読マークに
+            document.querySelectorAll('.notification-item').forEach(item => {
+                if (!item.classList.contains('notification-read')) {
+                    item.classList.add('notification-read');
+                }
+            });
+
+            alert('全ての通知を既読にしました');
+        }
+
+        function markAsRead(button) {
+            const notification = button.closest('.notification-item');
+            notification.classList.add('notification-read');
+            button.style.display = 'none';
+
+            if (notificationSystem.unreadCount > 0) {
+                notificationSystem.unreadCount--;
+                notificationSystem.updateUnreadCounter();
+            }
+        }
+
+        function refreshNotifications() {
+            console.log('通知リストを更新中...');
+
+            // 更新アニメーション
+            const refreshBtn = event.target.closest('button');
+            const icon = refreshBtn.querySelector('i');
+            icon.classList.add('fa-spin');
+
+            setTimeout(() => {
+                icon.classList.remove('fa-spin');
+                alert('通知リストを更新しました');
+            }, 1000);
+        }
+
+        function approveRequest(requestId) {
+            console.log('承認処理開始:', requestId);
+
+            // 承認モーダルを表示
+            document.getElementById('approvalDetails').innerHTML = `
+                <div class="alert alert-warning">
+                    <h6>承認対象</h6>
+                    <p><strong>案件:</strong> 港区ワンルーム原状回復<br>
+                    <strong>協力会社:</strong> 東京クロス工業<br>
+                    <strong>見積金額:</strong> ¥180,000<br>
+                    <strong>工期:</strong> 2025年1月20日〜22日</p>
+                </div>
+            `;
+
+            const modal = new bootstrap.Modal(document.getElementById('approvalModal'));
+            modal.show();
+        }
+
+        function finalizeApproval() {
+            const comment = document.getElementById('approvalComment').value;
+
+            console.log('承認確定:', comment);
+
+            // 承認処理の実行
+            if (notificationSystem.unreadCount > 0) {
+                notificationSystem.unreadCount--;
+            }
+
+            const pendingElement = document.getElementById('pendingApprovals');
+            if (pendingElement) {
+                const currentCount = parseInt(pendingElement.textContent);
+                if (currentCount > 0) {
+                    pendingElement.textContent = currentCount - 1;
+                }
+            }
+
+            // モーダルを閉じる
+            const modal = bootstrap.Modal.getInstance(document.getElementById('approvalModal'));
+            modal.hide();
+
+            // 成功メッセージ
+            alert('承認が完了しました。STEP 4の確認・承認処理が実行されます。');
+
+            // STEP 4へのフロー開始をトリガー
+            console.log('STEP 4: 社員用確認・承認画面への移行準備完了');
+        }
+
+        function viewDetails(requestId) {
+            console.log('詳細表示:', requestId);
+            window.location.href = 'contractor_approval.html?request=' + requestId;
+        }
+
+        function hideAutoShareAlert() {
+            document.getElementById('autoShareAlert').style.display = 'none';
+        }
+
+        function saveNotificationSettings() {
+            const settings = {
+                autoNotifyApproval: document.getElementById('autoNotifyApproval').checked,
+                autoShareUpdates: document.getElementById('autoShareUpdates').checked,
+                realTimeSync: document.getElementById('realTimeSync').checked,
+                shareToProjectMembers: document.getElementById('shareToProjectMembers').checked,
+                shareToManagers: document.getElementById('shareToManagers').checked,
+                shareToClients: document.getElementById('shareToClients').checked
+            };
+
+            localStorage.setItem('notificationSettings', JSON.stringify(settings));
+            alert('通知設定を保存しました');
+            console.log('設定保存:', settings);
+        }
+
+        // 外部からの呼び出し用（contractor_coordination.htmlから）
+        window.triggerAutoNotification = function(responseData) {
+            console.log('外部からの自動通知トリガー:', responseData);
+            notificationSystem.triggerAutoShare({
+                projectName: responseData.projectName || '案件情報',
+                message: responseData.message || '協力会社調整完了',
+                requiresApproval: true,
+                responseData: responseData
+            });
+        };
+
+        // ページ読み込み時に設定を復元
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedSettings = localStorage.getItem('notificationSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                Object.keys(settings).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        element.checked = settings[key];
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

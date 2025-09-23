@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マージン設定 - 建築派遣SaaS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../css/quotation_workflow.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+            padding-bottom: 100px;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+        .margin-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-left: 5px solid #28a745;
+        }
+        .cost-breakdown {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .margin-slider {
+            margin: 20px 0;
+        }
+        .margin-input {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 18px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .margin-input:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+        .calculation-result {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+        }
+        .recommendation-card {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .warning-card {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .submit-section {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
+        }
+        .employee-badge {
+            background: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .competitive-analysis {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .profit-indicator {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: 600;
+            margin: 5px;
+        }
+        .profit-low {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .profit-normal {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        .profit-high {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        .market-data {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-section">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-percent"></i> マージン設定</h2>
+                    <p class="mb-0">利益率・価格設定の最終調整</p>
+                </div>
+                <div>
+                    <span class="employee-badge">社員専用</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Workflow Progress -->
+        <div class="workflow-progress mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="text-white mb-0">見積作成進捗</h6>
+                <span class="badge bg-light text-dark">ステップ 3/4</span>
+            </div>
+            <div class="progress" style="height: 8px;">
+                <div class="progress-bar" role="progressbar" style="width: 75%"></div>
+            </div>
+            <div class="d-flex justify-content-between mt-2">
+                <small class="text-white-50">現地調査</small>
+                <small class="text-white-50">材料費入力</small>
+                <small class="text-white">マージン設定</small>
+                <small class="text-white-50">見積生成</small>
+            </div>
+        </div>
+
+        <!-- Cost Breakdown Summary -->
+        <div class="cost-breakdown">
+            <h5><i class="bi bi-calculator text-success"></i> 原価構成</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>材料費内訳</h6>
+                    <div class="d-flex justify-content-between">
+                        <span>クリーニング材料:</span>
+                        <span id="cleaningCost">¥8,500</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>壁紙関連材料:</span>
+                        <span id="wallpaperCost">¥45,200</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>水道設備材料:</span>
+                        <span id="plumbingCost">¥32,800</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold">
+                        <span>材料費合計:</span>
+                        <span id="totalMaterialCost">¥86,500</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>人件費・その他</h6>
+                    <div class="d-flex justify-content-between">
+                        <span>派遣スタッフ人件費:</span>
+                        <span id="laborCost">¥24,000</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>交通費・諸経費:</span>
+                        <span id="expenseCost">¥8,000</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>管理費:</span>
+                        <span id="managementCost">¥12,000</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold">
+                        <span>総原価:</span>
+                        <span id="totalBaseCost">¥130,500</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Analysis -->
+        <div class="competitive-analysis">
+            <h6><i class="bi bi-graph-up text-primary"></i> 市場分析・競合比較</h6>
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>同業他社平均</strong>
+                    <div class="market-data">1DK原状回復: ¥180,000-220,000</div>
+                </div>
+                <div class="col-md-4">
+                    <strong>自社過去実績</strong>
+                    <div class="market-data">同条件案件: ¥195,000 (マージン率35%)</div>
+                </div>
+                <div class="col-md-4">
+                    <strong>受注確率</strong>
+                    <div class="market-data">¥200,000以下: 85%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Margin Setting -->
+        <div class="margin-card">
+            <h5><i class="bi bi-sliders"></i> マージン率設定</h5>
+
+            <!-- Recommended Margins -->
+            <div class="recommendation-card">
+                <h6><i class="bi bi-lightbulb text-success"></i> 推奨マージン率</h6>
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <button class="btn btn-outline-success margin-preset" data-margin="25">
+                            <div class="fw-bold">25%</div>
+                            <small>安全圏</small>
+                        </button>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <button class="btn btn-success margin-preset" data-margin="35">
+                            <div class="fw-bold">35%</div>
+                            <small>推奨</small>
+                        </button>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <button class="btn btn-outline-primary margin-preset" data-margin="45">
+                            <div class="fw-bold">45%</div>
+                            <small>挑戦的</small>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Margin Input -->
+            <div class="row align-items-center margin-slider">
+                <div class="col-md-8">
+                    <label class="form-label">マージン率 (%) <span class="text-muted">- スライダーで調整</span></label>
+                    <input type="range" class="form-range" id="marginSlider" min="10" max="60" step="1" value="35">
+                </div>
+                <div class="col-md-4">
+                    <input type="number" class="form-control margin-input" id="marginInput" min="10" max="60" step="0.1" value="35">
+                </div>
+            </div>
+
+            <!-- Profit Indicator -->
+            <div class="text-center mt-3">
+                <span class="profit-indicator profit-normal" id="profitIndicator">適正利益率</span>
+            </div>
+        </div>
+
+        <!-- Real-time Calculation -->
+        <div class="calculation-result">
+            <h4><i class="bi bi-currency-yen"></i> 見積金額</h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="display-6" id="quotationPrice">¥176,175</div>
+                    <small>最終見積価格</small>
+                </div>
+                <div class="col-md-6">
+                    <div class="fs-3" id="profitAmount">¥45,675</div>
+                    <small>予想利益</small>
+                </div>
+            </div>
+            <hr class="border-light">
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>利益率:</strong> <span id="actualMargin">35.0%</span>
+                </div>
+                <div class="col-md-6">
+                    <strong>競合対比:</strong> <span id="competitivePosition">平均的</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Assessment -->
+        <div class="warning-card" id="riskAssessment" style="display: none;">
+            <h6><i class="bi bi-exclamation-triangle text-warning"></i> リスク評価</h6>
+            <div id="riskMessage"></div>
+        </div>
+
+        <!-- Additional Options -->
+        <div class="margin-card">
+            <h6><i class="bi bi-gear"></i> 追加オプション</h6>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="urgentSurcharge">
+                <label class="form-check-label" for="urgentSurcharge">
+                    緊急対応割増 (+10%)
+                </label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="qualityGuarantee">
+                <label class="form-check-label" for="qualityGuarantee">
+                    品質保証延長 (+5%)
+                </label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="weekendWork">
+                <label class="form-check-label" for="weekendWork">
+                    土日作業対応 (+15%)
+                </label>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">特記事項・値引き理由</label>
+                <textarea class="form-control" id="specialNotes" rows="3" placeholder="価格調整の理由、顧客との交渉内容など"></textarea>
+            </div>
+        </div>
+
+        <!-- Final Confirmation & Approval -->
+        <div class="margin-card">
+            <h6><i class="bi bi-check-circle"></i> 最終確認・承認</h6>
+            <div class="alert alert-info">
+                <strong>見積承認前の確認事項:</strong>
+                <ul class="mb-0 mt-2">
+                    <li>原価計算は正確ですか？</li>
+                    <li>競合他社との価格差は適切ですか？</li>
+                    <li>顧客の予算感に合致していますか？</li>
+                    <li>利益率は会社方針に沿っていますか？</li>
+                    <li>マージン設定は適切ですか？</li>
+                </ul>
+            </div>
+
+            <div class="approval-section mt-4 p-4 border rounded bg-light">
+                <h6><i class="bi bi-shield-check text-success"></i> 社員承認</h6>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirmAccuracy">
+                    <label class="form-check-label" for="confirmAccuracy">
+                        <strong>原価・計算内容の正確性を確認しました</strong>
+                    </label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirmMargin">
+                    <label class="form-check-label" for="confirmMargin">
+                        <strong>設定マージン率が適切であることを確認しました</strong>
+                    </label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirmCompetitive">
+                    <label class="form-check-label" for="confirmCompetitive">
+                        <strong>市場競争力のある価格設定であることを確認しました</strong>
+                    </label>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label"><strong>承認コメント（必須）</strong></label>
+                    <textarea class="form-control" id="approvalComment" rows="3" placeholder="承認理由、価格設定の根拠、特記事項など" required></textarea>
+                    <div class="invalid-feedback">承認コメントは必須入力です</div>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>注意:</strong> 承認後は価格変更に再承認プロセスが必要になります。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Section -->
+    <div class="submit-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-outline-secondary w-100" onclick="saveDraft()">
+                        <i class="bi bi-save"></i> 保存
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-warning w-100" onclick="recalculate()">
+                        <i class="bi bi-arrow-clockwise"></i> 再計算
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-success w-100" id="approveAndGenerate" disabled>
+                        <i class="bi bi-shield-check"></i> 承認・見積生成
+                    </button>
+                </div>
+            </div>
+            <div class="text-center mt-2">
+                <small class="text-muted">承認完了後、見積書が自動生成されお客様への提出が可能になります</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approval Confirmation Modal -->
+    <div class="modal fade" id="approvalModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-shield-check"></i> 見積承認確認</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>承認対象見積内容</h6>
+                    <table class="table table-striped">
+                        <tr><td>総原価</td><td class="text-end" id="confirmBaseCost">¥130,500</td></tr>
+                        <tr><td>設定マージン率</td><td class="text-end" id="confirmMargin">35.0%</td></tr>
+                        <tr><td>追加オプション</td><td class="text-end" id="confirmOptions">なし</td></tr>
+                        <tr class="table-success"><td><strong>最終見積価格</strong></td><td class="text-end"><strong id="confirmFinalPrice">¥176,175</strong></td></tr>
+                    </table>
+
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle"></i> 承認内容確認</h6>
+                        <div><strong>承認者:</strong> <span id="confirmApprover">田中 太郎（社員）</span></div>
+                        <div><strong>承認日時:</strong> <span id="confirmDateTime"></span></div>
+                        <div class="mt-2"><strong>承認コメント:</strong></div>
+                        <div id="confirmApprovalComment" class="border p-2 bg-light"></div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <strong>重要:</strong> 承認後は見積書が自動生成され、価格変更には再承認プロセスが必要になります。
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">修正する</button>
+                    <button type="button" class="btn btn-success" onclick="executeApproval()">
+                        <i class="bi bi-shield-check"></i> 承認・見積生成実行
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/quotation_workflow.js"></script>
+    <script>
+        class MarginSetting {
+            constructor() {
+                this.workflow = new QuotationWorkflow();
+                this.baseCosts = {
+                    materials: 86500,
+                    labor: 24000,
+                    expenses: 8000,
+                    management: 12000
+                };
+                this.totalBaseCost = Object.values(this.baseCosts).reduce((a, b) => a + b, 0);
+                this.currentMargin = 35;
+                this.additionalCharges = 0;
+                this.initializeApp();
+            }
+
+            initializeApp() {
+                this.validateAccess();
+                this.loadMaterialCosts();
+                this.setupEventListeners();
+                this.calculateQuotation();
+                this.loadSavedSettings();
+            }
+
+            validateAccess() {
+                const userRole = this.workflow.getUserRole();
+                if (userRole !== 'employee') {
+                    alert('この画面は社員専用です。');
+                    window.location.href = '../index_manager.html';
+                    return;
+                }
+            }
+
+            loadMaterialCosts() {
+                const materialData = this.workflow.getCurrentMaterialCosts();
+                if (materialData && materialData.categories) {
+                    this.baseCosts.materials = materialData.totalCost || this.baseCosts.materials;
+
+                    document.getElementById('cleaningCost').textContent =
+                        `¥${(materialData.categories.cleaning || 0).toLocaleString()}`;
+                    document.getElementById('wallpaperCost').textContent =
+                        `¥${(materialData.categories.wallpaper || 0).toLocaleString()}`;
+                    document.getElementById('plumbingCost').textContent =
+                        `¥${(materialData.categories.plumbing || 0).toLocaleString()}`;
+                    document.getElementById('totalMaterialCost').textContent =
+                        `¥${this.baseCosts.materials.toLocaleString()}`;
+                }
+
+                // Update other costs
+                document.getElementById('laborCost').textContent = `¥${this.baseCosts.labor.toLocaleString()}`;
+                document.getElementById('expenseCost').textContent = `¥${this.baseCosts.expenses.toLocaleString()}`;
+                document.getElementById('managementCost').textContent = `¥${this.baseCosts.management.toLocaleString()}`;
+
+                this.totalBaseCost = Object.values(this.baseCosts).reduce((a, b) => a + b, 0);
+                document.getElementById('totalBaseCost').textContent = `¥${this.totalBaseCost.toLocaleString()}`;
+            }
+
+            setupEventListeners() {
+                // Margin slider and input sync
+                const slider = document.getElementById('marginSlider');
+                const input = document.getElementById('marginInput');
+
+                slider.addEventListener('input', (e) => {
+                    const margin = parseFloat(e.target.value);
+                    input.value = margin;
+                    this.updateMargin(margin);
+                });
+
+                input.addEventListener('input', (e) => {
+                    const margin = parseFloat(e.target.value);
+                    if (margin >= 10 && margin <= 60) {
+                        slider.value = margin;
+                        this.updateMargin(margin);
+                    }
+                });
+
+                // Preset margin buttons
+                document.querySelectorAll('.margin-preset').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const margin = parseFloat(e.currentTarget.dataset.margin);
+                        slider.value = margin;
+                        input.value = margin;
+                        this.updateMargin(margin);
+                        this.updatePresetButtons(margin);
+                    });
+                });
+
+                // Additional charges checkboxes
+                ['urgentSurcharge', 'qualityGuarantee', 'weekendWork'].forEach(id => {
+                    document.getElementById(id).addEventListener('change', () => {
+                        this.calculateAdditionalCharges();
+                        this.calculateQuotation();
+                    });
+                });
+
+                // Approval checkboxes and button
+                ['confirmAccuracy', 'confirmMargin', 'confirmCompetitive'].forEach(id => {
+                    document.getElementById(id).addEventListener('change', () => {
+                        this.validateApprovalRequirements();
+                    });
+                });
+
+                document.getElementById('approvalComment').addEventListener('input', () => {
+                    this.validateApprovalRequirements();
+                });
+
+                // Approve and generate button
+                document.getElementById('approveAndGenerate').addEventListener('click', () => {
+                    this.showApprovalModal();
+                });
+
+                // Auto-save
+                setInterval(() => {
+                    this.autoSave();
+                }, 30000);
+            }
+
+            updateMargin(margin) {
+                this.currentMargin = margin;
+                this.calculateQuotation();
+                this.updateProfitIndicator(margin);
+                this.updateRiskAssessment(margin);
+                this.autoSave();
+            }
+
+            updatePresetButtons(selectedMargin) {
+                document.querySelectorAll('.margin-preset').forEach(button => {
+                    const buttonMargin = parseFloat(button.dataset.margin);
+                    if (buttonMargin === selectedMargin) {
+                        button.className = 'btn btn-success margin-preset';
+                    } else if (buttonMargin < 30) {
+                        button.className = 'btn btn-outline-success margin-preset';
+                    } else if (buttonMargin > 40) {
+                        button.className = 'btn btn-outline-primary margin-preset';
+                    } else {
+                        button.className = 'btn btn-outline-secondary margin-preset';
+                    }
+                });
+            }
+
+            calculateAdditionalCharges() {
+                let additionalRate = 0;
+
+                if (document.getElementById('urgentSurcharge').checked) additionalRate += 10;
+                if (document.getElementById('qualityGuarantee').checked) additionalRate += 5;
+                if (document.getElementById('weekendWork').checked) additionalRate += 15;
+
+                this.additionalCharges = additionalRate;
+            }
+
+            calculateQuotation() {
+                this.calculateAdditionalCharges();
+
+                // Base price with margin
+                const marginMultiplier = 1 + (this.currentMargin / 100);
+                const basePrice = this.totalBaseCost * marginMultiplier;
+
+                // Add additional charges
+                const additionalMultiplier = 1 + (this.additionalCharges / 100);
+                const finalPrice = basePrice * additionalMultiplier;
+
+                const profit = finalPrice - this.totalBaseCost;
+                const actualMargin = ((profit / finalPrice) * 100);
+
+                // Update display
+                document.getElementById('quotationPrice').textContent = `¥${Math.round(finalPrice).toLocaleString()}`;
+                document.getElementById('profitAmount').textContent = `¥${Math.round(profit).toLocaleString()}`;
+                document.getElementById('actualMargin').textContent = `${actualMargin.toFixed(1)}%`;
+
+                // Update competitive position
+                this.updateCompetitivePosition(finalPrice);
+
+                return {
+                    finalPrice: Math.round(finalPrice),
+                    profit: Math.round(profit),
+                    margin: actualMargin,
+                    baseCost: this.totalBaseCost
+                };
+            }
+
+            updateProfitIndicator(margin) {
+                const indicator = document.getElementById('profitIndicator');
+
+                if (margin < 20) {
+                    indicator.textContent = '低利益率';
+                    indicator.className = 'profit-indicator profit-low';
+                } else if (margin <= 40) {
+                    indicator.textContent = '適正利益率';
+                    indicator.className = 'profit-indicator profit-normal';
+                } else {
+                    indicator.textContent = '高利益率';
+                    indicator.className = 'profit-indicator profit-high';
+                }
+            }
+
+            updateCompetitivePosition(price) {
+                const competitive = document.getElementById('competitivePosition');
+
+                if (price < 180000) {
+                    competitive.textContent = '競争力あり';
+                    competitive.className = 'text-success';
+                } else if (price <= 220000) {
+                    competitive.textContent = '平均的';
+                    competitive.className = 'text-primary';
+                } else {
+                    competitive.textContent = '高価格帯';
+                    competitive.className = 'text-warning';
+                }
+            }
+
+            updateRiskAssessment(margin) {
+                const riskCard = document.getElementById('riskAssessment');
+                const riskMessage = document.getElementById('riskMessage');
+
+                if (margin < 15) {
+                    riskCard.style.display = 'block';
+                    riskMessage.innerHTML = '<strong>低利益率警告:</strong> 利益率が低すぎます。原価計算を再確認してください。';
+                } else if (margin > 50) {
+                    riskCard.style.display = 'block';
+                    riskMessage.innerHTML = '<strong>高価格警告:</strong> 競合他社より大幅に高い価格設定です。受注確率が低下する可能性があります。';
+                } else {
+                    riskCard.style.display = 'none';
+                }
+            }
+
+            validateApprovalRequirements() {
+                const accuracy = document.getElementById('confirmAccuracy').checked;
+                const margin = document.getElementById('confirmMargin').checked;
+                const competitive = document.getElementById('confirmCompetitive').checked;
+                const comment = document.getElementById('approvalComment').value.trim();
+
+                const allChecked = accuracy && margin && competitive && comment.length > 0;
+                document.getElementById('approveAndGenerate').disabled = !allChecked;
+
+                // Update approval comment validation
+                const commentField = document.getElementById('approvalComment');
+                if (comment.length > 0) {
+                    commentField.classList.remove('is-invalid');
+                    commentField.classList.add('is-valid');
+                } else if (commentField.value.length === 0 && document.activeElement !== commentField) {
+                    commentField.classList.remove('is-valid');
+                }
+            }
+
+            showApprovalModal() {
+                const calculation = this.calculateQuotation();
+
+                document.getElementById('confirmBaseCost').textContent = `¥${this.totalBaseCost.toLocaleString()}`;
+                document.getElementById('confirmMargin').textContent = `${this.currentMargin}%`;
+                document.getElementById('confirmFinalPrice').textContent = `¥${calculation.finalPrice.toLocaleString()}`;
+
+                // Additional options
+                const options = [];
+                if (document.getElementById('urgentSurcharge').checked) options.push('緊急対応割増');
+                if (document.getElementById('qualityGuarantee').checked) options.push('品質保証延長');
+                if (document.getElementById('weekendWork').checked) options.push('土日作業対応');
+
+                document.getElementById('confirmOptions').textContent = options.length > 0 ? options.join(', ') : 'なし';
+
+                // Set approval details
+                const user = this.workflow.getCurrentUser();
+                document.getElementById('confirmApprover').textContent = `${user.name || '担当者'}（社員）`;
+                document.getElementById('confirmDateTime').textContent = new Date().toLocaleString('ja-JP');
+                document.getElementById('confirmApprovalComment').textContent = document.getElementById('approvalComment').value;
+
+                const modal = new bootstrap.Modal(document.getElementById('approvalModal'));
+                modal.show();
+            }
+
+            collectMarginData() {
+                const calculation = this.calculateQuotation();
+                const user = this.workflow.getCurrentUser();
+
+                return {
+                    marginSettings: {
+                        marginRate: this.currentMargin,
+                        urgentSurcharge: document.getElementById('urgentSurcharge').checked,
+                        qualityGuarantee: document.getElementById('qualityGuarantee').checked,
+                        weekendWork: document.getElementById('weekendWork').checked,
+                        additionalChargesRate: this.additionalCharges,
+                        specialNotes: document.getElementById('specialNotes').value
+                    },
+                    costBreakdown: {
+                        baseCosts: this.baseCosts,
+                        totalBaseCost: this.totalBaseCost,
+                        finalPrice: calculation.finalPrice,
+                        profit: calculation.profit,
+                        actualMargin: calculation.margin
+                    },
+                    approval: {
+                        isApproved: false,
+                        approver: user.name || '担当者',
+                        approverId: user.id,
+                        approvalComment: document.getElementById('approvalComment').value,
+                        approvalDateTime: null,
+                        confirmations: {
+                            accuracy: document.getElementById('confirmAccuracy').checked,
+                            margin: document.getElementById('confirmMargin').checked,
+                            competitive: document.getElementById('confirmCompetitive').checked
+                        }
+                    },
+                    timestamp: new Date().toISOString(),
+                    employeeId: user.id
+                };
+            }
+
+            autoSave() {
+                const data = this.collectMarginData();
+                localStorage.setItem('marginSettingDraft', JSON.stringify(data));
+            }
+
+            loadSavedSettings() {
+                const saved = localStorage.getItem('marginSettingDraft');
+                if (saved) {
+                    try {
+                        const data = JSON.parse(saved);
+                        const settings = data.marginSettings;
+
+                        document.getElementById('marginSlider').value = settings.marginRate || 35;
+                        document.getElementById('marginInput').value = settings.marginRate || 35;
+                        document.getElementById('urgentSurcharge').checked = settings.urgentSurcharge || false;
+                        document.getElementById('qualityGuarantee').checked = settings.qualityGuarantee || false;
+                        document.getElementById('weekendWork').checked = settings.weekendWork || false;
+                        document.getElementById('specialNotes').value = settings.specialNotes || '';
+
+                        this.updateMargin(settings.marginRate || 35);
+                    } catch (e) {
+                        console.error('Failed to load saved settings:', e);
+                    }
+                }
+            }
+
+            async submitApprovedMarginSettings() {
+                try {
+                    const marginData = this.collectMarginData();
+
+                    // Mark as approved
+                    marginData.approval.isApproved = true;
+                    marginData.approval.approvalDateTime = new Date().toISOString();
+
+                    // Submit to workflow system
+                    await this.workflow.submitApprovedMarginSettings(marginData);
+
+                    // Log approval activity
+                    this.workflow.logActivity('quotation_approved', {
+                        finalPrice: marginData.costBreakdown.finalPrice,
+                        marginRate: marginData.marginSettings.marginRate,
+                        profit: marginData.costBreakdown.profit,
+                        approver: marginData.approval.approver,
+                        approvalComment: marginData.approval.approvalComment
+                    });
+
+                    // Clear draft
+                    localStorage.removeItem('marginSettingDraft');
+
+                    // Navigate to quotation generation
+                    window.location.href = 'quotation_generated.html';
+
+                } catch (error) {
+                    alert('見積承認の処理に失敗しました。再度お試しください。');
+                    console.error('Quotation approval failed:', error);
+                }
+            }
+        }
+
+        // Global functions
+        function saveDraft() {
+            app.autoSave();
+            alert('設定を保存しました。');
+        }
+
+        function recalculate() {
+            app.calculateQuotation();
+            alert('再計算が完了しました。');
+        }
+
+        function executeApproval() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('approvalModal'));
+            modal.hide();
+            app.submitApprovedMarginSettings();
+        }
+
+        // Initialize app
+        let app;
+        document.addEventListener('DOMContentLoaded', () => {
+            app = new MarginSetting();
+        });
+    </script>
+</body>
+</html>

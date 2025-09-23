@@ -1,0 +1,383 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}施工管理ダッシュボード - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-hard-hat me-2"></i>施工管理ダッシュボード</h2>
+                <div class="btn-group">
+                    <a href="{% url 'progress_search' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-search me-1"></i>進捗検索
+                    </a>
+                    <a href="{% url 'issues_list' %}" class="btn btn-outline-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i>問題管理
+                    </a>
+                    <a href="{% url 'progress_analytics' %}" class="btn btn-outline-info">
+                        <i class="fas fa-chart-bar me-1"></i>分析
+                    </a>
+                </div>
+            </div>
+
+            <!-- 統計カード -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-project-diagram fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ progress_stats.total_projects|default:0 }}</h5>
+                                    <small>進行中案件</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-percentage fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ progress_stats.avg_progress|floatformat:1|default:0 }}%</h5>
+                                    <small>平均進捗率</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ progress_stats.delayed_projects|default:0 }}</h5>
+                                    <small>遅れ案件</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ progress_stats.completed_this_week|default:0 }}</h5>
+                                    <small>今週完了</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 進捗一覧 -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-tasks me-2"></i>案件別進捗状況
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if progress_distribution %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>案件名</th>
+                                                <th>進捗率</th>
+                                                <th>状態</th>
+                                                <th>最終報告</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in progress_distribution %}
+                                            <tr {% if item.is_delayed %}class="table-warning"{% elif item.has_issues %}class="table-danger"{% endif %}>
+                                                <td>
+                                                    <a href="{% url 'project_progress_detail' item.project.id %}" class="text-decoration-none">
+                                                        {{ item.project.title }}
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar
+                                                            {% if item.progress_rate >= 80 %}bg-success
+                                                            {% elif item.progress_rate >= 50 %}bg-info
+                                                            {% elif item.progress_rate >= 25 %}bg-warning
+                                                            {% else %}bg-danger{% endif %}"
+                                                            style="width: {{ item.progress_rate }}%">
+                                                            {{ item.progress_rate }}%
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {% if item.is_delayed %}
+                                                        <span class="badge bg-warning">遅れ</span>
+                                                    {% elif item.has_issues %}
+                                                        <span class="badge bg-danger">問題あり</span>
+                                                    {% elif item.progress_rate >= 80 %}
+                                                        <span class="badge bg-success">完了間近</span>
+                                                    {% else %}
+                                                        <span class="badge bg-info">順調</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ item.latest_report|date:"m/d H:i" }}</td>
+                                                <td>
+                                                    <div class="btn-group-sm">
+                                                        <a href="{% url 'project_progress_detail' item.project.id %}" class="btn btn-outline-primary btn-sm">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <button class="btn btn-outline-success btn-sm" onclick="quickProgressUpdate({{ item.project.id }})">
+                                                            <i class="fas fa-plus"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">進行中の案件がありません</h5>
+                                    <p class="text-muted">案件を開始すると進捗管理ができます。</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 最近の進捗報告 -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-clock me-2"></i>最近の進捗報告
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_progress %}
+                                <div class="list-group list-group-flush">
+                                    {% for progress in recent_progress %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">{{ progress.project.title }}</h6>
+                                                <p class="mb-1">{{ progress.work_description|truncatechars:60 }}</p>
+                                                <small class="text-muted">
+                                                    {{ progress.craftsman.name }} - {{ progress.report_date|date:"m/d H:i" }}
+                                                </small>
+                                            </div>
+                                            <span class="badge bg-primary">{{ progress.progress_rate }}%</span>
+                                        </div>
+                                        {% if progress.has_issues %}
+                                        <div class="mt-2">
+                                            <span class="badge bg-warning">問題報告あり</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center">最近の進捗報告がありません。</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- サイドバー -->
+                <div class="col-md-4">
+                    <!-- 未解決問題 -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-warning text-white">
+                            <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>未解決問題</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if open_issues %}
+                                <div class="list-group list-group-flush">
+                                    {% for issue in open_issues|slice:":5" %}
+                                    <div class="list-group-item border-0 px-0">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="mb-1">{{ issue.title|truncatechars:30 }}</h6>
+                                            <span class="badge bg-{{ issue.priority }}">
+                                                {{ issue.get_priority_display }}
+                                            </span>
+                                        </div>
+                                        <p class="mb-1 small">{{ issue.project.title }}</p>
+                                        <small class="text-muted">{{ issue.created_at|date:"m/d" }}</small>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% if open_issues|length > 5 %}
+                                <div class="text-center mt-2">
+                                    <a href="{% url 'issues_list' %}" class="btn btn-outline-warning btn-sm">
+                                        すべて見る ({{ open_issues|length }}件)
+                                    </a>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <p class="text-muted text-center small">未解決問題はありません。</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 完了間近案件 -->
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="fas fa-flag-checkered me-2"></i>完了間近案件</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if near_completion %}
+                                <div class="list-group list-group-flush">
+                                    {% for item in near_completion %}
+                                    <div class="list-group-item border-0 px-0">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="mb-0">{{ item.project.title|truncatechars:25 }}</h6>
+                                            <span class="badge bg-success">{{ item.progress_rate }}%</span>
+                                        </div>
+                                        {% if item.completion %}
+                                        <div class="small">
+                                            <span class="text-muted">完了チェック: {{ item.completion.completion_percentage|floatformat:0 }}%</span>
+                                        </div>
+                                        {% else %}
+                                        <div class="small">
+                                            <a href="{% url 'completion_manage' item.project.id %}" class="text-primary">
+                                                完了処理を開始
+                                            </a>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center small">完了間近の案件はありません。</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- クイック進捗更新モーダル -->
+<div class="modal fade" id="quickProgressModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">クイック進捗更新</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickProgressForm">
+                    <div class="mb-3">
+                        <label for="progress_rate" class="form-label">進捗率（%）</label>
+                        <input type="number" class="form-control" name="progress_rate" min="0" max="100" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="work_description" class="form-label">作業内容</label>
+                        <textarea class="form-control" name="work_description" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="issues" class="form-label">問題・課題</label>
+                        <textarea class="form-control" name="issues" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" onclick="submitQuickProgress()">更新</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.table th {
+    border-top: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+
+.progress {
+    background-color: #e9ecef;
+}
+
+.badge.bg-critical {
+    background-color: #dc3545 !important;
+}
+
+.badge.bg-high {
+    background-color: #fd7e14 !important;
+}
+
+.badge.bg-medium {
+    background-color: #ffc107 !important;
+}
+
+.badge.bg-low {
+    background-color: #6c757d !important;
+}
+</style>
+
+<script>
+let currentProjectId = null;
+
+function quickProgressUpdate(projectId) {
+    currentProjectId = projectId;
+    const modal = new bootstrap.Modal(document.getElementById('quickProgressModal'));
+    modal.show();
+}
+
+function submitQuickProgress() {
+    if (!currentProjectId) return;
+
+    const form = document.getElementById('quickProgressForm');
+    const formData = new FormData(form);
+
+    fetch(`/construction/projects/${currentProjectId}/quick-progress/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('更新に失敗しました: ' + JSON.stringify(data.errors));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('エラーが発生しました。');
+    });
+}
+
+// リアルタイム更新（30秒間隔）
+setInterval(() => {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

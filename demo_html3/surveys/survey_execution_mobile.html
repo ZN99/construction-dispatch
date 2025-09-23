@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建築派遣SaaS - 現地調査実行（派遣専用）</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        /* モバイル最適化 */
+        .mobile-header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .checklist-item {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .checklist-item.completed {
+            border-color: #28a745;
+            background-color: #f8fff9;
+        }
+
+        .checklist-item:hover {
+            border-color: #007bff;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+        }
+
+        .photo-upload-area {
+            border: 3px dashed #6c757d;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .photo-upload-area:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+
+        .photo-upload-area.dragover {
+            border-color: #28a745;
+            background-color: #f8fff9;
+        }
+
+        .photo-preview {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin: 5px;
+            border: 2px solid #e9ecef;
+        }
+
+        .progress-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: conic-gradient(#28a745 0deg, #28a745 var(--progress), #e9ecef var(--progress));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .floating-submit {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            border-radius: 50px;
+            padding: 15px 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-group-lg .form-control {
+            font-size: 1.1rem;
+            padding: 15px;
+        }
+
+        .btn-lg {
+            padding: 12px 30px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Mobile Header -->
+    <div class="mobile-header text-white p-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">現地調査実行</h5>
+                <small>派遣スタッフ: 田中太郎</small>
+            </div>
+            <div class="text-end">
+                <div class="progress-circle" style="--progress: 45deg;">
+                    <span>45%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid px-3 py-3">
+        <!-- 案件情報表示 -->
+        <div class="card mb-3 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="text-primary mb-1">調査対象</h6>
+                        <h5 class="mb-2">新宿1K原状回復</h5>
+                        <p class="text-muted mb-1">
+                            <i class="fas fa-map-marker-alt me-1"></i>東京都新宿区△△2-3-4
+                        </p>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-clock me-1"></i>予定時間: 14:30-16:00
+                        </p>
+                    </div>
+                    <span class="badge bg-warning fs-6">実行中</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 社員からの指示 -->
+        <div class="alert alert-info mb-3">
+            <h6 class="alert-heading">
+                <i class="fas fa-bullhorn me-2"></i>社員からの重要指示
+            </h6>
+            <p class="mb-1">水道設備を重点的にチェックしてください：</p>
+            <ul class="mb-0">
+                <li>給水管の漏れ確認</li>
+                <li>排水の流れテスト</li>
+                <li>蛇口の動作確認</li>
+            </ul>
+        </div>
+
+        <!-- 調査チェックリスト -->
+        <div class="mb-4">
+            <h6 class="mb-3">
+                <i class="fas fa-clipboard-check me-2"></i>調査チェックリスト
+            </h6>
+
+            <!-- チェック項目1 -->
+            <div class="checklist-item" id="item1">
+                <div class="p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <input type="checkbox" class="form-check-input me-3" id="check1" onchange="toggleItem(1)">
+                        <h6 class="mb-0">給水管の漏れ確認</h6>
+                    </div>
+                    <p class="text-muted mb-2">キッチン・洗面台・浴室の給水管を目視確認</p>
+
+                    <div class="collapse" id="detail1">
+                        <div class="row mb-2">
+                            <div class="col-4">
+                                <label class="form-label small">状態</label>
+                                <select class="form-select form-select-sm" id="status1">
+                                    <option value="">選択...</option>
+                                    <option value="良好">良好</option>
+                                    <option value="軽微な問題">軽微な問題</option>
+                                    <option value="要修理">要修理</option>
+                                </select>
+                            </div>
+                            <div class="col-8">
+                                <label class="form-label small">メモ</label>
+                                <input type="text" class="form-control form-control-sm" id="memo1" placeholder="特記事項があれば記入">
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm" onclick="takePhoto('water-pipe')">
+                            <i class="fas fa-camera me-1"></i>写真撮影
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- チェック項目2 -->
+            <div class="checklist-item" id="item2">
+                <div class="p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <input type="checkbox" class="form-check-input me-3" id="check2" onchange="toggleItem(2)">
+                        <h6 class="mb-0">排水の流れテスト</h6>
+                    </div>
+                    <p class="text-muted mb-2">各排水口の流れをテスト（シンク・洗面台・浴室）</p>
+
+                    <div class="collapse" id="detail2">
+                        <div class="row mb-2">
+                            <div class="col-4">
+                                <label class="form-label small">状態</label>
+                                <select class="form-select form-select-sm" id="status2">
+                                    <option value="">選択...</option>
+                                    <option value="スムーズ">スムーズ</option>
+                                    <option value="やや遅い">やや遅い</option>
+                                    <option value="詰まり">詰まり</option>
+                                </select>
+                            </div>
+                            <div class="col-8">
+                                <label class="form-label small">メモ</label>
+                                <input type="text" class="form-control form-control-sm" id="memo2" placeholder="特記事項があれば記入">
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm" onclick="takePhoto('drainage')">
+                            <i class="fas fa-camera me-1"></i>写真撮影
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- チェック項目3 -->
+            <div class="checklist-item" id="item3">
+                <div class="p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <input type="checkbox" class="form-check-input me-3" id="check3" onchange="toggleItem(3)">
+                        <h6 class="mb-0">蛇口の動作確認</h6>
+                    </div>
+                    <p class="text-muted mb-2">すべての蛇口の開閉・水量・水圧を確認</p>
+
+                    <div class="collapse" id="detail3">
+                        <div class="row mb-2">
+                            <div class="col-4">
+                                <label class="form-label small">状態</label>
+                                <select class="form-select form-select-sm" id="status3">
+                                    <option value="">選択...</option>
+                                    <option value="正常">正常</option>
+                                    <option value="水圧低下">水圧低下</option>
+                                    <option value="故障">故障</option>
+                                </select>
+                            </div>
+                            <div class="col-8">
+                                <label class="form-label small">メモ</label>
+                                <input type="text" class="form-control form-control-sm" id="memo3" placeholder="特記事項があれば記入">
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm" onclick="takePhoto('faucet')">
+                            <i class="fas fa-camera me-1"></i>写真撮影
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- チェック項目4 -->
+            <div class="checklist-item" id="item4">
+                <div class="p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <input type="checkbox" class="form-check-input me-3" id="check4" onchange="toggleItem(4)">
+                        <h6 class="mb-0">壁面・クロスの確認</h6>
+                    </div>
+                    <p class="text-muted mb-2">各部屋の壁面状態、クロスの剥がれ・汚れを確認</p>
+
+                    <div class="collapse" id="detail4">
+                        <div class="row mb-2">
+                            <div class="col-4">
+                                <label class="form-label small">状態</label>
+                                <select class="form-select form-select-sm" id="status4">
+                                    <option value="">選択...</option>
+                                    <option value="良好">良好</option>
+                                    <option value="部分補修">部分補修</option>
+                                    <option value="全面張替">全面張替</option>
+                                </select>
+                            </div>
+                            <div class="col-8">
+                                <label class="form-label small">メモ</label>
+                                <input type="text" class="form-control form-control-sm" id="memo4" placeholder="特記事項があれば記入">
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm" onclick="takePhoto('wall')">
+                            <i class="fas fa-camera me-1"></i>写真撮影
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- チェック項目5 -->
+            <div class="checklist-item" id="item5">
+                <div class="p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <input type="checkbox" class="form-check-input me-3" id="check5" onchange="toggleItem(5)">
+                        <h6 class="mb-0">床面の確認</h6>
+                    </div>
+                    <p class="text-muted mb-2">フローリング・クッションフロアの傷・汚れ確認</p>
+
+                    <div class="collapse" id="detail5">
+                        <div class="row mb-2">
+                            <div class="col-4">
+                                <label class="form-label small">状態</label>
+                                <select class="form-select form-select-sm" id="status5">
+                                    <option value="">選択...</option>
+                                    <option value="良好">良好</option>
+                                    <option value="部分補修">部分補修</option>
+                                    <option value="全面張替">全面張替</option>
+                                </select>
+                            </div>
+                            <div class="col-8">
+                                <label class="form-label small">メモ</label>
+                                <input type="text" class="form-control form-control-sm" id="memo5" placeholder="特記事項があれば記入">
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm" onclick="takePhoto('floor')">
+                            <i class="fas fa-camera me-1"></i>写真撮影
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 写真アップロードエリア -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-camera me-2"></i>撮影写真（<span id="photoCount">0</span>枚）
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="photo-upload-area" onclick="document.getElementById('photoInput').click()">
+                    <i class="fas fa-camera fa-3x text-muted mb-2"></i>
+                    <p class="mb-0">写真を撮影またはファイルを選択</p>
+                    <small class="text-muted">複数選択可能</small>
+                </div>
+                <input type="file" id="photoInput" accept="image/*" multiple capture="environment" style="display: none;" onchange="handlePhotoUpload(event)">
+
+                <div id="photoPreview" class="mt-3"></div>
+            </div>
+        </div>
+
+        <!-- 全体メモ -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>調査メモ
+                </h6>
+            </div>
+            <div class="card-body">
+                <textarea class="form-control" id="overallMemo" rows="4" placeholder="調査全体を通じての所感、特記事項があれば記入してください"></textarea>
+            </div>
+        </div>
+
+        <!-- GPS位置情報 -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">位置情報</h6>
+                        <p class="text-muted mb-0" id="locationInfo">位置情報を取得中...</p>
+                    </div>
+                    <button class="btn btn-outline-primary btn-sm" onclick="getCurrentLocation()">
+                        <i class="fas fa-map-marker-alt me-1"></i>更新
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 進捗状況 -->
+        <div class="card mb-5 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0">調査進捗</h6>
+                    <span class="fw-bold text-primary" id="progressText">0/5 完了</span>
+                </div>
+                <div class="progress" style="height: 20px;">
+                    <div class="progress-bar" id="progressBar" style="width: 0%">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- フローティング完了ボタン -->
+        <button class="btn btn-success floating-submit" id="submitBtn" onclick="submitSurvey()" disabled>
+            <i class="fas fa-check me-2"></i>調査完了報告
+        </button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        let completedItems = 0;
+        let totalItems = 5;
+        let uploadedPhotos = [];
+
+        // チェック項目の切り替え
+        function toggleItem(itemId) {
+            const checkbox = document.getElementById(`check${itemId}`);
+            const detailDiv = document.getElementById(`detail${itemId}`);
+            const itemDiv = document.getElementById(`item${itemId}`);
+
+            if (checkbox.checked) {
+                // 詳細エリアを表示
+                new bootstrap.Collapse(detailDiv, { show: true });
+                itemDiv.classList.add('completed');
+                completedItems++;
+
+                // 監査ログ
+                if (window.app) {
+                    window.app.logAuditEvent('SURVEY_ITEM_COMPLETED', {
+                        itemId: itemId,
+                        staffId: 'staff_001',
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            } else {
+                // 詳細エリアを非表示
+                new bootstrap.Collapse(detailDiv, { hide: true });
+                itemDiv.classList.remove('completed');
+                completedItems--;
+            }
+
+            updateProgress();
+        }
+
+        // 進捗更新
+        function updateProgress() {
+            const percentage = Math.round((completedItems / totalItems) * 100);
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const submitBtn = document.getElementById('submitBtn');
+
+            progressBar.style.width = `${percentage}%`;
+            progressBar.textContent = `${percentage}%`;
+            progressText.textContent = `${completedItems}/${totalItems} 完了`;
+
+            // 進捗円グラフ更新
+            const progressCircle = document.querySelector('.progress-circle');
+            progressCircle.style.setProperty('--progress', `${percentage * 3.6}deg`);
+            progressCircle.querySelector('span').textContent = `${percentage}%`;
+
+            // 完了ボタンの有効化
+            if (completedItems === totalItems && uploadedPhotos.length > 0) {
+                submitBtn.disabled = false;
+                submitBtn.classList.add('btn-pulse');
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.classList.remove('btn-pulse');
+            }
+        }
+
+        // 写真撮影（カテゴリ別）
+        function takePhoto(category) {
+            // カメラを起動またはファイル選択
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.capture = 'environment';
+            input.onchange = function(e) {
+                handleCategoryPhoto(e, category);
+            };
+            input.click();
+        }
+
+        function handleCategoryPhoto(event, category) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadedPhotos.push({
+                        file: file,
+                        category: category,
+                        dataUrl: e.target.result,
+                        timestamp: new Date().toISOString()
+                    });
+                    updatePhotoPreview();
+                    updatePhotoCount();
+                };
+                reader.readAsDataURL(file);
+
+                // 監査ログ
+                if (window.app) {
+                    window.app.logAuditEvent('SURVEY_PHOTO_TAKEN', {
+                        category: category,
+                        fileName: file.name,
+                        fileSize: file.size,
+                        staffId: 'staff_001'
+                    });
+                }
+            }
+        }
+
+        // 写真アップロード処理
+        function handlePhotoUpload(event) {
+            const files = Array.from(event.target.files);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadedPhotos.push({
+                        file: file,
+                        category: 'general',
+                        dataUrl: e.target.result,
+                        timestamp: new Date().toISOString()
+                    });
+                    updatePhotoPreview();
+                    updatePhotoCount();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function updatePhotoPreview() {
+            const previewDiv = document.getElementById('photoPreview');
+            previewDiv.innerHTML = '';
+
+            uploadedPhotos.forEach((photo, index) => {
+                const photoWrapper = document.createElement('div');
+                photoWrapper.className = 'd-inline-block position-relative';
+                photoWrapper.innerHTML = `
+                    <img src="${photo.dataUrl}" class="photo-preview" alt="調査写真 ${index + 1}">
+                    <button class="btn btn-sm btn-danger position-absolute top-0 end-0"
+                            onclick="removePhoto(${index})"
+                            style="margin: -5px;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="badge bg-secondary position-absolute bottom-0 start-0 m-1">
+                        ${photo.category}
+                    </div>
+                `;
+                previewDiv.appendChild(photoWrapper);
+            });
+
+            updateProgress();
+        }
+
+        function updatePhotoCount() {
+            document.getElementById('photoCount').textContent = uploadedPhotos.length;
+        }
+
+        function removePhoto(index) {
+            uploadedPhotos.splice(index, 1);
+            updatePhotoPreview();
+            updatePhotoCount();
+        }
+
+        // GPS位置情報取得
+        function getCurrentLocation() {
+            const locationInfo = document.getElementById('locationInfo');
+            locationInfo.textContent = '位置情報を取得中...';
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        locationInfo.innerHTML = `
+                            <i class="fas fa-check-circle text-success me-1"></i>
+                            ${lat.toFixed(6)}, ${lon.toFixed(6)}
+                        `;
+
+                        // 監査ログ
+                        if (window.app) {
+                            window.app.logAuditEvent('LOCATION_CAPTURED', {
+                                latitude: lat,
+                                longitude: lon,
+                                accuracy: position.coords.accuracy,
+                                staffId: 'staff_001'
+                            });
+                        }
+                    },
+                    function(error) {
+                        locationInfo.innerHTML = `
+                            <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                            位置情報を取得できませんでした
+                        `;
+                    }
+                );
+            } else {
+                locationInfo.innerHTML = `
+                    <i class="fas fa-times-circle text-danger me-1"></i>
+                    GPS機能が利用できません
+                `;
+            }
+        }
+
+        // 調査完了報告
+        function submitSurvey() {
+            if (completedItems < totalItems) {
+                alert('すべてのチェック項目を完了してください');
+                return;
+            }
+
+            if (uploadedPhotos.length === 0) {
+                alert('写真を最低1枚は撮影してください');
+                return;
+            }
+
+            if (confirm('調査を完了して報告しますか？この操作後は修正できません。')) {
+                // 調査データの収集
+                const surveyData = {
+                    projectId: 'PRJ-002',
+                    staffId: 'staff_001',
+                    completedAt: new Date().toISOString(),
+                    items: []
+                };
+
+                // 各チェック項目のデータを収集
+                for (let i = 1; i <= totalItems; i++) {
+                    const status = document.getElementById(`status${i}`)?.value || '';
+                    const memo = document.getElementById(`memo${i}`)?.value || '';
+                    surveyData.items.push({
+                        itemId: i,
+                        status: status,
+                        memo: memo
+                    });
+                }
+
+                surveyData.overallMemo = document.getElementById('overallMemo').value;
+                surveyData.photoCount = uploadedPhotos.length;
+
+                // 監査ログ
+                if (window.app) {
+                    window.app.logAuditEvent('SURVEY_COMPLETED', {
+                        surveyData: surveyData,
+                        completionTime: new Date().toISOString()
+                    });
+                }
+
+                // 成功メッセージ
+                showSuccessMessage();
+
+                // 報告完了画面に遷移
+                setTimeout(() => {
+                    window.location.href = '../report_completion.html?survey=completed';
+                }, 2000);
+            }
+        }
+
+        function showSuccessMessage() {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'alert alert-success position-fixed top-50 start-50 translate-middle';
+            successDiv.style.zIndex = '9999';
+            successDiv.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle fa-2x text-success me-3"></i>
+                    <div>
+                        <h5 class="mb-1">調査完了!</h5>
+                        <p class="mb-0">報告が正常に送信されました</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(successDiv);
+
+            setTimeout(() => {
+                successDiv.remove();
+            }, 3000);
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            // GPS位置情報を自動取得
+            getCurrentLocation();
+
+            // 派遣スタッフの権限チェック
+            const userRole = localStorage.getItem('userRole');
+            if (userRole !== 'temporary' && userRole !== 'staff') {
+                alert('このページへのアクセス権限がありません');
+                window.location.href = '../index.html';
+                return;
+            }
+
+            // ページアクセスのログ
+            if (window.app) {
+                window.app.logAuditEvent('SURVEY_PAGE_ACCESSED', {
+                    staffId: 'staff_001',
+                    projectId: 'PRJ-002',
+                    accessTime: new Date().toISOString()
+                });
+            }
+
+            // 離脱時の警告
+            window.addEventListener('beforeunload', function(e) {
+                if (completedItems > 0 && completedItems < totalItems) {
+                    e.preventDefault();
+                    e.returnValue = '調査が完了していません。ページを離れますか？';
+                }
+            });
+        });
+
+        // エラーハンドリング
+        window.addEventListener('error', function(e) {
+            if (window.app) {
+                window.app.logAuditEvent('SURVEY_EXECUTION_ERROR', {
+                    error: e.message,
+                    staffId: 'staff_001',
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+    </script>
+
+    <style>
+        .btn-pulse {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+
+        .form-check-input:checked {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+
+        .form-select:focus,
+        .form-control:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,197 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}調査完了 - {{ survey.project.title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-check-circle me-2"></i>調査完了確認
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5 class="mb-3">調査を完了しますか？</h5>
+
+                            <!-- 調査情報 -->
+                            <div class="bg-light rounded p-3 mb-4">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-2">
+                                            <small class="text-muted">案件名</small>
+                                            <div class="fw-bold">{{ survey.project.title }}</div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <small class="text-muted">顧客</small>
+                                            <div>{{ survey.project.customer.name }}</div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <small class="text-muted">調査員</small>
+                                            <div>{{ survey.surveyor.name }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-2">
+                                            <small class="text-muted">開始時刻</small>
+                                            <div>{{ survey.actual_start_time|date:"Y年m月d日 H:i" }}</div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <small class="text-muted">調査状況</small>
+                                            <div>
+                                                <span class="badge bg-warning">進行中</span>
+                                            </div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <small class="text-muted">予想所要時間</small>
+                                            <div>{{ survey.estimated_duration }}分</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 調査記録サマリー -->
+                            {% if report %}
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-clipboard-check me-2"></i>調査記録サマリー</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div><strong>実測面積:</strong> {{ report.actual_area }}㎡</div>
+                                        <div><strong>作業難易度:</strong>
+                                            {% if report.difficulty_level == 'easy' %}易
+                                            {% elif report.difficulty_level == 'normal' %}普通
+                                            {% elif report.difficulty_level == 'hard' %}困難
+                                            {% elif report.difficulty_level == 'very_hard' %}非常に困難
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div><strong>想定作業日数:</strong> {{ report.estimated_work_days }}日</div>
+                                        <div><strong>壁面状態:</strong>
+                                            {% if report.wall_condition == 'excellent' %}優良
+                                            {% elif report.wall_condition == 'good' %}良好
+                                            {% elif report.wall_condition == 'fair' %}普通
+                                            {% elif report.wall_condition == 'poor' %}不良
+                                            {% else %}未確認
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- 完了フォーム -->
+                            <form method="post" class="mt-4">
+                                {% csrf_token %}
+
+                                <!-- 完了ステータス -->
+                                <div class="mb-3">
+                                    <label for="{{ form.status.id_for_label }}" class="form-label">
+                                        調査結果ステータス
+                                    </label>
+                                    {{ form.status }}
+                                </div>
+
+                                <!-- 完了メモ -->
+                                <div class="mb-3">
+                                    <label for="{{ form.completion_notes.id_for_label }}" class="form-label">
+                                        完了メモ・引き継ぎ事項
+                                    </label>
+                                    {{ form.completion_notes }}
+                                    <div class="form-text">
+                                        職人アサインに向けた重要な情報や注意事項を記入してください
+                                    </div>
+                                </div>
+
+                                <!-- 職人アサイン準備完了チェック -->
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="ready_for_assignment"
+                                               class="form-check-input" id="ready-for-assignment" checked>
+                                        <label class="form-check-label" for="ready-for-assignment">
+                                            <i class="fas fa-user-hard-hat me-2"></i>
+                                            <strong>職人アサイン準備完了</strong>
+                                            <br>
+                                            <small class="text-muted">
+                                                チェックすると、この調査記録が職人アサイン候補として利用可能になります
+                                            </small>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- 送信ボタン -->
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="{% url 'survey_record_form' report.id %}" class="btn btn-secondary me-md-2">
+                                        <i class="fas fa-arrow-left me-1"></i>記録に戻る
+                                    </a>
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="fas fa-check-circle me-2"></i>調査を完了する
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- サイドバー -->
+                        <div class="col-md-4">
+                            <!-- 現在時刻 -->
+                            <div class="card mb-3">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted">現在時刻</h6>
+                                    <div class="h4" id="current-time"></div>
+                                </div>
+                            </div>
+
+                            <!-- 完了後の流れ -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">完了後の流れ</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ol class="list-group list-group-numbered">
+                                        <li class="list-group-item">
+                                            調査記録完了
+                                            <br><small class="text-muted">終了時刻を記録</small>
+                                        </li>
+                                        <li class="list-group-item">
+                                            職人選定・アサイン
+                                            <br><small class="text-muted">適切な職人をマッチング</small>
+                                        </li>
+                                        <li class="list-group-item">
+                                            作業スケジュール調整
+                                            <br><small class="text-muted">日程・工程を確定</small>
+                                        </li>
+                                        <li class="list-group-item">
+                                            現場作業開始
+                                            <br><small class="text-muted">実際の工事・作業</small>
+                                        </li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 現在時刻を表示
+function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('ja-JP', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    document.getElementById('current-time').textContent = timeString;
+}
+
+// 1秒ごとに時刻を更新
+updateTime();
+setInterval(updateTime, 1000);
+</script>
+{% endblock %}

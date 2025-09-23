@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>現地調査開始 - 原状回復調査</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item"><a class="nav-link" href="../index.html"><i class="fas fa-tachometer-alt me-2"></i>ダッシュボード</a></li>
+                        <li class="nav-item"><a class="nav-link active" href="survey_list.html"><i class="fas fa-clipboard-list me-2"></i>調査管理</a></li>
+                    </ul>
+                </div>
+            </nav>
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header bg-warning text-white">
+                                <h4 class="mb-0"><i class="fas fa-play-circle me-2"></i>原状回復現地調査開始</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <h5><i class="fas fa-info-circle me-2"></i>調査を開始しますか？</h5>
+                                    <p class="mb-0">原状回復現地調査を開始します。開始時刻が記録されます。</p>
+                                </div>
+                                <div class="bg-light rounded p-3 mb-4">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-2">
+                                                <small class="text-muted">物件名</small>
+                                                <div class="fw-bold">グランドマンション港区</div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <small class="text-muted">部屋番号</small>
+                                                <div>305号室</div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <small class="text-muted">調査者名</small>
+                                                <div>田中太郎</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-2">
+                                                <small class="text-muted">調査日</small>
+                                                <div>2025年9月15日 10:00-12:00</div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <small class="text-muted">現在時刻</small>
+                                                <div id="currentTime" class="text-primary fw-bold">10:05</div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <small class="text-muted">住所</small>
+                                                <div>東京都港区白金台1-1-1</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="survey_detail.html" class="btn btn-secondary me-md-2">キャンセル</a>
+                                    <button type="button" class="btn btn-warning btn-lg" onclick="startSurvey()">調査を開始する</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- クロスリフォーム現地調査フォーム (初期は非表示) -->
+                        <div class="card mt-4" id="surveyInProgress" style="display: none;">
+                            <div class="card-header bg-success text-white">
+                                <h4 class="mb-0">
+                                    <i class="fas fa-clipboard-list me-2"></i>原状回復現地調査実施中
+                                    <span class="badge bg-warning ms-2" id="elapsedTime">00:00</span>
+                                </h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-success">
+                                    <i class="fas fa-play-circle me-2"></i>
+                                    <strong>調査開始時刻:</strong> <span id="startTime"></span>
+                                </div>
+
+                                <!-- 基本情報 -->
+                                <div class="card mb-4">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>1. 基本情報</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">物件名</label>
+                                                    <input type="text" class="form-control" id="propertyName" value="グランドマンション港区" readonly>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">部屋番号</label>
+                                                    <input type="text" class="form-control" id="roomNumber" value="305号室" readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">調査日</label>
+                                                    <input type="date" class="form-control" id="surveyDate" value="2025-09-15" readonly>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">調査者名</label>
+                                                    <input type="text" class="form-control" id="surveyorName" value="田中太郎" readonly>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 部屋別調査 -->
+                                <div class="card mb-4">
+                                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0"><i class="fas fa-home me-2"></i>2. 部屋別調査項目</h5>
+                                        <button type="button" class="btn btn-light btn-sm" onclick="addRoom()">
+                                            <i class="fas fa-plus me-1"></i>部屋追加
+                                        </button>
+                                    </div>
+                                    <div class="card-body" id="roomsContainer">
+                                        <!-- 部屋1 -->
+                                        <div class="room-section border rounded p-3 mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <h6 class="mb-0"><strong>部屋 1</strong></h6>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRoom(this)">削除</button>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">部屋名</label>
+                                                <input type="text" class="form-control" placeholder="例: リビング、寝室1、キッチン等">
+                                            </div>
+                                            
+                                            <!-- 壁面情報 -->
+                                            <div class="wall-sections">
+                                                <h6 class="text-muted mb-3">壁面情報</h6>
+                                                <div class="wall-section mb-3">
+                                                    <div class="row">
+                                                        <div class="col-md-2">
+                                                            <label class="form-label">壁面</label>
+                                                            <select class="form-select">
+                                                                <option>北壁</option>
+                                                                <option>南壁</option>
+                                                                <option>東壁</option>
+                                                                <option>西壁</option>
+                                                                <option>天井</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label class="form-label">長さ(m)</label>
+                                                            <input type="number" class="form-control" step="0.1">
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label class="form-label">高さ(m)</label>
+                                                            <input type="number" class="form-control" step="0.1">
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label class="form-label">開口部面積(㎡)</label>
+                                                            <input type="number" class="form-control" step="0.1">
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label class="form-label">下地種別</label>
+                                                            <select class="form-select">
+                                                                <option>石膏ボード</option>
+                                                                <option>コンクリート</option>
+                                                                <option>合板</option>
+                                                                <option>その他</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label class="form-label">下地状態</label>
+                                                            <select class="form-select">
+                                                                <option>良好</option>
+                                                                <option>補修必要</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addWall(this)">
+                                                <i class="fas fa-plus me-1"></i>壁面追加
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 損傷状況 -->
+                                <div class="card mb-4">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>3. 損傷状況</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">損傷種別</label>
+                                                    <div class="border rounded p-3">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="damage1">
+                                                            <label class="form-check-label" for="damage1">汚れ・変色</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="damage2">
+                                                            <label class="form-check-label" for="damage2">破れ・剥がれ</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="damage3">
+                                                            <label class="form-check-label" for="damage3">釘穴・画鋲穴</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="damage4">
+                                                            <label class="form-check-label" for="damage4">大きな穴・ネジ穴</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="damage5">
+                                                            <label class="form-check-label" for="damage5">カビ・水染み</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="damage6">
+                                                            <label class="form-check-label" for="damage6">タバコヤニ</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="damage7">
+                                                            <label class="form-check-label" for="damage7">油汚れ</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">凹み情報</label>
+                                                    <div class="border rounded p-3">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="dent" id="dentYes">
+                                                            <label class="form-check-label" for="dentYes">凹みあり</label>
+                                                        </div>
+                                                        <div class="form-check mb-2">
+                                                            <input class="form-check-input" type="radio" name="dent" id="dentNo">
+                                                            <label class="form-check-label" for="dentNo">凹みなし</label>
+                                                        </div>
+                                                        <div class="mb-2">
+                                                            <label class="form-label small">凹み個数</label>
+                                                            <input type="number" class="form-control form-control-sm">
+                                                        </div>
+                                                        <div>
+                                                            <label class="form-label small">凹み写真</label>
+                                                            <input type="file" class="form-control form-control-sm" multiple accept="image/*">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 写真撮影 -->
+                                <div class="card mb-4">
+                                    <div class="card-header bg-secondary text-white">
+                                        <h5 class="mb-0"><i class="fas fa-camera me-2"></i>4. 写真撮影</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label class="form-label">部屋全景写真（4方向）</label>
+                                                <input type="file" class="form-control" multiple accept="image/*">
+                                                <small class="text-muted">各部屋の4方向から撮影</small>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label class="form-label">損傷箇所写真</label>
+                                                <input type="file" class="form-control" multiple accept="image/*">
+                                                <small class="text-muted">損傷が確認された箇所</small>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label class="form-label">凹み詳細写真</label>
+                                                <input type="file" class="form-control" multiple accept="image/*">
+                                                <small class="text-muted">凹みの詳細写真</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 備考 -->
+                                <div class="card mb-4">
+                                    <div class="card-header bg-dark text-white">
+                                        <h5 class="mb-0"><i class="fas fa-sticky-note me-2"></i>5. 備考</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">特記事項</label>
+                                            <textarea class="form-control" rows="4" placeholder="調査時の特記事項、注意点、追加情報等を記載してください..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 自動保存インジケーター -->
+                                <div class="alert alert-info">
+                                    <i class="fas fa-save me-2"></i>
+                                    <small>調査データは自動的に保存されます。最終保存: <span id="lastSaved">未保存</span></small>
+                                </div>
+
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button type="button" class="btn btn-outline-secondary me-md-2" onclick="pauseSurvey()">
+                                        <i class="fas fa-pause me-1"></i>一時停止
+                                    </button>
+                                    <a href="survey_complete.html" class="btn btn-success btn-lg">
+                                        <i class="fas fa-check-circle me-2"></i>調査を完了する
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script>
+        let surveyStartTime = null;
+        let elapsedInterval = null;
+        let autoSaveInterval = null;
+
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('currentTime').textContent = timeString;
+        }
+
+        function startSurvey() {
+            // 調査開始
+            surveyStartTime = new Date();
+            const startTimeString = surveyStartTime.toLocaleTimeString('ja-JP', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+
+            // 開始確認画面を非表示にして、調査中画面を表示
+            document.querySelector('.card:first-child').style.display = 'none';
+            document.getElementById('surveyInProgress').style.display = 'block';
+            document.getElementById('startTime').textContent = startTimeString;
+
+            // 経過時間の更新開始
+            elapsedInterval = setInterval(updateElapsedTime, 1000);
+
+            // 自動保存の開始（30秒間隔）
+            autoSaveInterval = setInterval(autoSave, 30000);
+
+            updateElapsedTime();
+        }
+
+        function updateElapsedTime() {
+            if (!surveyStartTime) return;
+
+            const now = new Date();
+            const elapsed = Math.floor((now - surveyStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+
+            const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('elapsedTime').textContent = timeString;
+        }
+
+        function addRoom() {
+            const container = document.getElementById('roomsContainer');
+            const roomCount = container.children.length + 1;
+            
+            const roomHtml = `
+                <div class="room-section border rounded p-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0"><strong>部屋 ${roomCount}</strong></h6>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRoom(this)">削除</button>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">部屋名</label>
+                        <input type="text" class="form-control" placeholder="例: リビング、寝室1、キッチン等">
+                    </div>
+                    
+                    <div class="wall-sections">
+                        <h6 class="text-muted mb-3">壁面情報</h6>
+                        <div class="wall-section mb-3">
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <label class="form-label">壁面</label>
+                                    <select class="form-select">
+                                        <option>北壁</option>
+                                        <option>南壁</option>
+                                        <option>東壁</option>
+                                        <option>西壁</option>
+                                        <option>天井</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">長さ(m)</label>
+                                    <input type="number" class="form-control" step="0.1">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">高さ(m)</label>
+                                    <input type="number" class="form-control" step="0.1">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">開口部面積(㎡)</label>
+                                    <input type="number" class="form-control" step="0.1">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">下地種別</label>
+                                    <select class="form-select">
+                                        <option>石膏ボード</option>
+                                        <option>コンクリート</option>
+                                        <option>合板</option>
+                                        <option>その他</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">下地状態</label>
+                                    <select class="form-select">
+                                        <option>良好</option>
+                                        <option>補修必要</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="addWall(this)">
+                        <i class="fas fa-plus me-1"></i>壁面追加
+                    </button>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', roomHtml);
+        }
+
+        function removeRoom(button) {
+            if (confirm('この部屋を削除しますか？')) {
+                button.closest('.room-section').remove();
+            }
+        }
+
+        function addWall(button) {
+            const wallSections = button.parentElement.querySelector('.wall-sections');
+            const wallHtml = `
+                <div class="wall-section mb-3">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <label class="form-label">壁面</label>
+                            <select class="form-select">
+                                <option>北壁</option>
+                                <option>南壁</option>
+                                <option>東壁</option>
+                                <option>西壁</option>
+                                <option>天井</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">長さ(m)</label>
+                            <input type="number" class="form-control" step="0.1">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">高さ(m)</label>
+                            <input type="number" class="form-control" step="0.1">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">開口部面積(㎡)</label>
+                            <input type="number" class="form-control" step="0.1">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">下地種別</label>
+                            <select class="form-select">
+                                <option>石膏ボード</option>
+                                <option>コンクリート</option>
+                                <option>合板</option>
+                                <option>その他</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">下地状態</label>
+                            <select class="form-select">
+                                <option>良好</option>
+                                <option>補修必要</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12 mt-2">
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeWall(this)">
+                                <i class="fas fa-minus me-1"></i>この壁面を削除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            wallSections.insertAdjacentHTML('beforeend', wallHtml);
+        }
+
+        function removeWall(button) {
+            if (confirm('この壁面を削除しますか？')) {
+                button.closest('.wall-section').remove();
+            }
+        }
+
+        function autoSave() {
+            // 調査フォームの全データを収集
+            const formData = {
+                propertyName: document.getElementById('propertyName').value,
+                roomNumber: document.getElementById('roomNumber').value,
+                surveyDate: document.getElementById('surveyDate').value,
+                surveyorName: document.getElementById('surveyorName').value,
+                // 部屋データ、損傷状況等も含める
+            };
+
+            // 実際のアプリではここでサーバーに保存
+            console.log('自動保存:', formData);
+
+            const now = new Date();
+            const saveTime = now.toLocaleTimeString('ja-JP', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            document.getElementById('lastSaved').textContent = saveTime;
+        }
+
+        function pauseSurvey() {
+            if (confirm('調査を一時停止しますか？')) {
+                clearInterval(elapsedInterval);
+                clearInterval(autoSaveInterval);
+                autoSave(); // 停止前に保存
+                alert('調査を一時停止しました。データは保存されています。');
+            }
+        }
+
+        // 現在時刻の更新
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // ページ離脱時の確認
+        window.addEventListener('beforeunload', function(e) {
+            if (surveyStartTime) {
+                e.preventDefault();
+                e.returnValue = '';
+                return '調査中です。ページを離れてもよろしいですか？';
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

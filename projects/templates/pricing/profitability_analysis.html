@@ -1,0 +1,368 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}収益性分析 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-chart-line me-2"></i>収益性分析</h2>
+                <div class="btn-group">
+                    <a href="{% url 'pricing_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>ダッシュボード
+                    </a>
+                    <button class="btn btn-primary" onclick="exportAnalysis()">
+                        <i class="fas fa-download me-1"></i>エクスポート
+                    </button>
+                </div>
+            </div>
+
+            <!-- 検索フォーム -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-filter me-2"></i>分析条件</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get">
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="{{ form.project_type.id_for_label }}" class="form-label">工種</label>
+                                {{ form.project_type }}
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="{{ form.profit_rate_min.id_for_label }}" class="form-label">最小利益率</label>
+                                {{ form.profit_rate_min }}
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="{{ form.profit_rate_max.id_for_label }}" class="form-label">最大利益率</label>
+                                {{ form.profit_rate_max }}
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="{{ form.pricing_stage.id_for_label }}" class="form-label">価格段階</label>
+                                {{ form.pricing_stage }}
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="{{ form.date_from.id_for_label }}" class="form-label">開始日</label>
+                                {{ form.date_from }}
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="{{ form.date_to.id_for_label }}" class="form-label">終了日</label>
+                                {{ form.date_to }}
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-1"></i>分析実行
+                            </button>
+                            <a href="{% url 'profitability_analysis' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>クリア
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 分析結果統計 -->
+            {% if analysis_stats %}
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-percentage fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ analysis_stats.avg_profit_rate|floatformat:1 }}%</h5>
+                                    <small>平均利益率</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-chart-bar fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ analysis_stats.avg_margin_rate|floatformat:1 }}%</h5>
+                                    <small>平均マージン率</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-yen-sign fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">¥{{ analysis_stats.total_revenue|floatformat:0|default:"0" }}</h5>
+                                    <small>総売上</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-coins fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">¥{{ analysis_stats.total_profit|floatformat:0|default:"0" }}</h5>
+                                    <small>総利益</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 収益性一覧 -->
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table me-2"></i>収益性一覧 ({{ pricings|length }}件)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if pricings %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>案件</th>
+                                        <th>工種</th>
+                                        <th>顧客</th>
+                                        <th>段階</th>
+                                        <th>基準コスト</th>
+                                        <th>マージン率</th>
+                                        <th>最終価格</th>
+                                        <th>利益額</th>
+                                        <th>利益率</th>
+                                        <th>設定日</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pricing in pricings %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'project_detail' pricing.project.id %}" class="text-decoration-none">
+                                                {{ pricing.project.title }}
+                                            </a>
+                                        </td>
+                                        <td>{{ pricing.project.project_type.name }}</td>
+                                        <td>{{ pricing.project.customer.name }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ pricing.pricing_stage }}">
+                                                {{ pricing.get_pricing_stage_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ pricing.formatted_base_cost }}</td>
+                                        <td>
+                                            <strong>{{ pricing.margin_rate }}%</strong>
+                                        </td>
+                                        <td>
+                                            <strong class="text-success">{{ pricing.formatted_final_price }}</strong>
+                                        </td>
+                                        <td>
+                                            <strong class="text-primary">{{ pricing.formatted_margin_amount }}</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge
+                                                {% if pricing.profit_rate >= 30 %}bg-success
+                                                {% elif pricing.profit_rate >= 20 %}bg-warning
+                                                {% else %}bg-danger{% endif %}
+                                                fs-6">
+                                                {{ pricing.profit_rate }}%
+                                            </span>
+                                        </td>
+                                        <td>{{ pricing.created_at|date:"m/d" }}</td>
+                                        <td>
+                                            <div class="btn-group-vertical btn-group-sm">
+                                                <a href="{% url 'pricing_detail' pricing.project.id %}" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-eye"></i> 詳細
+                                                </a>
+                                                <a href="{% url 'project_pricing_setup' pricing.project.id %}" class="btn btn-outline-warning btn-sm">
+                                                    <i class="fas fa-edit"></i> 編集
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 分析チャート -->
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">利益率分布</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="profitRateChart" width="400" height="200"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">マージン率分布</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="marginRateChart" width="400" height="200"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">分析データがありません</h5>
+                            <p class="text-muted">検索条件を変更するか、価格設定済みの案件を確認してください。</p>
+                            <a href="{% url 'project_list' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>案件一覧
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.table th {
+    border-top: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+
+.badge.fs-6 {
+    font-size: 0.9rem !important;
+}
+
+.btn-group-vertical .btn {
+    margin-bottom: 2px;
+}
+
+.text-decoration-none:hover {
+    text-decoration: underline !important;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// データエクスポート
+function exportAnalysis() {
+    const params = new URLSearchParams(window.location.search);
+    window.open('/pricing/analysis/export/?' + params.toString());
+}
+
+// チャート作成
+document.addEventListener('DOMContentLoaded', function() {
+    {% if pricings %}
+    // 利益率データ
+    const profitRates = [
+        {% for pricing in pricings %}{{ pricing.profit_rate }},{% endfor %}
+    ];
+
+    // マージン率データ
+    const marginRates = [
+        {% for pricing in pricings %}{{ pricing.margin_rate }},{% endfor %}
+    ];
+
+    // 利益率分布チャート
+    const profitCtx = document.getElementById('profitRateChart').getContext('2d');
+    new Chart(profitCtx, {
+        type: 'histogram',
+        data: {
+            datasets: [{
+                label: '利益率分布',
+                data: profitRates,
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: '利益率 (%)'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: '件数'
+                    }
+                }
+            }
+        }
+    });
+
+    // マージン率分布チャート
+    const marginCtx = document.getElementById('marginRateChart').getContext('2d');
+    new Chart(marginCtx, {
+        type: 'histogram',
+        data: {
+            datasets: [{
+                label: 'マージン率分布',
+                data: marginRates,
+                backgroundColor: 'rgba(255, 159, 64, 0.6)',
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'マージン率 (%)'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: '件数'
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

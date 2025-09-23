@@ -1,0 +1,289 @@
+{% extends "projects/base.html" %}
+
+{% block title %}業者登録 - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-plus me-2"></i>業者登録</h2>
+    <a href="{% url 'supplier_list' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-1"></i>業者一覧に戻る
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-edit me-1"></i>業者情報</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                                <i class="fas fa-building me-1"></i>業者名 <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger small">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.specialty.id_for_label }}" class="form-label">
+                                <i class="fas fa-tags me-1"></i>専門分野 <span class="text-danger">*</span>
+                            </label>
+                            {{ form.specialty }}
+                            {% if form.specialty.errors %}
+                                <div class="text-danger small">{{ form.specialty.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.contact_person.id_for_label }}" class="form-label">
+                                <i class="fas fa-user me-1"></i>担当者名
+                            </label>
+                            {{ form.contact_person }}
+                            {% if form.contact_person.errors %}
+                                <div class="text-danger small">{{ form.contact_person.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                <i class="fas fa-phone me-1"></i>電話番号 <span class="text-danger">*</span>
+                            </label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                                <div class="text-danger small">{{ form.phone.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>メールアドレス
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.fax.id_for_label }}" class="form-label">
+                                <i class="fas fa-fax me-1"></i>FAX番号
+                            </label>
+                            {{ form.fax }}
+                            {% if form.fax.errors %}
+                                <div class="text-danger small">{{ form.fax.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.address.id_for_label }}" class="form-label">
+                            <i class="fas fa-map-marker-alt me-1"></i>住所
+                        </label>
+                        {{ form.address }}
+                        {% if form.address.errors %}
+                            <div class="text-danger small">{{ form.address.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.delivery_area.id_for_label }}" class="form-label">
+                                <i class="fas fa-truck me-1"></i>配送エリア
+                            </label>
+                            {{ form.delivery_area }}
+                            {% if form.delivery_area.errors %}
+                                <div class="text-danger small">{{ form.delivery_area.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">対応可能な配送エリアを記載してください</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.payment_terms.id_for_label }}" class="form-label">
+                                <i class="fas fa-credit-card me-1"></i>支払条件
+                            </label>
+                            {{ form.payment_terms }}
+                            {% if form.payment_terms.errors %}
+                                <div class="text-danger small">{{ form.payment_terms.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">例：月末締め翌月末払い</div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.minimum_order.id_for_label }}" class="form-label">
+                                <i class="fas fa-shopping-cart me-1"></i>最小発注金額
+                            </label>
+                            {{ form.minimum_order }}
+                            {% if form.minimum_order.errors %}
+                                <div class="text-danger small">{{ form.minimum_order.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">円（税抜）</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.delivery_time.id_for_label }}" class="form-label">
+                                <i class="fas fa-clock me-1"></i>標準納期
+                            </label>
+                            {{ form.delivery_time }}
+                            {% if form.delivery_time.errors %}
+                                <div class="text-danger small">{{ form.delivery_time.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">例：発注から3営業日</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">
+                            <i class="fas fa-sticky-note me-1"></i>備考・メモ
+                        </label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger small">{{ form.notes.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">特記事項、取扱商品、その他重要な情報を記載</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                <i class="fas fa-toggle-on me-1"></i>稼働中（有効）
+                            </label>
+                            {% if form.is_active.errors %}
+                                <div class="text-danger small">{{ form.is_active.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>業者を登録
+                        </button>
+                        <a href="{% url 'supplier_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>キャンセル
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-info-circle me-1"></i>登録のポイント</h6>
+            </div>
+            <div class="card-body">
+                <ul class="small mb-0">
+                    <li><strong>業者名:</strong> 正式な会社名を入力</li>
+                    <li><strong>専門分野:</strong> 主要な取扱商品・サービス</li>
+                    <li><strong>担当者:</strong> 日常的な連絡窓口の方</li>
+                    <li><strong>配送エリア:</strong> 対応可能な地域を明記</li>
+                    <li><strong>支払条件:</strong> 請求・支払いのサイクル</li>
+                    <li><strong>最小発注額:</strong> 効率的な発注のため</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-tags me-1"></i>専門分野の例</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-1">
+                    <span class="badge bg-light text-dark">木材</span>
+                    <span class="badge bg-light text-dark">金属</span>
+                    <span class="badge bg-light text-dark">電気設備</span>
+                    <span class="badge bg-light text-dark">配管設備</span>
+                    <span class="badge bg-light text-dark">内装材</span>
+                    <span class="badge bg-light text-dark">外装材</span>
+                    <span class="badge bg-light text-dark">工具</span>
+                    <span class="badge bg-light text-dark">安全用品</span>
+                    <span class="badge bg-light text-dark">重機</span>
+                    <span class="badge bg-light text-dark">その他</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-lightbulb me-1"></i>業者管理のメリット</h6>
+            </div>
+            <div class="card-body">
+                <ul class="small mb-0">
+                    <li>発注作業の効率化</li>
+                    <li>過去の取引履歴管理</li>
+                    <li>業者評価システム</li>
+                    <li>価格比較・最適選択</li>
+                    <li>配送・納期の一元管理</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 電話番号フォーマット
+    const phoneInput = document.querySelector('input[name="phone"]');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function() {
+            let value = this.value.replace(/[^\d]/g, '');
+            if (value.length > 0) {
+                if (value.length <= 3) {
+                    this.value = value;
+                } else if (value.length <= 7) {
+                    this.value = value.slice(0, 3) + '-' + value.slice(3);
+                } else {
+                    this.value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
+                }
+            }
+        });
+    }
+
+    // FAX番号フォーマット
+    const faxInput = document.querySelector('input[name="fax"]');
+    if (faxInput) {
+        faxInput.addEventListener('input', function() {
+            let value = this.value.replace(/[^\d]/g, '');
+            if (value.length > 0) {
+                if (value.length <= 3) {
+                    this.value = value;
+                } else if (value.length <= 7) {
+                    this.value = value.slice(0, 3) + '-' + value.slice(3);
+                } else {
+                    this.value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
+                }
+            }
+        });
+    }
+
+    // 最小発注金額の数値フォーマット
+    const minOrderInput = document.querySelector('input[name="minimum_order"]');
+    if (minOrderInput) {
+        minOrderInput.addEventListener('input', function() {
+            let value = this.value.replace(/[^\d]/g, '');
+            if (value) {
+                this.value = parseInt(value).toLocaleString();
+            }
+        });
+
+        minOrderInput.addEventListener('blur', function() {
+            let value = this.value.replace(/,/g, '');
+            if (value && !isNaN(value)) {
+                this.value = parseInt(value).toLocaleString();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

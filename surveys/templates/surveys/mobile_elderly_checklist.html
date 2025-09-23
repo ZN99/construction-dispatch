@@ -1,0 +1,2528 @@
+{% extends 'surveys/surveyor_base.html' %}
+{% load static %}
+
+{% block title %}調査記録（シンプルUI版） - ステップ{{ current_step.step_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* シンプルUI版モバイル最適化CSS */
+    * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        font-family: 'Noto Sans JP', 'Yu Gothic', 'Hiragino Sans', sans-serif;
+        font-size: 20px;
+        line-height: 1.6;
+        background: #f0f4f8;
+        margin: 0;
+        padding: 0;
+        color: #2d3748;
+    }
+
+    .mobile-container {
+        max-width: 480px;
+        margin: 0 auto;
+        background: white;
+        min-height: 100vh;
+        position: relative;
+    }
+
+    /* ヘッダー - 大きくて見やすく */
+    .header-simple {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 20px;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    /* ヘッダートップバー */
+    .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+    .back-button {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 25px;
+        padding: 8px 16px;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-width: 80px;
+    }
+
+    .back-button:hover {
+        background: rgba(255,255,255,0.3);
+        transform: translateX(-2px);
+    }
+
+    .header-spacer {
+        min-width: 80px;
+    }
+
+    .site-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
+        flex: 1;
+        text-align: center;
+    }
+
+    .progress-text {
+        font-size: 18px;
+        opacity: 0.9;
+    }
+
+    /* 視覚的ステップインジケーター */
+    .step-indicators {
+        display: flex;
+        justify-content: space-between;
+        margin: 20px 0;
+        padding: 0 10px;
+    }
+
+    .step-indicator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        opacity: 0.3;
+        transition: all 0.3s ease;
+    }
+
+    .step-indicator.current {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+
+    .step-indicator.completed {
+        opacity: 1;
+    }
+
+    .step-icon {
+        font-size: 32px;
+        margin-bottom: 8px;
+        background: #e2e8f0;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .step-indicator.current .step-icon {
+        background: #10b981;
+        color: white;
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        animation: pulse 2s infinite;
+    }
+
+    .step-indicator.completed .step-icon {
+        background: #48bb78;
+        color: white;
+    }
+
+    .step-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2d3748;
+        text-align: center;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    /* 進捗バー - 太くて見やすく */
+    .progress-big {
+        height: 16px;
+        background: rgba(255,255,255,0.3);
+        border-radius: 10px;
+        margin: 15px 0;
+        overflow: hidden;
+    }
+
+    .progress-fill-big {
+        height: 100%;
+        background: #48bb78;
+        border-radius: 10px;
+        transition: width 0.8s ease;
+    }
+
+    /* メインコンテンツ */
+    .step-content {
+        padding: 30px 20px;
+    }
+
+    /* ステップ番号 - 超大きく */
+    .step-number-big {
+        background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+        color: white;
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        font-weight: bold;
+        margin: 0 auto 30px auto;
+        box-shadow: 0 8px 20px rgba(237, 137, 54, 0.3);
+    }
+
+    /* タイトル - 大きく分かりやすく */
+    .step-title-big {
+        font-size: 32px;
+        font-weight: 700;
+        text-align: center;
+        margin: 20px 0 40px 0;
+        color: #2d3748;
+        line-height: 1.3;
+    }
+
+    /* 説明文 - 読みやすく */
+    .instruction-simple {
+        background: #edf2f7;
+        border-left: 6px solid #10b981;
+        padding: 25px;
+        margin: 30px 0;
+        border-radius: 0 12px 12px 0;
+        font-size: 22px;
+        line-height: 1.8;
+    }
+
+    .instruction-simple h3 {
+        font-size: 26px;
+        color: #2b6cb0;
+        margin: 0 0 15px 0;
+    }
+
+    .simple-list {
+        list-style: none;
+        padding: 0;
+        margin: 20px 0;
+    }
+
+    .simple-list li {
+        padding: 15px 0;
+        border-bottom: 2px solid #e2e8f0;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+    }
+
+    .simple-list li::before {
+        content: "✓";
+        background: #48bb78;
+        color: white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 15px;
+        font-size: 18px;
+    }
+
+    /* 測定エリア - シンプルで大きく */
+    .measurement-area {
+        background: white;
+        border: 3px solid #10b981;
+        border-radius: 15px;
+        padding: 30px;
+        margin: 30px 0;
+        text-align: center;
+    }
+
+    .measurement-input-big {
+        margin: 25px 0;
+        text-align: center;
+    }
+
+    .measurement-input-big label {
+        display: block;
+        font-size: 24px;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 15px;
+    }
+
+    .measurement-input-big input {
+        width: 150px;
+        height: 70px;
+        font-size: 32px;
+        text-align: center;
+        border: 3px solid #cbd5e0;
+        border-radius: 12px;
+        background: #f7fafc;
+        color: #2d3748;
+        font-weight: 600;
+    }
+
+    .measurement-input-big input:focus {
+        border-color: #10b981;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+    }
+
+    .unit-text {
+        font-size: 20px;
+        color: #4a5568;
+        margin-left: 10px;
+        font-weight: 600;
+    }
+
+    /* 選択ボタン - 超大きく */
+    .choice-buttons {
+        margin: 30px 0;
+    }
+
+    .choice-btn {
+        display: block;
+        width: 100%;
+        padding: 25px;
+        margin: 15px 0;
+        background: white;
+        border: 3px solid #cbd5e0;
+        border-radius: 15px;
+        font-size: 22px;
+        font-weight: 600;
+        color: #2d3748;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .choice-btn:hover,
+    .choice-btn.selected {
+        border-color: #10b981;
+        background: #ebf8ff;
+        color: #2b6cb0;
+        transform: scale(1.02);
+    }
+
+    .choice-btn i {
+        font-size: 32px;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    /* 写真撮影エリア */
+    .photo-area {
+        background: #f0fff4;
+        border: 4px dashed #48bb78;
+        border-radius: 20px;
+        padding: 40px 20px;
+        margin: 30px 0;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .photo-area:hover {
+        background: #e6fffa;
+        border-color: #38a169;
+    }
+
+    .photo-icon {
+        font-size: 64px;
+        color: #48bb78;
+        margin-bottom: 20px;
+    }
+
+    .photo-text {
+        font-size: 24px;
+        font-weight: 600;
+        color: #2f855a;
+        margin-bottom: 10px;
+    }
+
+    .photo-help {
+        font-size: 18px;
+        color: #68d391;
+    }
+
+    /* アクションボタン - 超大きく */
+    .action-area {
+        padding: 30px 20px;
+        background: #f7fafc;
+        margin-top: 40px;
+    }
+
+    .big-button {
+        width: 100%;
+        height: 80px;
+        font-size: 24px;
+        font-weight: 700;
+        border-radius: 20px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        margin: 15px 0;
+    }
+
+    .btn-complete {
+        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        color: white;
+    }
+
+    .btn-complete:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(72, 187, 120, 0.3);
+    }
+
+    .btn-complete:disabled {
+        background: #cbd5e0;
+        color: #a0aec0;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+
+    /* 緊急時ヘルプボタン */
+    .help-button {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: #e53e3e;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 70px;
+        height: 70px;
+        font-size: 28px;
+        cursor: pointer;
+        box-shadow: 0 6px 20px rgba(229, 62, 62, 0.4);
+        z-index: 1000;
+    }
+
+    .help-button:hover {
+        background: #c53030;
+        transform: scale(1.1);
+    }
+
+    /* アクセシビリティ改善 */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* アニメーション */
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .step-content {
+        animation: slideIn 0.6s ease-out;
+    }
+
+    /* ダークモード対応（高齢者が夜間使用する場合） */
+    @media (prefers-color-scheme: dark) {
+        body {
+            background: #1a202c;
+            color: #e2e8f0;
+        }
+
+        .mobile-container {
+            background: #2d3748;
+        }
+
+        .measurement-input-big input {
+            background: #4a5568;
+            color: #e2e8f0;
+            border-color: #718096;
+        }
+
+        .choice-btn {
+            background: #4a5568;
+            color: #e2e8f0;
+            border-color: #718096;
+        }
+    }
+
+    /* 調査概要スタイル */
+    .survey-overview-content {
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 15px;
+        margin: 20px 0;
+    }
+
+    .overview-section {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0;
+        border-left: 4px solid #10b981;
+    }
+
+    .overview-section h5 {
+        font-size: 18px;
+        margin-bottom: 15px;
+        color: #10b981;
+        font-weight: 700;
+    }
+
+    .info-box {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+    }
+
+    .info-row {
+        display: flex;
+        margin-bottom: 10px;
+        align-items: center;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #4a5568;
+        min-width: 80px;
+        font-size: 16px;
+    }
+
+    .info-value {
+        color: #2d3748;
+        font-size: 16px;
+        flex: 1;
+    }
+
+    .workflow-steps {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+    }
+
+    .workflow-step {
+        display: flex;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .workflow-step:last-child {
+        border-bottom: none;
+    }
+
+    .step-indicator-mini {
+        background: #e2e8f0;
+        color: #718096;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 15px;
+        font-size: 14px;
+    }
+
+    .step-indicator-mini.current {
+        background: #10b981;
+        color: white;
+    }
+
+    .step-description {
+        flex: 1;
+    }
+
+    .step-title-mini {
+        font-weight: 600;
+        color: #2d3748;
+        font-size: 14px;
+        margin-bottom: 2px;
+    }
+
+    .step-subtitle {
+        color: #718096;
+        font-size: 12px;
+    }
+
+    .attention-items {
+        background: #fff5f5;
+        border: 1px solid #fed7d7;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+    }
+
+    .attention-items h6 {
+        color: #c53030;
+        font-weight: 600;
+        margin-bottom: 10px;
+        font-size: 16px;
+    }
+
+    .attention-items ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .attention-items li {
+        color: #744210;
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+
+    /* 部屋選択機能 */
+    .room-selection-section {
+        margin: 30px 0;
+    }
+
+    .current-room-display {
+        background: white;
+        border: 3px solid #10b981;
+        border-radius: 15px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .room-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .room-name {
+        font-size: 24px;
+        font-weight: 700;
+        color: #2d3748;
+    }
+
+    .change-room-btn {
+        background: #10b981;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 12px 20px;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .change-room-btn:hover {
+        background: #059669;
+        transform: scale(1.05);
+    }
+
+    /* モーダル */
+    .room-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .room-modal-content {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        width: 100%;
+        max-width: 400px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .room-modal h4 {
+        font-size: 24px;
+        margin: 0 0 20px 0;
+        text-align: center;
+        color: #2d3748;
+    }
+
+    .room-list {
+        margin: 20px 0;
+    }
+
+    .room-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        margin: 10px 0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .room-item:hover {
+        border-color: #10b981;
+        background: #f0fdf4;
+    }
+
+    .room-item.active {
+        border-color: #10b981;
+        background: #ecfdf5;
+    }
+
+    .room-item span {
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    .edit-room-btn {
+        background: #f59e0b;
+        color: white;
+        border: none;
+        border-radius: 15px;
+        padding: 8px 15px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .add-room-btn {
+        width: 100%;
+        background: #059669;
+        color: white;
+        border: none;
+        border-radius: 15px;
+        padding: 15px;
+        font-size: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        margin: 20px 0;
+    }
+
+    .add-room-btn:hover {
+        background: #047857;
+        transform: translateY(-2px);
+    }
+
+    .room-modal-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .cancel-btn, .confirm-btn {
+        flex: 1;
+        padding: 15px;
+        border: none;
+        border-radius: 15px;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .cancel-btn {
+        background: #e5e7eb;
+        color: #374151;
+    }
+
+    .confirm-btn {
+        background: #10b981;
+        color: white;
+    }
+
+    .cancel-btn:hover {
+        background: #d1d5db;
+    }
+
+    .confirm-btn:hover {
+        background: #059669;
+    }
+
+    /* 壁管理機能 */
+    .wall-management-section {
+        margin: 30px 0;
+    }
+
+    .current-wall-display {
+        background: white;
+        border: 3px solid #059669;
+        border-radius: 15px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .wall-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .wall-name {
+        font-size: 22px;
+        font-weight: 700;
+        color: #2d3748;
+    }
+
+    .change-wall-btn {
+        background: #059669;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 12px 20px;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .change-wall-btn:hover {
+        background: #047857;
+        transform: scale(1.05);
+    }
+
+    .wall-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .wall-modal-content {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        width: 100%;
+        max-width: 400px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .wall-list {
+        margin: 20px 0;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .wall-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        margin: 10px 0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .wall-item:hover {
+        border-color: #059669;
+        background: #f0fdf4;
+    }
+
+    .wall-item.active {
+        border-color: #059669;
+        background: #ecfdf5;
+    }
+
+    .wall-item-content {
+        flex: 1;
+    }
+
+    .wall-item-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #2d3748;
+    }
+
+    .wall-item-details {
+        font-size: 14px;
+        color: #6b7280;
+        margin-top: 5px;
+    }
+
+    .wall-item-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .edit-wall-btn, .delete-wall-btn {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 12px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .edit-wall-btn {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .delete-wall-btn {
+        background: #ef4444;
+        color: white;
+    }
+
+    .add-wall-btn {
+        width: 100%;
+        background: #047857;
+        color: white;
+        border: none;
+        border-radius: 15px;
+        padding: 15px;
+        font-size: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        margin: 20px 0;
+    }
+
+    .add-wall-btn:hover {
+        background: #065f46;
+        transform: translateY(-2px);
+    }
+
+    /* 詳細チェックセクション */
+    .detailed-check-section {
+        margin: 30px 0;
+        padding: 20px;
+        background: #f8fffe;
+        border-radius: 15px;
+        border: 2px solid #e6f7f1;
+    }
+
+    .check-categories {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .check-category {
+        background: white;
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid #d1fae5;
+    }
+
+    .check-category h5 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #065f46;
+        margin: 0 0 15px 0;
+        text-align: center;
+    }
+
+    .check-items {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .check-item {
+        background: #f0fdf4;
+        border: 2px solid #bbf7d0;
+        padding: 12px 8px;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 500;
+        color: #065f46;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .check-item:hover {
+        background: #dcfce7;
+        border-color: #86efac;
+        transform: translateY(-1px);
+    }
+
+    .check-item.selected {
+        background: #10b981;
+        color: white;
+        border-color: #059669;
+        transform: scale(1.05);
+    }
+
+    /* 備考欄 */
+    .notes-section {
+        margin: 30px 0;
+        padding: 20px;
+        background: #fffef7;
+        border-radius: 15px;
+        border: 2px solid #fef3c7;
+    }
+
+    .notes-input-area {
+        margin-top: 15px;
+    }
+
+    .notes-input-area textarea {
+        width: 100%;
+        min-height: 120px;
+        font-size: 18px;
+        padding: 20px;
+        border: 2px solid #fed7aa;
+        border-radius: 12px;
+        background: white;
+        color: #92400e;
+        resize: vertical;
+        font-family: inherit;
+    }
+
+    .notes-input-area textarea:focus {
+        outline: none;
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+    }
+
+    .notes-help {
+        margin-top: 10px;
+        font-size: 14px;
+        color: #92400e;
+        text-align: center;
+        padding: 8px;
+        background: rgba(254, 215, 170, 0.3);
+        border-radius: 8px;
+    }
+
+    /* 部屋写真セクション */
+    .room-photo-section {
+        margin: 30px 0;
+        padding: 20px;
+        background: #f0f9ff;
+        border-radius: 15px;
+        border: 2px solid #bfdbfe;
+    }
+
+    .photo-area-enhanced {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin: 20px 0;
+        border: 3px solid #60a5fa;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .photo-area-enhanced:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    }
+
+    .photo-area-enhanced .photo-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+        display: block;
+    }
+
+    .photo-area-enhanced .photo-text {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .photo-area-enhanced .photo-help {
+        font-size: 16px;
+        opacity: 0.9;
+    }
+
+    .photo-area-enhanced.completed {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-color: #34d399;
+    }
+
+    .photo-area-enhanced.completed:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    }
+
+    .photo-status {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #059669;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .photo-preview {
+        margin-top: 20px;
+        padding: 20px;
+        background: white;
+        border-radius: 15px;
+        border: 2px solid #e5e7eb;
+        text-align: center;
+    }
+
+    .photo-preview h5 {
+        color: #374151;
+        margin-bottom: 15px;
+        font-size: 18px;
+    }
+
+    .retake-btn {
+        background: #f59e0b;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 10px;
+    }
+
+    .retake-btn:hover {
+        background: #d97706;
+        transform: translateY(-1px);
+    }
+
+    /* セカンダリボタン */
+    .btn-secondary {
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        color: white;
+        border: none;
+        font-size: 20px;
+        font-weight: 600;
+        border-radius: 15px;
+        padding: 20px 40px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+        display: block;
+    }
+
+    .btn-secondary:hover {
+        background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mobile-container">
+    <!-- シンプルヘッダー -->
+    <div class="header-simple">
+        <div class="header-top">
+            <button class="back-button" onclick="goBack()" title="前に戻る">
+                ← 戻る
+            </button>
+            <h1 class="site-title">調査記録</h1>
+            <div class="header-spacer"></div>
+        </div>
+        <div class="progress-text">ステップ {{ current_step.step_number }} / 6</div>
+
+        <!-- 視覚的ステップインジケーター -->
+        <div class="step-indicators">
+            {% for step_info in steps_progress %}
+                <div class="step-indicator
+                    {% if step_info.is_completed %}completed{% endif %}
+                    {% if step_info.is_current %}current{% endif %}"
+                    onclick="navigateToStep({{ step_info.step.id }})"
+                    style="cursor: pointer;">
+                    <div class="step-icon">
+                        {% if step_info.step.step_type == 'survey_overview' %}
+                            📋
+                        {% elif step_info.step.step_type == 'room_setup' %}
+                            🏠
+                        {% elif step_info.step.step_type == 'wall_measurement' %}
+                            📏
+                        {% elif step_info.step.step_type == 'condition_check' %}
+                            🔍
+                        {% elif step_info.step.step_type == 'photo_capture' %}
+                            📷
+                        {% elif step_info.step.step_type == 'damage_assessment' %}
+                            🔧
+                        {% else %}
+                            ✅
+                        {% endif %}
+                    </div>
+                    <div class="step-label">
+                        {% if step_info.step.step_type == 'survey_overview' %}
+                            概要
+                        {% elif step_info.step.step_type == 'room_setup' %}
+                            準備
+                        {% elif step_info.step.step_type == 'wall_measurement' %}
+                            測定
+                        {% elif step_info.step.step_type == 'condition_check' %}
+                            確認
+                        {% elif step_info.step.step_type == 'photo_capture' %}
+                            撮影
+                        {% elif step_info.step.step_type == 'damage_assessment' %}
+                            点検
+                        {% else %}
+                            完了
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="progress-big">
+            <div class="progress-fill-big" style="width: {{ completion_percentage }}%"></div>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <div class="step-content">
+        <!-- ステップ番号 -->
+        <div class="step-number-big">{{ current_step.step_number }}</div>
+
+        <!-- ステップタイトル -->
+        <h2 class="step-title-big">
+            {% if current_step.step_type == 'survey_overview' %}
+                調査概要を確認
+            {% elif current_step.step_type == 'room_setup' %}
+                お部屋の準備
+            {% elif current_step.step_type == 'wall_measurement' %}
+                壁を測る
+            {% elif current_step.step_type == 'condition_check' %}
+                壁の状態をチェック
+            {% elif current_step.step_type == 'photo_capture' %}
+                写真を撮る
+            {% elif current_step.step_type == 'damage_assessment' %}
+                キズをチェック
+            {% else %}
+                完了確認
+            {% endif %}
+        </h2>
+
+        <!-- ステップ別コンテンツ -->
+        {% if current_step.step_type == 'survey_overview' %}
+            <!-- 調査概要コンテンツ -->
+            <div class="survey-overview-content">
+                <!-- 物件情報 -->
+                <div class="overview-section">
+                    <h5><i class="fas fa-building text-primary"></i> 物件情報</h5>
+                    <div class="info-box">
+                        <div class="info-row">
+                            <span class="info-label">物件名:</span>
+                            <span class="info-value">{{ survey.project.site_name }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">住所:</span>
+                            <span class="info-value">{{ survey.project.site_address }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">調査員:</span>
+                            <span class="info-value">{{ survey.surveyor.name }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">予定日:</span>
+                            <span class="info-value">{{ survey.scheduled_date|date:"Y年m月d日" }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 作業内容 -->
+                <div class="overview-section">
+                    <h5><i class="fas fa-clipboard-list text-primary"></i> 作業内容</h5>
+                    <div class="info-box">
+                        <p style="margin: 0; font-size: 16px; line-height: 1.6;">
+                            内装の現地調査を行います。各部屋の壁面を測定し、現在の状態を詳しく記録します。
+                            写真撮影も含めて、約2時間程度の作業を予定しています。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 調査の流れ -->
+                <div class="overview-section">
+                    <h5><i class="fas fa-list-ol text-primary"></i> 調査の流れ</h5>
+                    <div class="workflow-steps">
+                        <div class="workflow-step">
+                            <div class="step-indicator-mini current">0</div>
+                            <div class="step-description">
+                                <div class="step-title-mini">調査概要</div>
+                                <div class="step-subtitle">物件情報と作業内容を確認</div>
+                            </div>
+                        </div>
+                        <div class="workflow-step">
+                            <div class="step-indicator-mini">1</div>
+                            <div class="step-description">
+                                <div class="step-title-mini">部屋・壁面管理</div>
+                                <div class="step-subtitle">調査対象の部屋と壁面を設定</div>
+                            </div>
+                        </div>
+                        <div class="workflow-step">
+                            <div class="step-indicator-mini">2</div>
+                            <div class="step-description">
+                                <div class="step-title-mini">壁面測定</div>
+                                <div class="step-subtitle">各壁面の寸法を測定</div>
+                            </div>
+                        </div>
+                        <div class="workflow-step">
+                            <div class="step-indicator-mini">3</div>
+                            <div class="step-description">
+                                <div class="step-title-mini">状態確認</div>
+                                <div class="step-subtitle">壁面の現在の状態を確認</div>
+                            </div>
+                        </div>
+                        <div class="workflow-step">
+                            <div class="step-indicator-mini">4</div>
+                            <div class="step-description">
+                                <div class="step-title-mini">詳細写真撮影</div>
+                                <div class="step-subtitle">壁面と損傷箇所の撮影</div>
+                            </div>
+                        </div>
+                        <div class="workflow-step">
+                            <div class="step-indicator-mini">5</div>
+                            <div class="step-description">
+                                <div class="step-title-mini">完了確認</div>
+                                <div class="step-subtitle">入力内容を確認して完了</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 注意事項 -->
+                <div class="overview-section">
+                    <h5><i class="fas fa-exclamation-triangle text-warning"></i> 注意事項</h5>
+                    <div class="attention-items">
+                        <h6>⚠️ 作業前に必ずご確認ください</h6>
+                        <ul>
+                            <li>安全靴を着用し、滑りやすい場所に注意してください</li>
+                            <li>メジャーなど測定道具を準備してください</li>
+                            <li>スマートフォンのバッテリーを十分に充電してください</li>
+                            <li>写真は明るい場所で鮮明に撮影してください</li>
+                            <li>測定は正確に行い、記録漏れがないよう注意してください</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        {% elif current_step.step_type == 'room_setup' %}
+            <!-- 部屋選択セクション -->
+            <div class="room-selection-section">
+                <h3>🏠 調査する部屋を選んでください</h3>
+
+                <div class="current-room-display" id="current-room-display">
+                    <div class="room-info">
+                        <span class="room-name" id="selected-room-name">
+                            {% if current_room %}{{ current_room.room_name }}{% else %}部屋を選択してください{% endif %}
+                        </span>
+                        <button class="change-room-btn" onclick="showRoomSelector()">
+                            部屋を変更
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 部屋選択モーダル -->
+                <div class="room-modal" id="room-modal" style="display: none;">
+                    <div class="room-modal-content">
+                        <h4>部屋を選択</h4>
+
+                        <div class="room-list" id="room-list">
+                            <!-- 既存の部屋 -->
+                            <div class="room-item active" data-room-id="{% if current_room %}{{ current_room.id }}{% endif %}">
+                                <span>{% if current_room %}{{ current_room.room_name }}{% else %}リビング{% endif %}</span>
+                                <button class="edit-room-btn" onclick="editRoom(this)">編集</button>
+                            </div>
+                        </div>
+
+                        <button class="add-room-btn" onclick="addNewRoom()">
+                            ➕ 新しい部屋を追加
+                        </button>
+
+                        <div class="room-modal-actions">
+                            <button class="cancel-btn" onclick="hideRoomSelector()">キャンセル</button>
+                            <button class="confirm-btn" onclick="confirmRoomSelection()">決定</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="instruction-simple">
+                <h3>📋 部屋の準備をしましょう</h3>
+                <ul class="simple-list">
+                    <li>電気をつけて明るくする</li>
+                    <li>大きな家具を壁から離す</li>
+                    <li>メジャーを用意する</li>
+                    <li>安全を確認する</li>
+                </ul>
+            </div>
+
+            <!-- 部屋全体写真セクション -->
+            <div class="room-photo-section">
+                <h4 style="font-size: 20px; margin: 20px 0;">📸 部屋全体の写真を撮りましょう</h4>
+                <p style="font-size: 16px; color: #666; margin-bottom: 20px;">
+                    部屋の四隅が見えるように、入口付近から撮影してください
+                </p>
+
+                <div class="photo-area-enhanced" onclick="capturePhoto('room_overview')" id="room-photo-area">
+                    <div class="photo-icon">📷</div>
+                    <div class="photo-text">お部屋全体の写真を撮る</div>
+                    <div class="photo-help">ここをタップして撮影</div>
+                    <div class="photo-status" id="room-photo-status" style="display: none;">
+                        ✅ 撮影済み
+                    </div>
+                </div>
+
+                <!-- 撮影プレビューエリア -->
+                <div class="photo-preview" id="room-photo-preview" style="display: none;">
+                    <h5>📷 撮影された写真</h5>
+                    <img id="room-photo-img" src="" alt="部屋全体の写真" style="max-width: 100%; border-radius: 10px; margin: 10px 0;">
+                    <button class="retake-btn" onclick="retakePhoto('room_overview')">📷 撮り直す</button>
+                </div>
+            </div>
+
+        {% elif current_step.step_type == 'wall_measurement' %}
+            <!-- 壁選択・管理セクション -->
+            <div class="wall-management-section">
+                <h3>🧱 壁を選択・追加</h3>
+
+                <div class="current-wall-display" id="current-wall-display">
+                    <div class="wall-info">
+                        <span class="wall-name" id="selected-wall-name">壁1 - 北側</span>
+                        <button class="change-wall-btn" onclick="showWallManager()">
+                            壁を管理
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 壁管理モーダル -->
+                <div class="wall-modal" id="wall-modal" style="display: none;">
+                    <div class="wall-modal-content">
+                        <h4>壁を選択・管理</h4>
+
+                        <div class="wall-list" id="wall-list">
+                            <!-- 壁リストが動的に生成される -->
+                        </div>
+
+                        <button class="add-wall-btn" onclick="addNewWall()">
+                            ➕ 新しい壁を追加
+                        </button>
+
+                        <div class="wall-modal-actions">
+                            <button class="cancel-btn" onclick="hideWallManager()">キャンセル</button>
+                            <button class="confirm-btn" onclick="confirmWallSelection()">決定</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="instruction-simple">
+                <h3>📏 選択した壁のサイズを測りましょう</h3>
+                <p>メジャーで壁の横と縦を測って、数字を入力してください</p>
+            </div>
+
+            <div class="measurement-area">
+                <div class="measurement-input-big">
+                    <label>壁の横の長さ</label>
+                    <input type="number" id="wall-width" placeholder="350" step="0.1">
+                    <span class="unit-text">cm</span>
+                </div>
+
+                <div class="measurement-input-big">
+                    <label>壁の高さ</label>
+                    <input type="number" id="wall-height" placeholder="240" step="0.1">
+                    <span class="unit-text">cm</span>
+                </div>
+
+                <div class="measurement-input-big">
+                    <label>ドアや窓の面積<br><small>（分からなければ0でOK）</small></label>
+                    <input type="number" id="wall-opening" placeholder="0" step="0.1" value="0">
+                    <span class="unit-text">㎡</span>
+                </div>
+            </div>
+
+            <!-- 壁の写真撮影 -->
+            <div class="photo-area" onclick="capturePhoto('wall_condition')">
+                <div class="photo-icon">📷</div>
+                <div class="photo-text">壁の写真を撮る</div>
+                <div class="photo-help">測定前に壁の全体写真を撮影</div>
+            </div>
+
+        {% elif current_step.step_type == 'condition_check' %}
+            <div class="instruction-simple">
+                <h3>🔍 壁の材料と状態をチェック</h3>
+                <p>壁を軽く叩いて音を聞き、見た目で判断してください</p>
+            </div>
+
+            <div class="choice-buttons">
+                <h4 style="font-size: 22px; margin: 20px 0;">壁の材料は何ですか？</h4>
+                <button class="choice-btn" data-value="gypsum_board">
+                    <i>🏠</i>
+                    石膏ボード<br>
+                    <small>（一般的な壁）</small>
+                </button>
+                <button class="choice-btn" data-value="concrete">
+                    <i>🧱</i>
+                    コンクリート<br>
+                    <small>（硬い壁）</small>
+                </button>
+                <button class="choice-btn" data-value="plywood">
+                    <i>🌳</i>
+                    木の板<br>
+                    <small>（木でできた壁）</small>
+                </button>
+                <button class="choice-btn" data-value="other">
+                    <i>❓</i>
+                    よく分からない
+                </button>
+            </div>
+
+            <div class="choice-buttons">
+                <h4 style="font-size: 22px; margin: 20px 0;">壁の状態はどうですか？</h4>
+                <button class="choice-btn" data-value="good">
+                    <i>✅</i>
+                    きれい<br>
+                    <small>（そのまま使える）</small>
+                </button>
+                <button class="choice-btn" data-value="needs_repair">
+                    <i>⚠️</i>
+                    直す必要がある<br>
+                    <small>（ひび割れや穴がある）</small>
+                </button>
+            </div>
+
+            <!-- 詳細チェックリスト -->
+            <div class="detailed-check-section">
+                <h4 style="font-size: 22px; margin: 20px 0;">🔍 詳しくチェック（当てはまるものをタップ）</h4>
+
+                <div class="check-categories">
+                    <div class="check-category">
+                        <h5>汚れ・変色</h5>
+                        <div class="check-items">
+                            <button class="check-item" data-check="stain">汚れ</button>
+                            <button class="check-item" data-check="discoloration">変色</button>
+                            <button class="check-item" data-check="mold">カビ</button>
+                            <button class="check-item" data-check="water_damage">水染み</button>
+                        </div>
+                    </div>
+
+                    <div class="check-category">
+                        <h5>破損・損傷</h5>
+                        <div class="check-items">
+                            <button class="check-item" data-check="crack">ひび割れ</button>
+                            <button class="check-item" data-check="hole">穴</button>
+                            <button class="check-item" data-check="peel">はがれ</button>
+                            <button class="check-item" data-check="dent">へこみ</button>
+                        </div>
+                    </div>
+
+                    <div class="check-category">
+                        <h5>その他</h5>
+                        <div class="check-items">
+                            <button class="check-item" data-check="scratch">キズ</button>
+                            <button class="check-item" data-check="nail_hole">釘穴</button>
+                            <button class="check-item" data-check="none">問題なし</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 備考欄 -->
+            <div class="notes-section">
+                <h4 style="font-size: 22px; margin: 20px 0;">📝 気になることがあれば記録</h4>
+                <div class="notes-input-area">
+                    <textarea id="wall-notes"
+                              placeholder="例: 右上に小さな穴がある&#10;例: 全体的に少し汚れている&#10;例: コンセント周りにひび"
+                              rows="4"></textarea>
+                    <div class="notes-help">
+                        細かいことでも記録しておくと、後で役に立ちます
+                    </div>
+                </div>
+            </div>
+
+        {% elif current_step.step_type == 'photo_capture' %}
+            <div class="instruction-simple">
+                <h3>📸 壁の写真を撮りましょう</h3>
+                <p>明るい場所で、壁全体がよく見えるように撮影してください</p>
+            </div>
+
+            <div class="photo-area" onclick="capturePhoto('wall_condition')">
+                <div class="photo-icon">📷</div>
+                <div class="photo-text">壁全体の写真</div>
+                <div class="photo-help">タップして撮影</div>
+            </div>
+
+            <div class="photo-area" onclick="capturePhoto('damage_detail')">
+                <div class="photo-icon">🔍</div>
+                <div class="photo-text">キズや汚れの写真</div>
+                <div class="photo-help">気になる部分があれば撮影</div>
+            </div>
+
+        {% elif current_step.step_type == 'damage_assessment' %}
+            <div class="instruction-simple">
+                <h3>🔍 壁のキズや汚れをチェック</h3>
+                <p>当てはまるものがあれば選んでください（複数選択OK）</p>
+            </div>
+
+            <div class="choice-buttons">
+                <button class="choice-btn damage-choice" data-value="stain_discoloration">
+                    <i>🟤</i>
+                    汚れ・色あせ
+                </button>
+                <button class="choice-btn damage-choice" data-value="tear_peel">
+                    <i>📄</i>
+                    破れ・めくれ
+                </button>
+                <button class="choice-btn damage-choice" data-value="nail_holes">
+                    <i>📌</i>
+                    画鋲の穴
+                </button>
+                <button class="choice-btn damage-choice" data-value="large_holes">
+                    <i>⚫</i>
+                    大きな穴
+                </button>
+                <button class="choice-btn damage-choice" data-value="none">
+                    <i>✨</i>
+                    特に問題なし
+                </button>
+            </div>
+
+        {% else %}
+            <div class="instruction-simple">
+                <h3>✅ お疲れさまでした！</h3>
+                <p>すべての調査が完了しました。内容を確認して「完了」ボタンを押してください。</p>
+            </div>
+        {% endif %}
+
+        <!-- アクションエリア -->
+        <div class="action-area">
+            {% if current_step.step_type == 'survey_overview' %}
+                <button class="big-button btn-complete" onclick="completeStep('{{ current_step.id }}')">
+                    <i class="fas fa-play"></i> 調査開始
+                </button>
+            {% elif current_step.step_type == 'room_setup' %}
+                <button class="big-button btn-complete" onclick="completeStep('{{ current_step.id }}')">
+                    <i class="fas fa-check"></i> 準備できました
+                </button>
+            {% elif current_step.step_type == 'wall_measurement' %}
+                <button class="big-button btn-complete" onclick="completeMeasurement()">
+                    <i class="fas fa-save"></i> 測定完了
+                </button>
+            {% elif current_step.step_type == 'condition_check' %}
+                <button class="big-button btn-complete" onclick="completeConditionCheck()" disabled id="condition-complete-btn">
+                    <i class="fas fa-check"></i> チェック完了
+                </button>
+            {% elif current_step.step_type == 'photo_capture' %}
+                <button class="big-button btn-complete" onclick="completePhotoCapture()">
+                    <i class="fas fa-images"></i> 撮影完了
+                </button>
+            {% elif current_step.step_type == 'damage_assessment' %}
+                <button class="big-button btn-complete" onclick="completeDamageAssessment()">
+                    <i class="fas fa-check"></i> チェック完了
+                </button>
+            {% else %}
+                <div class="final-completion-area">
+                    <button class="big-button btn-complete" onclick="completeStep('{{ current_step.id }}')">
+                        <i class="fas fa-flag-checkered"></i> 調査完了
+                    </button>
+                    <button class="big-button btn-secondary" onclick="goToSurveyList()" style="margin-top: 15px;">
+                        <i class="fas fa-list"></i> 調査一覧に戻る
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+
+    <!-- ヘルプボタン -->
+    <button class="help-button" onclick="showHelp()" title="困った時はここをタップ">
+        🆘
+    </button>
+</div>
+
+<!-- Hidden file input for photo capture -->
+<input type="file" id="photo-input" accept="image/*" capture="environment" style="display: none;">
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedFoundationType = null;
+let selectedFoundationCondition = null;
+let selectedDamageTypes = [];
+let selectedDetailedChecks = [];
+let wallNotes = '';
+let roomPhotoTaken = false;
+let currentStepId = {{ current_step.id }};
+let surveyId = {{ survey.id }};
+
+// 選択ボタンの処理
+document.querySelectorAll('.choice-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const value = this.dataset.value;
+
+        if (this.classList.contains('damage-choice')) {
+            // 損傷評価では複数選択可能
+            if (value === 'none') {
+                // 「問題なし」を選んだら他を全てクリア
+                selectedDamageTypes = ['none'];
+                document.querySelectorAll('.damage-choice').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                this.classList.add('selected');
+            } else {
+                // 他の項目を選んだら「問題なし」をクリア
+                const noneBtn = document.querySelector('.damage-choice[data-value="none"]');
+                if (noneBtn) noneBtn.classList.remove('selected');
+
+                const index = selectedDamageTypes.indexOf('none');
+                if (index > -1) selectedDamageTypes.splice(index, 1);
+
+                // トグル
+                if (this.classList.contains('selected')) {
+                    this.classList.remove('selected');
+                    const damageIndex = selectedDamageTypes.indexOf(value);
+                    if (damageIndex > -1) selectedDamageTypes.splice(damageIndex, 1);
+                } else {
+                    this.classList.add('selected');
+                    selectedDamageTypes.push(value);
+                }
+            }
+        } else {
+            // 通常の選択（単一選択）
+            const parentGroup = this.parentElement;
+            parentGroup.querySelectorAll('.choice-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            this.classList.add('selected');
+
+            // 値を保存
+            if (['gypsum_board', 'concrete', 'plywood', 'other'].includes(value)) {
+                selectedFoundationType = value;
+            } else if (['good', 'needs_repair'].includes(value)) {
+                selectedFoundationCondition = value;
+            }
+
+            // 条件チェック完了ボタンの有効化
+            if (selectedFoundationType && selectedFoundationCondition) {
+                document.getElementById('condition-complete-btn').disabled = false;
+            }
+        }
+    });
+});
+
+// 詳細チェック項目の処理
+document.querySelectorAll('.check-item').forEach(button => {
+    button.addEventListener('click', function() {
+        const checkValue = this.dataset.check;
+
+        if (checkValue === 'none') {
+            // 「問題なし」を選んだら他を全てクリア
+            selectedDetailedChecks = ['none'];
+            document.querySelectorAll('.check-item').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            this.classList.add('selected');
+        } else {
+            // 他の項目を選んだら「問題なし」をクリア
+            const noneBtn = document.querySelector('.check-item[data-check="none"]');
+            if (noneBtn) noneBtn.classList.remove('selected');
+
+            const index = selectedDetailedChecks.indexOf('none');
+            if (index > -1) selectedDetailedChecks.splice(index, 1);
+
+            // トグル
+            if (this.classList.contains('selected')) {
+                this.classList.remove('selected');
+                const checkIndex = selectedDetailedChecks.indexOf(checkValue);
+                if (checkIndex > -1) selectedDetailedChecks.splice(checkIndex, 1);
+            } else {
+                this.classList.add('selected');
+                selectedDetailedChecks.push(checkValue);
+            }
+        }
+
+        // 条件チェック完了ボタンの有効化
+        checkConditionComplete();
+    });
+});
+
+// 備考欄の処理
+const notesTextarea = document.getElementById('wall-notes');
+if (notesTextarea) {
+    notesTextarea.addEventListener('input', function() {
+        wallNotes = this.value;
+    });
+}
+
+// 条件チェック完了ボタンの有効化チェック
+function checkConditionComplete() {
+    const button = document.getElementById('condition-complete-btn');
+    if (button && selectedFoundationType && selectedFoundationCondition) {
+        button.disabled = false;
+    }
+}
+
+// 写真撮影
+function capturePhoto(photoType) {
+    const input = document.getElementById('photo-input');
+    input.dataset.photoType = photoType;
+    input.click();
+}
+
+document.getElementById('photo-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const photoType = this.dataset.photoType;
+
+        // Show preview for room overview photos
+        if (photoType === 'room_overview') {
+            showRoomPhotoPreview(file);
+        }
+
+        uploadPhoto(file, photoType);
+    }
+});
+
+// 写真アップロード
+function uploadPhoto(file, photoType) {
+    const formData = new FormData();
+    formData.append('photo', file);
+    formData.append('photo_type', photoType);
+
+    fetch(`/surveys/${surveyId}/step/${currentStepId}/upload-photo/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('写真を保存しました！');
+        } else {
+            showError('写真の保存に失敗しました');
+        }
+    });
+}
+
+// ステップ完了関数（音声フィードバック付き）
+function completeStep(stepId) {
+    playClickSound(); // クリック音
+
+    fetch(`/surveys/${surveyId}/step/${stepId}/complete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            playSuccessSound();
+            if (data.next_step_id) {
+                speak('次のステップに進みます');
+                setTimeout(() => {
+                    window.location.href = `?step=${data.next_step_id}`;
+                }, 2000);
+            } else {
+                speak('すべての調査が完了しました。お疲れさまでした');
+                showSuccess('調査が完了しました！お疲れさまでした！');
+                setTimeout(() => {
+                    window.location.href = `/surveys/demo/`;
+                }, 3000);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        playErrorSound();
+        speak('エラーが発生しました。もう一度やり直してください');
+    });
+}
+
+function completeMeasurement() {
+    const width = document.getElementById('wall-width').value;
+    const height = document.getElementById('wall-height').value;
+    const opening = document.getElementById('wall-opening').value || 0;
+
+    if (!width || !height) {
+        showError('横の長さと高さを入力してください');
+        return;
+    }
+
+    const data = {
+        width: parseFloat(width),
+        height: parseFloat(height),
+        opening_area: parseFloat(opening)
+    };
+
+    fetch(`/surveys/${surveyId}/step/${currentStepId}/complete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('測定完了！次へ進みます');
+            setTimeout(() => {
+                if (data.next_step_id) {
+                    window.location.href = `?step=${data.next_step_id}`;
+                }
+            }, 1000);
+        }
+    });
+}
+
+function completeConditionCheck() {
+    const data = {
+        foundation_type: selectedFoundationType,
+        foundation_condition: selectedFoundationCondition,
+        detailed_checks: selectedDetailedChecks,
+        wall_notes: wallNotes
+    };
+
+    fetch(`/surveys/${surveyId}/step/${currentStepId}/complete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('チェック完了！次へ進みます');
+            setTimeout(() => {
+                if (data.next_step_id) {
+                    window.location.href = `?step=${data.next_step_id}`;
+                }
+            }, 1000);
+        }
+    });
+}
+
+function completePhotoCapture() {
+    showSuccess('写真撮影完了！次へ進みます');
+    setTimeout(() => {
+        completeStep(currentStepId);
+    }, 1000);
+}
+
+function completeDamageAssessment() {
+    const data = {
+        damage_types: selectedDamageTypes
+    };
+
+    fetch(`/surveys/${surveyId}/step/${currentStepId}/complete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('チェック完了！次へ進みます');
+            setTimeout(() => {
+                if (data.next_step_id) {
+                    window.location.href = `?step=${data.next_step_id}`;
+                }
+            }, 1000);
+        }
+    });
+}
+
+// 音声ガイド機能の強化版
+function playVoiceGuide(customMessage = null) {
+    const stepType = '{{ current_step.step_type }}';
+    let message = customMessage;
+
+    if (!message) {
+        switch(stepType) {
+            case 'room_setup':
+                message = 'ステップ1、お部屋の準備をしましょう。まず電気をつけて明るくしてください。次に大きな家具を壁から離してください。メジャーを用意して、安全を確認したら写真を撮ってください。';
+                break;
+            case 'wall_measurement':
+                message = 'ステップ2、壁のサイズを測りましょう。メジャーで壁の横の長さを測って、数字を入力してください。次に壁の高さを測って入力してください。ドアや窓の面積は分からなければ0で大丈夫です。';
+                break;
+            case 'condition_check':
+                message = 'ステップ3、壁の材料と状態をチェックしてください。壁を軽く叩いて音を聞いてください。石膏ボード、コンクリート、ベニヤ板の中から選んでください。分からなければ石膏ボードで大丈夫です。';
+                break;
+            case 'photo_capture':
+                message = 'ステップ4、壁の写真を撮影してください。できるだけ明るくて、壁全体が見えるように撮ってください。写真エリアをタップすると撮影できます。';
+                break;
+            case 'damage_assessment':
+                message = 'ステップ5、壁にキズや汚れがあるかチェックしてください。ひび割れ、汚れ、穴、はがれがあるか確認してください。問題がなければ「問題なし」を選んでください。';
+                break;
+            default:
+                message = 'ステップ6、お疲れさまでした。すべての調査が完了しました。調査完了ボタンを押してください。';
+        }
+    }
+
+    speak(message);
+}
+
+// 音声合成機能を削除し、視覚的フィードバックに置き換え
+function speak(message, rate = 0.7) {
+    // 音声の代わりに視覚的メッセージを表示
+    showMessage(message, 'info');
+}
+
+function showMessage(message, type) {
+    const msgDiv = document.createElement('div');
+    msgDiv.textContent = message;
+    msgDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#e53e3e' : '#3b82f6'};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        font-size: 18px;
+        font-weight: bold;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        max-width: 300px;
+        text-align: center;
+    `;
+    document.body.appendChild(msgDiv);
+
+    setTimeout(() => {
+        msgDiv.remove();
+    }, 3000);
+}
+
+// 効果音とフィードバック（音声なし版）
+function playSuccessSound() {
+    showMessage('よくできました！', 'success');
+}
+
+function playErrorSound() {
+    showMessage('もう一度確認してください', 'error');
+}
+
+function playClickSound() {
+    // 音声の代わりに簡単な視覚的フィードバック（何もしない）
+}
+
+// ページ読み込み時の処理（音声ガイダンスなし）
+document.addEventListener('DOMContentLoaded', function() {
+    // 音声ガイドの代わりに、必要に応じて視覚的な説明を表示
+});
+
+// 部屋管理機能
+let rooms = [
+    { id: {% if current_room %}{{ current_room.id }}{% else %}1{% endif %}, name: '{% if current_room %}{{ current_room.room_name }}{% else %}リビング{% endif %}' }
+];
+let selectedRoomId = {% if current_room %}{{ current_room.id }}{% else %}1{% endif %};
+
+function showRoomSelector() {
+    playClickSound();
+    document.getElementById('room-modal').style.display = 'flex';
+    renderRoomList();
+}
+
+function hideRoomSelector() {
+    playClickSound();
+    document.getElementById('room-modal').style.display = 'none';
+}
+
+function renderRoomList() {
+    const roomList = document.getElementById('room-list');
+    roomList.innerHTML = '';
+
+    rooms.forEach(room => {
+        const roomItem = document.createElement('div');
+        roomItem.className = `room-item ${room.id === selectedRoomId ? 'active' : ''}`;
+        roomItem.dataset.roomId = room.id;
+        roomItem.innerHTML = `
+            <span>${room.name}</span>
+            <button class="edit-room-btn" onclick="editRoom(${room.id})">編集</button>
+        `;
+
+        roomItem.addEventListener('click', function(e) {
+            if (e.target.classList.contains('edit-room-btn')) return;
+
+            // 他の選択を解除
+            document.querySelectorAll('.room-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // 現在のアイテムを選択
+            this.classList.add('active');
+            selectedRoomId = parseInt(this.dataset.roomId);
+        });
+
+        roomList.appendChild(roomItem);
+    });
+}
+
+function addNewRoom() {
+    playClickSound();
+    const roomName = prompt('新しい部屋の名前を入力してください:', '');
+
+    if (roomName && roomName.trim()) {
+        const newId = Math.max(...rooms.map(r => r.id)) + 1;
+        rooms.push({
+            id: newId,
+            name: roomName.trim()
+        });
+
+        // 新しい部屋を自動選択
+        selectedRoomId = newId;
+        renderRoomList();
+
+        speak(`${roomName}を追加しました`);
+    }
+}
+
+function editRoom(roomId) {
+    playClickSound();
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return;
+
+    const newName = prompt('部屋名を編集:', room.name);
+    if (newName && newName.trim() && newName.trim() !== room.name) {
+        room.name = newName.trim();
+        renderRoomList();
+
+        // 表示中の部屋名も更新
+        if (roomId === selectedRoomId) {
+            document.getElementById('selected-room-name').textContent = room.name;
+        }
+
+        speak(`部屋名を${newName}に変更しました`);
+    }
+}
+
+function confirmRoomSelection() {
+    playClickSound();
+    const selectedRoom = rooms.find(r => r.id === selectedRoomId);
+
+    if (selectedRoom) {
+        document.getElementById('selected-room-name').textContent = selectedRoom.name;
+        hideRoomSelector();
+        speak(`${selectedRoom.name}を選択しました`);
+    }
+}
+
+// 壁管理機能
+let walls = [
+    { id: 1, name: '壁1 - 北側', direction: '北', width: null, height: null, condition: null }
+];
+let selectedWallId = 1;
+
+function showWallManager() {
+    playClickSound();
+    document.getElementById('wall-modal').style.display = 'flex';
+    renderWallList();
+}
+
+function hideWallManager() {
+    playClickSound();
+    document.getElementById('wall-modal').style.display = 'none';
+}
+
+function renderWallList() {
+    const wallList = document.getElementById('wall-list');
+    wallList.innerHTML = '';
+
+    walls.forEach(wall => {
+        const wallItem = document.createElement('div');
+        wallItem.className = `wall-item ${wall.id === selectedWallId ? 'active' : ''}`;
+        wallItem.dataset.wallId = wall.id;
+
+        let details = '';
+        if (wall.width && wall.height) {
+            details = `${wall.width}cm × ${wall.height}cm`;
+        } else {
+            details = '未測定';
+        }
+
+        wallItem.innerHTML = `
+            <div class="wall-item-content">
+                <div class="wall-item-name">${wall.name}</div>
+                <div class="wall-item-details">${details}</div>
+            </div>
+            <div class="wall-item-actions">
+                <button class="edit-wall-btn" onclick="editWall(${wall.id})">編集</button>
+                <button class="delete-wall-btn" onclick="deleteWall(${wall.id})">削除</button>
+            </div>
+        `;
+
+        wallItem.addEventListener('click', function(e) {
+            if (e.target.classList.contains('edit-wall-btn') ||
+                e.target.classList.contains('delete-wall-btn')) return;
+
+            // 他の選択を解除
+            document.querySelectorAll('.wall-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // 現在のアイテムを選択
+            this.classList.add('active');
+            selectedWallId = parseInt(this.dataset.wallId);
+        });
+
+        wallList.appendChild(wallItem);
+    });
+}
+
+function addNewWall() {
+    playClickSound();
+
+    const directions = ['北', '南', '東', '西', '北東', '北西', '南東', '南西'];
+    let directionText = directions.join('、');
+
+    const wallName = prompt(`新しい壁の名前を入力してください:\n例: 壁2 - 東側`, '');
+
+    if (wallName && wallName.trim()) {
+        const newId = Math.max(...walls.map(w => w.id)) + 1;
+        walls.push({
+            id: newId,
+            name: wallName.trim(),
+            direction: '未設定',
+            width: null,
+            height: null,
+            condition: null
+        });
+
+        // 新しい壁を自動選択
+        selectedWallId = newId;
+        renderWallList();
+
+        speak(`${wallName}を追加しました`);
+    }
+}
+
+function editWall(wallId) {
+    playClickSound();
+    const wall = walls.find(w => w.id === wallId);
+    if (!wall) return;
+
+    const newName = prompt('壁の名前を編集:', wall.name);
+    if (newName && newName.trim() && newName.trim() !== wall.name) {
+        wall.name = newName.trim();
+        renderWallList();
+
+        // 表示中の壁名も更新
+        if (wallId === selectedWallId) {
+            document.getElementById('selected-wall-name').textContent = wall.name;
+        }
+
+        speak(`壁名を${newName}に変更しました`);
+    }
+}
+
+function deleteWall(wallId) {
+    playClickSound();
+
+    if (walls.length <= 1) {
+        speak('最低1つの壁は必要です');
+        return;
+    }
+
+    const wall = walls.find(w => w.id === wallId);
+    if (!wall) return;
+
+    if (confirm(`${wall.name}を削除しますか？`)) {
+        walls = walls.filter(w => w.id !== wallId);
+
+        // 削除した壁が選択中だった場合、最初の壁を選択
+        if (wallId === selectedWallId) {
+            selectedWallId = walls[0].id;
+            document.getElementById('selected-wall-name').textContent = walls[0].name;
+        }
+
+        renderWallList();
+        speak(`${wall.name}を削除しました`);
+    }
+}
+
+function confirmWallSelection() {
+    playClickSound();
+    const selectedWall = walls.find(w => w.id === selectedWallId);
+
+    if (selectedWall) {
+        document.getElementById('selected-wall-name').textContent = selectedWall.name;
+
+        // 既存の測定値があれば復元
+        if (selectedWall.width) {
+            document.getElementById('wall-width').value = selectedWall.width;
+        }
+        if (selectedWall.height) {
+            document.getElementById('wall-height').value = selectedWall.height;
+        }
+
+        hideWallManager();
+        speak(`${selectedWall.name}を選択しました`);
+    }
+}
+
+// 測定値保存機能
+function saveMeasurement() {
+    const selectedWall = walls.find(w => w.id === selectedWallId);
+    if (!selectedWall) return;
+
+    const width = document.getElementById('wall-width').value;
+    const height = document.getElementById('wall-height').value;
+
+    if (width) selectedWall.width = parseFloat(width);
+    if (height) selectedWall.height = parseFloat(height);
+}
+
+// 入力フィールドの変更時に自動保存
+document.addEventListener('DOMContentLoaded', function() {
+    const widthInput = document.getElementById('wall-width');
+    const heightInput = document.getElementById('wall-height');
+
+    if (widthInput) {
+        widthInput.addEventListener('input', saveMeasurement);
+    }
+    if (heightInput) {
+        heightInput.addEventListener('input', saveMeasurement);
+    }
+});
+
+// ヘルプ機能
+function showHelp() {
+    const helpMessage = '分からないことがあれば、事務所に電話してください。\n電話番号: 03-1234-5678\n\nまたは、近くの人に聞いてみてください。';
+    alert(helpMessage);
+}
+
+// ユーティリティ関数
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showSuccess(message) {
+    // 大きなアラート風のメッセージ
+    const alertDiv = document.createElement('div');
+    alertDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #48bb78;
+        color: white;
+        padding: 30px;
+        border-radius: 20px;
+        font-size: 24px;
+        font-weight: 600;
+        z-index: 10000;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    `;
+    alertDiv.textContent = message;
+    document.body.appendChild(alertDiv);
+
+    setTimeout(() => {
+        document.body.removeChild(alertDiv);
+    }, 2000);
+}
+
+function showError(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #e53e3e;
+        color: white;
+        padding: 30px;
+        border-radius: 20px;
+        font-size: 24px;
+        font-weight: 600;
+        z-index: 10000;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    `;
+    alertDiv.textContent = message;
+    document.body.appendChild(alertDiv);
+
+    setTimeout(() => {
+        document.body.removeChild(alertDiv);
+    }, 3000);
+}
+
+// 戻るボタン機能
+function goBack() {
+    playClickSound();
+
+    const currentStep = {{ current_step.step_number }};
+    const stepType = '{{ current_step.step_type }}';
+
+    // 最終ステップの場合は確認して調査一覧に戻る
+    if (stepType === 'final_review' || currentStep >= 6) {
+        if (confirm('調査一覧に戻りますか？')) {
+            window.location.href = '/surveys/demo/';
+        }
+        return;
+    }
+
+    if (currentStep <= 0) {
+        // 最初のステップの場合は調査一覧に戻る
+        if (confirm('調査一覧に戻りますか？')) {
+            window.location.href = '/surveys/demo/';
+        }
+    } else {
+        // 前のステップに戻る
+        const steps = [
+            {% for step_info in steps_progress %}
+                {
+                    id: {{ step_info.step.id }},
+                    number: {{ step_info.step.step_number }},
+                    completed: {{ step_info.is_completed|yesno:"true,false" }}
+                }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        // 前のステップを探す
+        for (let i = steps.length - 1; i >= 0; i--) {
+            if (steps[i].number < currentStep) {
+                window.location.href = `?step=${steps[i].id}`;
+                break;
+            }
+        }
+    }
+}
+
+// 調査一覧に戻る
+function goToSurveyList() {
+    playClickSound();
+    if (confirm('調査一覧に戻りますか？')) {
+        window.location.href = '/surveys/demo/';
+    }
+}
+
+// 部屋写真プレビュー機能
+function showRoomPhotoPreview(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const photoArea = document.getElementById('room-photo-area');
+        const previewArea = document.getElementById('room-photo-preview');
+        const photoImg = document.getElementById('room-photo-img');
+        const photoStatus = document.getElementById('room-photo-status');
+
+        // 写真を表示
+        photoImg.src = e.target.result;
+        previewArea.style.display = 'block';
+
+        // 撮影エリアのスタイルを変更
+        photoArea.classList.add('completed');
+        photoStatus.style.display = 'block';
+
+        // フラグを設定
+        roomPhotoTaken = true;
+
+        // 音声フィードバック
+        speak('部屋の写真が撮影されました。良い写真です。');
+        showSuccess('📷 写真撮影完了！');
+    };
+    reader.readAsDataURL(file);
+}
+
+function retakePhoto(photoType) {
+    if (photoType === 'room_overview') {
+        const photoArea = document.getElementById('room-photo-area');
+        const previewArea = document.getElementById('room-photo-preview');
+        const photoStatus = document.getElementById('room-photo-status');
+
+        // 撮影エリアを元に戻す
+        photoArea.classList.remove('completed');
+        photoStatus.style.display = 'none';
+        previewArea.style.display = 'none';
+
+        // フラグをリセット
+        roomPhotoTaken = false;
+
+        // 新しい写真を撮影
+        capturePhoto(photoType);
+    }
+}
+
+// ステップナビゲーション
+function navigateToStep(stepId) {
+    const currentUrl = window.location.href.split('?')[0];
+    const urlParams = new URLSearchParams(window.location.search);
+    const simpleParam = urlParams.get('simple') || urlParams.get('elderly') || urlParams.get('mobile');
+
+    let newUrl = currentUrl + '?step=' + stepId;
+    if (simpleParam) {
+        newUrl += '&simple=' + simpleParam;
+    }
+
+    window.location.href = newUrl;
+}
+
+// ページ読み込み時の処理
+document.addEventListener('DOMContentLoaded', function() {
+    // ステップ開始API呼び出し
+    fetch(`/surveys/${surveyId}/step/${currentStepId}/start/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    });
+
+    // 音声ガイドのポップアップは削除済み
+});
+</script>
+{% endblock %}

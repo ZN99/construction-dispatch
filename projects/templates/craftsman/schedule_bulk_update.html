@@ -1,0 +1,327 @@
+{% extends "projects/base.html" %}
+
+{% block title %}スケジュール一括更新 - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-calendar-plus me-2"></i>スケジュール一括更新</h2>
+    <a href="{% url 'craftsman_schedule_calendar' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-1"></i>スケジュールに戻る
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-edit me-1"></i>一括更新設定</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="bulkUpdateForm">
+                    {% csrf_token %}
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.craftsman.id_for_label }}" class="form-label">
+                                <i class="fas fa-user me-1"></i>職人 <span class="text-danger">*</span>
+                            </label>
+                            {{ form.craftsman }}
+                            {% if form.craftsman.errors %}
+                                <div class="text-danger small">{{ form.craftsman.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.is_available.id_for_label }}" class="form-label">
+                                <i class="fas fa-toggle-on me-1"></i>稼働状態 <span class="text-danger">*</span>
+                            </label>
+                            <div class="mt-2">
+                                {% for choice in form.is_available %}
+                                    <div class="form-check form-check-inline">
+                                        {{ choice.tag }}
+                                        <label class="form-check-label" for="{{ choice.id_for_label }}">
+                                            {% if choice.choice_value == 'True' %}
+                                                <span class="badge bg-success me-1">稼働可能</span>
+                                            {% else %}
+                                                <span class="badge bg-danger me-1">稼働不可</span>
+                                            {% endif %}
+                                            {{ choice.choice_label }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.is_available.errors %}
+                                <div class="text-danger small">{{ form.is_available.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.start_date.id_for_label }}" class="form-label">
+                                <i class="fas fa-calendar-alt me-1"></i>開始日 <span class="text-danger">*</span>
+                            </label>
+                            {{ form.start_date }}
+                            {% if form.start_date.errors %}
+                                <div class="text-danger small">{{ form.start_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.end_date.id_for_label }}" class="form-label">
+                                <i class="fas fa-calendar-alt me-1"></i>終了日 <span class="text-danger">*</span>
+                            </label>
+                            {{ form.end_date }}
+                            {% if form.end_date.errors %}
+                                <div class="text-danger small">{{ form.end_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.exclude_weekends }}
+                            <label class="form-check-label" for="{{ form.exclude_weekends.id_for_label }}">
+                                <i class="fas fa-calendar-times me-1"></i>土日を除外する
+                            </label>
+                            {% if form.exclude_weekends.errors %}
+                                <div class="text-danger small">{{ form.exclude_weekends.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">チェックすると土曜日・日曜日はスケジュール更新の対象外になります</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">
+                            <i class="fas fa-sticky-note me-1"></i>メモ・備考
+                        </label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger small">{{ form.notes.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">期間中の共通メモや特記事項があれば記載してください</div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <strong>確認事項:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>選択した期間内の既存スケジュールは上書きされます</li>
+                            <li>土日除外を選択した場合、平日のみが対象となります</li>
+                            <li>既にアサインが確定している日程は変更されません</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-info" id="previewBtn">
+                            <i class="fas fa-eye me-1"></i>プレビュー
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                            <i class="fas fa-save me-1"></i>一括更新実行
+                        </button>
+                        <a href="{% url 'craftsman_schedule_calendar' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>キャンセル
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-calculator me-1"></i>更新対象日数</h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="h2 text-primary mb-1" id="targetDays">-</div>
+                <div class="text-muted">日間が対象</div>
+                <div class="small text-muted mt-2" id="excludeInfo"></div>
+            </div>
+        </div>
+
+        <div class="card mb-3" id="previewCard" style="display: none;">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-eye me-1"></i>更新プレビュー</h6>
+            </div>
+            <div class="card-body">
+                <div id="previewContent">
+                    <!-- プレビュー内容がここに表示される -->
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-lightbulb me-1"></i>使用例</h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <div class="mb-2">
+                        <strong>長期休暇の設定:</strong>
+                        <br>GW期間を一括で「稼働不可」に設定
+                    </div>
+                    <div class="mb-2">
+                        <strong>稼働再開:</strong>
+                        <br>休暇明けの期間を「稼働可能」に一括変更
+                    </div>
+                    <div class="mb-2">
+                        <strong>平日のみ稼働:</strong>
+                        <br>土日除外で平日のみスケジュール設定
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-exclamation-triangle me-1"></i>注意事項</h6>
+            </div>
+            <div class="card-body">
+                <ul class="small mb-0">
+                    <li>既にアサインが確定している日程は自動的にスキップされます</li>
+                    <li>大量の日数を一度に更新する場合は時間がかかることがあります</li>
+                    <li>更新後は各職人に変更内容を通知することをお勧めします</li>
+                    <li>誤って更新した場合は個別に修正が必要です</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startDateInput = document.querySelector('input[name="start_date"]');
+    const endDateInput = document.querySelector('input[name="end_date"]');
+    const excludeWeekendsCheckbox = document.querySelector('input[name="exclude_weekends"]');
+    const targetDaysElement = document.getElementById('targetDays');
+    const excludeInfoElement = document.getElementById('excludeInfo');
+    const previewBtn = document.getElementById('previewBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const previewCard = document.getElementById('previewCard');
+    const previewContent = document.getElementById('previewContent');
+
+    // 日数計算
+    function calculateDays() {
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+
+        if (startDate && endDate && startDate <= endDate) {
+            let totalDays = 0;
+            let weekdays = 0;
+            let weekends = 0;
+
+            const currentDate = new Date(startDate);
+            while (currentDate <= endDate) {
+                totalDays++;
+                const dayOfWeek = currentDate.getDay();
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    weekends++;
+                } else {
+                    weekdays++;
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            const excludeWeekends = excludeWeekendsCheckbox.checked;
+            const targetDays = excludeWeekends ? weekdays : totalDays;
+
+            targetDaysElement.textContent = targetDays;
+
+            if (excludeWeekends) {
+                excludeInfoElement.textContent = `平日のみ（土日${weekends}日除外）`;
+            } else {
+                excludeInfoElement.textContent = `全日程（平日${weekdays}日 + 土日${weekends}日）`;
+            }
+
+            submitBtn.disabled = targetDays === 0;
+        } else {
+            targetDaysElement.textContent = '-';
+            excludeInfoElement.textContent = '';
+            submitBtn.disabled = true;
+        }
+    }
+
+    // 日付変更時の処理
+    startDateInput.addEventListener('change', function() {
+        if (this.value) {
+            endDateInput.min = this.value;
+            if (endDateInput.value && endDateInput.value < this.value) {
+                endDateInput.value = this.value;
+            }
+        }
+        calculateDays();
+    });
+
+    endDateInput.addEventListener('change', calculateDays);
+    excludeWeekendsCheckbox.addEventListener('change', calculateDays);
+
+    // プレビュー機能
+    previewBtn.addEventListener('click', function() {
+        const craftsman = document.querySelector('select[name="craftsman"]');
+        const isAvailable = document.querySelector('input[name="is_available"]:checked');
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+        const notes = document.querySelector('textarea[name="notes"]').value;
+
+        if (!craftsman.value || !isAvailable || !startDate || !endDate) {
+            alert('必須項目を全て入力してください');
+            return;
+        }
+
+        // プレビュー内容を生成
+        const craftsmanName = craftsman.options[craftsman.selectedIndex].text;
+        const statusText = isAvailable.value === 'True' ? '稼働可能' : '稼働不可';
+        const statusClass = isAvailable.value === 'True' ? 'success' : 'danger';
+        const targetDays = targetDaysElement.textContent;
+
+        previewContent.innerHTML = `
+            <div class="mb-2">
+                <strong>職人:</strong> ${craftsmanName}
+            </div>
+            <div class="mb-2">
+                <strong>期間:</strong> ${startDate} ～ ${endDate}
+            </div>
+            <div class="mb-2">
+                <strong>設定:</strong> <span class="badge bg-${statusClass}">${statusText}</span>
+            </div>
+            <div class="mb-2">
+                <strong>対象日数:</strong> ${targetDays}日
+            </div>
+            ${notes ? `<div class="mb-2"><strong>メモ:</strong> ${notes}</div>` : ''}
+            <div class="text-muted small mt-2">
+                ${excludeWeekendsCheckbox.checked ? '※土日は除外されます' : '※土日も含まれます'}
+            </div>
+        `;
+
+        previewCard.style.display = 'block';
+        submitBtn.disabled = false;
+    });
+
+    // フォーム送信確認
+    document.getElementById('bulkUpdateForm').addEventListener('submit', function(e) {
+        const targetDays = targetDaysElement.textContent;
+        if (!confirm(`${targetDays}日分のスケジュールを一括更新します。よろしいですか？`)) {
+            e.preventDefault();
+        }
+    });
+
+    // 初期計算
+    calculateDays();
+});
+</script>
+
+<style>
+.form-check-inline {
+    margin-right: 1rem;
+}
+
+.card {
+    transition: all 0.2s ease;
+}
+
+#previewCard {
+    border-left: 4px solid #0d6efd;
+}
+</style>
+{% endblock %}

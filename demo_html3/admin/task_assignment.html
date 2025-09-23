@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>タスク指示作成 - 社員専用</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/role-separation.css" rel="stylesheet">
+</head>
+<body data-user-role="employee">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="../index_manager.html">
+                <i class="fas fa-clipboard-list me-2"></i>タスク指示作成
+            </a>
+            <div class="ms-auto">
+                <span class="navbar-text me-3">社員専用</span>
+                <a href="../index_manager.html" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-home me-1"></i>ダッシュボード
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- タスク作成フォーム -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>新規タスク指示作成</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="taskCreationForm">
+                            <!-- 基本情報 -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="taskTitle" class="form-label">タスク名 <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="taskTitle" placeholder="例：新宿1K現地調査" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="taskPriority" class="form-label">優先度</label>
+                                    <select class="form-select" id="taskPriority">
+                                        <option value="normal">通常</option>
+                                        <option value="high">高</option>
+                                        <option value="urgent">緊急</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="taskDeadline" class="form-label">期限 <span class="text-danger">*</span></label>
+                                    <input type="datetime-local" class="form-control" id="taskDeadline" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="assignedStaff" class="form-label">担当派遣スタッフ</label>
+                                    <select class="form-select" id="assignedStaff">
+                                        <option value="">選択してください</option>
+                                        <option value="TEMP001">田中太郎</option>
+                                        <option value="TEMP002">佐藤次郎</option>
+                                        <option value="TEMP003">鈴木花子</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 案件情報（財務情報は非表示） -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="customerName" class="form-label">顧客名</label>
+                                    <input type="text" class="form-control" id="customerName" placeholder="例：○○不動産様">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="propertyAddress" class="form-label">物件住所</label>
+                                    <input type="text" class="form-control" id="propertyAddress" placeholder="例：東京都新宿区○○1-2-3">
+                                </div>
+                            </div>
+
+                            <!-- タスク詳細指示 -->
+                            <div class="mb-3">
+                                <label for="taskDescription" class="form-label">作業指示詳細 <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="taskDescription" rows="4" placeholder="具体的な作業内容を記載してください（決定権限を含まない実行タスクのみ）" required></textarea>
+                            </div>
+
+                            <!-- チェックリスト作成 -->
+                            <div class="mb-3">
+                                <label class="form-label">チェックリスト</label>
+                                <div id="checklistContainer">
+                                    <div class="input-group mb-2">
+                                        <input type="text" class="form-control" placeholder="チェック項目を入力">
+                                        <button class="btn btn-outline-danger" type="button" onclick="removeChecklistItem(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="addChecklistItem()">
+                                    <i class="fas fa-plus me-1"></i>項目追加
+                                </button>
+                            </div>
+
+                            <!-- 必要な資料・ツール -->
+                            <div class="mb-3">
+                                <label for="requiredTools" class="form-label">必要な資料・ツール</label>
+                                <textarea class="form-control" id="requiredTools" rows="2" placeholder="例：メジャー、カメラ、チェックシート"></textarea>
+                            </div>
+
+                            <!-- 注意事項 -->
+                            <div class="mb-3">
+                                <label for="specialInstructions" class="form-label">特記事項・注意点</label>
+                                <textarea class="form-control" id="specialInstructions" rows="3" placeholder="安全に関する注意点や特別な指示事項"></textarea>
+                            </div>
+
+                            <!-- 法令遵守確認 -->
+                            <div class="alert alert-warning mb-3">
+                                <h6><i class="fas fa-exclamation-triangle me-2"></i>法令遵守チェック</h6>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="complianceCheck1" required>
+                                    <label class="form-check-label" for="complianceCheck1">
+                                        このタスクに決定権限が含まれていないことを確認しました
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="complianceCheck2" required>
+                                    <label class="form-check-label" for="complianceCheck2">
+                                        財務情報が一切含まれていないことを確認しました
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="complianceCheck3" required>
+                                    <label class="form-check-label" for="complianceCheck3">
+                                        労働者派遣法第23条に準拠していることを確認しました
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 送信ボタン -->
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-outline-secondary me-md-2" onclick="saveDraft()">
+                                    <i class="fas fa-save me-1"></i>下書き保存
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane me-1"></i>タスク指示送信
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- サイドパネル -->
+            <div class="col-md-4">
+                <!-- テンプレート -->
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-templates me-2"></i>タスクテンプレート</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            <a href="#" class="list-group-item list-group-item-action" onclick="loadTemplate('survey')">
+                                <i class="fas fa-search me-2"></i>現地調査
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action" onclick="loadTemplate('cleaning')">
+                                <i class="fas fa-broom me-2"></i>清掃作業
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action" onclick="loadTemplate('contact')">
+                                <i class="fas fa-phone me-2"></i>連絡業務
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action" onclick="loadTemplate('inspection')">
+                                <i class="fas fa-clipboard-check me-2"></i>点検作業
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 利用可能スタッフ -->
+                <div class="card mt-3">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-users me-2"></i>利用可能スタッフ</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold">田中太郎</div>
+                                    <small class="text-muted">新宿1K現地調査中</small>
+                                </div>
+                                <span class="badge bg-warning">作業中</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold">佐藤次郎</div>
+                                    <small class="text-muted">渋谷オフィス清掃中</small>
+                                </div>
+                                <span class="badge bg-warning">作業中</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold">鈴木花子</div>
+                                    <small class="text-muted">待機中</small>
+                                </div>
+                                <span class="badge bg-success">利用可能</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 重要な注意事項 -->
+                <div class="card mt-3">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>重要な注意事項</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fas fa-ban text-danger me-2"></i>
+                                <small>決定権限を含むタスクは禁止</small>
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-ban text-danger me-2"></i>
+                                <small>財務情報の開示は禁止</small>
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-ban text-danger me-2"></i>
+                                <small>価格設定・交渉権限の付与は禁止</small>
+                            </li>
+                            <li class="mb-0">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>実行タスクのみ指示可能</small>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        // ページロード時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 役割制御の強制実行
+            if (typeof window.roleManager !== 'undefined') {
+                window.roleManager.enforceRoleSeparation();
+                window.roleManager.hideFinancialInfo();
+            }
+
+            // 法令遵守のための監査ログ記録
+            logAuditEvent('TASK_ASSIGNMENT_PAGE_ACCESS', 'task_assignment.html', 'TASK_MANAGEMENT');
+
+            // フォーム送信イベント
+            document.getElementById('taskCreationForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitTask();
+            });
+
+            // 初期チェックリスト項目追加
+            addChecklistItem();
+        });
+
+        function addChecklistItem() {
+            const container = document.getElementById('checklistContainer');
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'input-group mb-2';
+            itemDiv.innerHTML = `
+                <input type="text" class="form-control" placeholder="チェック項目を入力">
+                <button class="btn btn-outline-danger" type="button" onclick="removeChecklistItem(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+            container.appendChild(itemDiv);
+
+            logAuditEvent('CHECKLIST_ITEM_ADDED', 'New checklist item added to task', 'TASK_CREATION');
+        }
+
+        function removeChecklistItem(button) {
+            button.closest('.input-group').remove();
+            logAuditEvent('CHECKLIST_ITEM_REMOVED', 'Checklist item removed from task', 'TASK_CREATION');
+        }
+
+        function loadTemplate(templateType) {
+            const templates = {
+                survey: {
+                    title: '現地調査',
+                    description: `以下の項目について現地調査を実施してください：
+
+1. 物件の外観確認
+2. 設備の動作確認
+3. 写真撮影（各部屋・設備）
+4. チェックシートの記入
+5. 報告書の作成
+
+※判断や決定は行わず、事実の記録のみを行ってください。`,
+                    checklist: [
+                        '外観の確認と写真撮影',
+                        '各部屋の状況確認',
+                        '設備の動作確認',
+                        'チェックシートの記入',
+                        '写真のアップロード'
+                    ],
+                    tools: 'メジャー、カメラ、チェックシート、筆記用具'
+                },
+                cleaning: {
+                    title: '清掃作業',
+                    description: `指定された箇所の清掃作業を実施してください：
+
+1. 作業前の状況確認・写真撮影
+2. 清掃作業の実施
+3. 作業後の確認・写真撮影
+4. 清掃完了報告
+
+※作業手順に従って実施し、判断が必要な場合は社員に確認してください。`,
+                    checklist: [
+                        '作業前の状況確認',
+                        '必要な清掃用具の準備',
+                        '清掃作業の実施',
+                        '作業後の確認',
+                        '片付け・整理'
+                    ],
+                    tools: '清掃用具一式、カメラ、作業手順書'
+                },
+                contact: {
+                    title: '連絡業務',
+                    description: `指定されたテンプレートを使用して連絡業務を実施してください：
+
+1. 提供されたテンプレートの確認
+2. 必要情報の入力
+3. 内容の最終確認
+4. 送信・連絡実施
+5. 結果の報告
+
+※テンプレート以外の内容は追加せず、編集も行わないでください。`,
+                    checklist: [
+                        'テンプレートの確認',
+                        '連絡先の確認',
+                        '必要情報の入力',
+                        '内容の最終確認',
+                        '送信完了の報告'
+                    ],
+                    tools: 'PC、電話、指定テンプレート'
+                },
+                inspection: {
+                    title: '点検作業',
+                    description: `指定された設備・箇所の点検作業を実施してください：
+
+1. 点検チェックリストの確認
+2. 各項目の点検実施
+3. 結果の記録
+4. 異常発見時は即座に報告
+5. 点検完了報告
+
+※異常や判断が必要な事項は作業を停止し、すぐに社員に報告してください。`,
+                    checklist: [
+                        '点検対象の確認',
+                        '安全確認',
+                        '各項目の点検実施',
+                        '結果の記録',
+                        '点検完了報告'
+                    ],
+                    tools: '点検チェックシート、測定器具、カメラ、筆記用具'
+                }
+            };
+
+            const template = templates[templateType];
+            if (template) {
+                document.getElementById('taskTitle').value = template.title;
+                document.getElementById('taskDescription').value = template.description;
+                document.getElementById('requiredTools').value = template.tools;
+
+                // チェックリストを更新
+                const container = document.getElementById('checklistContainer');
+                container.innerHTML = '';
+                template.checklist.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'input-group mb-2';
+                    itemDiv.innerHTML = `
+                        <input type="text" class="form-control" value="${item}">
+                        <button class="btn btn-outline-danger" type="button" onclick="removeChecklistItem(this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+                    container.appendChild(itemDiv);
+                });
+
+                logAuditEvent('TEMPLATE_LOADED', `Template loaded: ${templateType}`, 'TASK_CREATION');
+            }
+        }
+
+        function submitTask() {
+            // フォームデータの収集
+            const taskData = {
+                title: document.getElementById('taskTitle').value,
+                priority: document.getElementById('taskPriority').value,
+                deadline: document.getElementById('taskDeadline').value,
+                assignedStaff: document.getElementById('assignedStaff').value,
+                customerName: document.getElementById('customerName').value,
+                propertyAddress: document.getElementById('propertyAddress').value,
+                description: document.getElementById('taskDescription').value,
+                requiredTools: document.getElementById('requiredTools').value,
+                specialInstructions: document.getElementById('specialInstructions').value,
+                checklist: Array.from(document.querySelectorAll('#checklistContainer input')).map(input => input.value).filter(value => value.trim() !== ''),
+                complianceChecks: {
+                    noDecisionAuthority: document.getElementById('complianceCheck1').checked,
+                    noFinancialInfo: document.getElementById('complianceCheck2').checked,
+                    lawCompliant: document.getElementById('complianceCheck3').checked
+                }
+            };
+
+            // 法令遵守チェック
+            if (!taskData.complianceChecks.noDecisionAuthority ||
+                !taskData.complianceChecks.noFinancialInfo ||
+                !taskData.complianceChecks.lawCompliant) {
+                alert('法令遵守チェックを全て確認してください。');
+                return;
+            }
+
+            // 禁止されたキーワードのチェック
+            const prohibitedWords = ['決定', '承認', '価格', '金額', '利益', 'コスト', '予算', '見積'];
+            const taskText = (taskData.title + ' ' + taskData.description + ' ' + taskData.specialInstructions).toLowerCase();
+
+            for (let word of prohibitedWords) {
+                if (taskText.includes(word)) {
+                    alert(`タスクに決定権限や財務情報に関する内容が含まれています: "${word}"\n\n労働者派遣法第23条により、これらの内容は派遣スタッフに指示できません。`);
+                    return;
+                }
+            }
+
+            // タスク作成実行
+            logAuditEvent('TASK_CREATED', JSON.stringify(taskData), 'TASK_MANAGEMENT');
+
+            alert('タスク指示が正常に作成されました。\n\n' +
+                  `タスク名: ${taskData.title}\n` +
+                  `担当者: ${taskData.assignedStaff || '未割当'}\n` +
+                  `期限: ${taskData.deadline}\n\n` +
+                  '法令遵守が確認され、派遣スタッフに適切な指示が送信されます。');
+
+            // フォームリセット
+            document.getElementById('taskCreationForm').reset();
+            document.getElementById('checklistContainer').innerHTML = '';
+            addChecklistItem();
+        }
+
+        function saveDraft() {
+            logAuditEvent('TASK_DRAFT_SAVED', 'Task draft saved', 'TASK_CREATION');
+            alert('下書きが保存されました。');
+        }
+
+        function logAuditEvent(action, details, category) {
+            const auditLog = {
+                timestamp: new Date().toISOString(),
+                action: action,
+                details: details,
+                category: category,
+                userId: 'current_user',
+                userRole: 'employee',
+                complianceRelevant: true
+            };
+
+            console.log('監査ログ記録:', auditLog);
+        }
+    </script>
+</body>
+</html>

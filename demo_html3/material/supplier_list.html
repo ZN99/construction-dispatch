@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>協力会社管理 - 建築派遣SaaS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item"><a class="nav-link" href="../index.html"><i class="fas fa-tachometer-alt me-2"></i>ダッシュボード</a></li>
+                        <li class="nav-item"><a class="nav-link" href="../projects/project_list.html"><i class="fas fa-project-diagram me-2"></i>案件管理</a></li>
+                        <li class="nav-item"><a class="nav-link" href="../surveys/survey_list.html"><i class="fas fa-clipboard-list me-2"></i>調査管理</a></li>
+                        <li class="nav-item"><a class="nav-link" href="../craftsman/craftsman_list.html"><i class="fas fa-users me-2"></i>職人管理</a></li>
+                        <li class="nav-item"><a class="nav-link active" href="supplier_list.html"><i class="fas fa-building me-2"></i>協力会社</a></li>
+                        <li class="nav-item"><a class="nav-link" href="../pricing/pricing_list.html"><i class="fas fa-yen-sign me-2"></i>見積管理</a></li>
+                    </ul>
+                </div>
+            </nav>
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">協力会社管理</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2" id="employee-actions">
+                            <a href="supplier_create.html" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>新規登録
+                            </a>
+                            <a href="supplier_workflow.html" class="btn btn-outline-info">
+                                <i class="fas fa-tasks me-1"></i>5ステップ管理
+                            </a>
+                            <a href="supplier_evaluation.html" class="btn btn-outline-warning">
+                                <i class="fas fa-star me-1"></i>評価管理
+                            </a>
+                        </div>
+                        <div class="btn-group me-2" id="temp-staff-actions" style="display: none;">
+                            <a href="supplier_contact.html" class="btn btn-success">
+                                <i class="fas fa-phone me-1"></i>連絡先一覧
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- 5ステップワークフロー管理 -->
+                <div class="card mb-4" id="workflow-overview">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tasks me-2"></i>5ステップワークフロー状況
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-2">
+                                <div class="workflow-step-summary">
+                                    <div class="step-number bg-primary text-white">1</div>
+                                    <h6>初期登録</h6>
+                                    <div class="step-count">3件</div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="workflow-step-summary">
+                                    <div class="step-number bg-warning text-white">2</div>
+                                    <h6>書類確認</h6>
+                                    <div class="step-count">2件</div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="workflow-step-summary">
+                                    <div class="step-number bg-info text-white">3</div>
+                                    <h6>試用評価</h6>
+                                    <div class="step-count">1件</div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="workflow-step-summary">
+                                    <div class="step-number bg-secondary text-white">4</div>
+                                    <h6>契約交渉</h6>
+                                    <div class="step-count">2件</div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="workflow-step-summary">
+                                    <div class="step-number bg-success text-white">5</div>
+                                    <h6>正式登録</h6>
+                                    <div class="step-count">12件</div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="workflow-step-summary">
+                                    <div class="step-number bg-danger text-white"><i class="fas fa-times"></i></div>
+                                    <h6>不承認</h6>
+                                    <div class="step-count">1件</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- フィルター・検索 -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">ステップフィルタ</label>
+                                <select class="form-select" id="stepFilter">
+                                    <option value="">全て</option>
+                                    <option value="1">初期登録</option>
+                                    <option value="2">書類確認</option>
+                                    <option value="3">試用評価</option>
+                                    <option value="4">契約交渉</option>
+                                    <option value="5">正式登録</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">業種フィルタ</label>
+                                <select class="form-select" id="categoryFilter">
+                                    <option value="">全て</option>
+                                    <option value="資材業者">資材業者</option>
+                                    <option value="工事業者">工事業者</option>
+                                    <option value="清掃業者">清掃業者</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">検索</label>
+                                <input type="text" class="form-control" id="searchInput" placeholder="会社名、連絡先で検索">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button class="btn btn-primary w-100" onclick="applyFilters()">
+                                    <i class="fas fa-search me-1"></i>検索
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 協力会社一覧テーブル -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-building me-2"></i>協力会社一覧
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="suppliersTable">
+                                <thead>
+                                    <tr>
+                                        <th>会社名</th>
+                                        <th>業種・サービス</th>
+                                        <th>ステップ</th>
+                                        <th id="evaluation-col">評価・料金</th>
+                                        <th>ステータス</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- JavaScriptで動的に生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- ページネーション -->
+                        <nav aria-label="協力会社ページネーション">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" tabindex="-1">前へ</a>
+                                </li>
+                                <li class="page-item active">
+                                    <a class="page-link" href="#">1</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">2</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">次へ</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 協力会社データ（サンプル）
+        const suppliers = [
+            {
+                id: 1,
+                name: "東京壁紙センター",
+                category: "資材業者",
+                services: ["壁紙", "クロス", "接着剤"],
+                step: 5,
+                stepName: "正式登録",
+                rating: 4.2,
+                costPerHour: 2500,
+                status: "稼働中",
+                contact: "03-1234-5678",
+                area: "東京23区"
+            },
+            {
+                id: 2,
+                name: "都市部水道資材",
+                category: "資材業者",
+                services: ["水道部品", "配管材料"],
+                step: 5,
+                stepName: "正式登録",
+                rating: 4.8,
+                costPerHour: 3200,
+                status: "稼働中",
+                contact: "03-2345-6789",
+                area: "関東全域"
+            },
+            {
+                id: 3,
+                name: "プロ工事株式会社",
+                category: "工事業者",
+                services: ["内装工事", "原状回復"],
+                step: 3,
+                stepName: "試用評価",
+                rating: 0,
+                costPerHour: 0,
+                status: "評価中",
+                contact: "03-3456-7890",
+                area: "東京、神奈川"
+            },
+            {
+                id: 4,
+                name: "クリーンワークス",
+                category: "清掃業者",
+                services: ["ハウスクリーニング", "原状回復清掃"],
+                step: 4,
+                stepName: "契約交渉",
+                rating: 4.3,
+                costPerHour: 2800,
+                status: "交渉中",
+                contact: "03-4567-8901",
+                area: "首都圏全域"
+            },
+            {
+                id: 5,
+                name: "新規建材商事",
+                category: "資材業者",
+                services: ["建築資材", "工具レンタル"],
+                step: 1,
+                stepName: "初期登録",
+                rating: 0,
+                costPerHour: 0,
+                status: "書類待ち",
+                contact: "03-5678-9012",
+                area: "東京都内"
+            },
+            {
+                id: 6,
+                name: "エリート清掃サービス",
+                category: "清掃業者",
+                services: ["業務用清掃", "特殊清掃"],
+                step: 2,
+                stepName: "書類確認",
+                rating: 0,
+                costPerHour: 0,
+                status: "確認中",
+                contact: "03-6789-0123",
+                area: "関東広域"
+            }
+        ];
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            applyRoleBasedUI();
+            renderSuppliersTable();
+            updateWorkflowCounts();
+        });
+
+        // 役割に基づくUI制御
+        function applyRoleBasedUI() {
+            const userRole = localStorage.getItem('userRole') || 'employee';
+
+            if (userRole === 'temporary_staff') {
+                // 派遣スタッフ用UI
+                document.getElementById('employee-actions').style.display = 'none';
+                document.getElementById('temp-staff-actions').style.display = 'block';
+                document.getElementById('workflow-overview').style.display = 'none';
+                document.getElementById('evaluation-col').style.display = 'none';
+
+                // タイトル変更
+                document.querySelector('h1').textContent = '協力会社連絡先';
+            } else {
+                // 社員用UI（デフォルト）
+                document.getElementById('employee-actions').style.display = 'block';
+                document.getElementById('temp-staff-actions').style.display = 'none';
+            }
+        }
+
+        // ワークフロー件数更新
+        function updateWorkflowCounts() {
+            const counts = suppliers.reduce((acc, supplier) => {
+                acc[supplier.step] = (acc[supplier.step] || 0) + 1;
+                return acc;
+            }, {});
+
+            // ステップ別件数を更新（実際のデータベースから取得する想定）
+            document.querySelectorAll('.step-count').forEach((element, index) => {
+                const stepNumber = index + 1;
+                if (stepNumber <= 5) {
+                    element.textContent = `${counts[stepNumber] || 0}件`;
+                } else {
+                    element.textContent = '1件'; // 不承認件数（固定）
+                }
+            });
+        }
+
+        // 協力会社テーブル描画
+        function renderSuppliersTable() {
+            const userRole = localStorage.getItem('userRole') || 'employee';
+            const tbody = document.querySelector('#suppliersTable tbody');
+            tbody.innerHTML = '';
+
+            suppliers.forEach(supplier => {
+                const row = createSupplierRow(supplier, userRole);
+                tbody.appendChild(row);
+            });
+        }
+
+        // 協力会社行作成
+        function createSupplierRow(supplier, userRole) {
+            const row = document.createElement('tr');
+
+            // 会社名
+            const nameCell = document.createElement('td');
+            nameCell.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="company-avatar bg-${getStepColor(supplier.step)} text-white me-3">
+                        ${supplier.name.charAt(0)}
+                    </div>
+                    <div>
+                        <div class="fw-bold">${supplier.name}</div>
+                        <small class="text-muted">${supplier.contact}</small>
+                    </div>
+                </div>
+            `;
+            row.appendChild(nameCell);
+
+            // 業種・サービス
+            const servicesCell = document.createElement('td');
+            const serviceBadges = supplier.services.map(service =>
+                `<span class="badge bg-light text-dark me-1">${service}</span>`
+            ).join('');
+            servicesCell.innerHTML = `
+                <div class="mb-1"><strong>${supplier.category}</strong></div>
+                ${serviceBadges}
+            `;
+            row.appendChild(servicesCell);
+
+            // ステップ
+            const stepCell = document.createElement('td');
+            stepCell.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="step-indicator bg-${getStepColor(supplier.step)} text-white me-2">
+                        ${supplier.step}
+                    </div>
+                    <div>
+                        <div class="fw-bold">${supplier.stepName}</div>
+                        <small class="text-muted">ステップ${supplier.step}/5</small>
+                    </div>
+                </div>
+            `;
+            row.appendChild(stepCell);
+
+            // 評価・料金（役割により表示制御）
+            const evaluationCell = document.createElement('td');
+            if (userRole === 'employee') {
+                if (supplier.step >= 4) {
+                    evaluationCell.innerHTML = `
+                        <div class="rating-display">
+                            ${generateStars(supplier.rating)} ${supplier.rating || '未評価'}
+                        </div>
+                        <small class="text-muted">¥${supplier.costPerHour.toLocaleString()}/時</small>
+                    `;
+                } else {
+                    evaluationCell.innerHTML = `
+                        <span class="text-muted">評価待ち</span>
+                    `;
+                }
+            } else {
+                evaluationCell.style.display = 'none';
+            }
+            row.appendChild(evaluationCell);
+
+            // ステータス
+            const statusCell = document.createElement('td');
+            const statusClass = getStatusClass(supplier.status);
+            statusCell.innerHTML = `
+                <span class="badge bg-${statusClass}">${supplier.status}</span>
+                <br><small class="text-muted">${supplier.area}</small>
+            `;
+            row.appendChild(statusCell);
+
+            // 操作
+            const actionCell = document.createElement('td');
+            if (userRole === 'employee') {
+                actionCell.innerHTML = `
+                    <div class="btn-group btn-group-sm">
+                        <a href="supplier_detail.html?id=${supplier.id}" class="btn btn-outline-primary">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        ${supplier.step < 5 ?
+                            `<button class="btn btn-outline-success" onclick="advanceStep(${supplier.id})">
+                                <i class="fas fa-arrow-right"></i>
+                            </button>` :
+                            `<button class="btn btn-outline-warning" onclick="showEvaluation(${supplier.id})">
+                                <i class="fas fa-star"></i>
+                            </button>`
+                        }
+                        <button class="btn btn-outline-info" onclick="showWorkflowHistory(${supplier.id})">
+                            <i class="fas fa-history"></i>
+                        </button>
+                    </div>
+                `;
+            } else {
+                actionCell.innerHTML = `
+                    <a href="tel:${supplier.contact.replace(/-/g, '')}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-phone me-1"></i>電話
+                    </a>
+                `;
+            }
+            row.appendChild(actionCell);
+
+            return row;
+        }
+
+        // ステップカラー取得
+        function getStepColor(step) {
+            const colors = {
+                1: 'primary',
+                2: 'warning',
+                3: 'info',
+                4: 'secondary',
+                5: 'success'
+            };
+            return colors[step] || 'secondary';
+        }
+
+        // ステータスクラス取得
+        function getStatusClass(status) {
+            const statusMap = {
+                '稼働中': 'success',
+                '評価中': 'info',
+                '交渉中': 'warning',
+                '書類待ち': 'secondary',
+                '確認中': 'primary'
+            };
+            return statusMap[status] || 'secondary';
+        }
+
+        // 星評価生成
+        function generateStars(rating) {
+            if (!rating) return '';
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating % 1 !== 0;
+            let stars = '';
+
+            for (let i = 0; i < fullStars; i++) {
+                stars += '<i class="fas fa-star text-warning"></i>';
+            }
+
+            if (hasHalfStar) {
+                stars += '<i class="fas fa-star-half-alt text-warning"></i>';
+            }
+
+            return stars;
+        }
+
+        // ステップ進行（社員専用）
+        function advanceStep(supplierId) {
+            const supplier = suppliers.find(s => s.id === supplierId);
+            if (!supplier) return;
+
+            const stepNames = ['', '初期登録', '書類確認', '試用評価', '契約交渉', '正式登録'];
+            const nextStep = supplier.step + 1;
+
+            if (nextStep <= 5) {
+                const confirmed = confirm(`${supplier.name}を次のステップ「${stepNames[nextStep]}」に進めますか？`);
+                if (confirmed) {
+                    supplier.step = nextStep;
+                    supplier.stepName = stepNames[nextStep];
+
+                    if (nextStep === 5) {
+                        supplier.status = '稼働中';
+                    }
+
+                    renderSuppliersTable();
+                    updateWorkflowCounts();
+
+                    // 証跡記録（Phase 4で実装予定）
+                    console.log(`証跡: ${supplier.name}がステップ${nextStep}に進行しました`);
+                }
+            }
+        }
+
+        // 評価表示（社員専用）
+        function showEvaluation(supplierId) {
+            const supplier = suppliers.find(s => s.id === supplierId);
+            if (!supplier) return;
+
+            alert(`${supplier.name}の評価詳細:\n\n評価: ${supplier.rating}/5.0\n時給: ¥${supplier.costPerHour.toLocaleString()}\nエリア: ${supplier.area}\n\n※実際の評価管理画面に遷移します`);
+        }
+
+        // ワークフロー履歴表示
+        function showWorkflowHistory(supplierId) {
+            const supplier = suppliers.find(s => s.id === supplierId);
+            if (!supplier) return;
+
+            alert(`${supplier.name}のワークフロー履歴:\n\n現在: ステップ${supplier.step} - ${supplier.stepName}\n\n※実際の履歴画面に遷移します`);
+        }
+
+        // フィルタ適用
+        function applyFilters() {
+            const stepFilter = document.getElementById('stepFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            const filteredSuppliers = suppliers.filter(supplier => {
+                const matchesStep = !stepFilter || supplier.step.toString() === stepFilter;
+                const matchesCategory = !categoryFilter || supplier.category === categoryFilter;
+                const matchesSearch = !searchTerm ||
+                    supplier.name.toLowerCase().includes(searchTerm) ||
+                    supplier.contact.includes(searchTerm);
+
+                return matchesStep && matchesCategory && matchesSearch;
+            });
+
+            renderFilteredSuppliers(filteredSuppliers);
+        }
+
+        function renderFilteredSuppliers(filteredSuppliers) {
+            const userRole = localStorage.getItem('userRole') || 'employee';
+            const tbody = document.querySelector('#suppliersTable tbody');
+            tbody.innerHTML = '';
+
+            filteredSuppliers.forEach(supplier => {
+                const row = createSupplierRow(supplier, userRole);
+                tbody.appendChild(row);
+            });
+        }
+    </script>
+    <style>
+        .workflow-step-summary {
+            padding: 20px 10px;
+        }
+        .step-number {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0 auto 10px;
+        }
+        .step-count {
+            font-size: 18px;
+            font-weight: bold;
+            color: #495057;
+        }
+        .company-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .step-indicator {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .rating-display .fas {
+            color: #ffc107;
+        }
+        .workflow-step-summary h6 {
+            margin: 10px 0 5px;
+            font-size: 14px;
+        }
+        @media (max-width: 768px) {
+            .workflow-step-summary {
+                padding: 15px 5px;
+            }
+            .step-number {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</body>
+</html>

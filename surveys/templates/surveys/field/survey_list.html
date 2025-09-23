@@ -1,0 +1,217 @@
+{% extends 'surveys/field/base.html' %}
+
+{% block title %}調査一覧 - 現場調査システム{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- ヘッダー -->
+        <div class="col-12 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="text-success mb-0">
+                    <i class="fas fa-list"></i> 担当調査一覧
+                </h2>
+                <div class="text-muted">
+                    {{ user.first_name }}さんの調査リスト
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 統計カード -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-light border-success h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-list-alt fa-2x text-success mb-2"></i>
+                    <h4 class="card-title text-success">{{ stats.total }}</h4>
+                    <p class="card-text">総調査数</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-light border-warning h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                    <h4 class="card-title text-warning">{{ stats.scheduled }}</h4>
+                    <p class="card-text">予定</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-light border-info h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-play fa-2x text-info mb-2"></i>
+                    <h4 class="card-title text-info">{{ stats.in_progress }}</h4>
+                    <p class="card-text">実施中</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-light border-success h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                    <h4 class="card-title text-success">{{ stats.completed }}</h4>
+                    <p class="card-text">完了</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- フィルター -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">ステータス</label>
+                            <select name="status" class="form-select">
+                                <option value="">全て</option>
+                                <option value="scheduled" {% if request.GET.status == 'scheduled' %}selected{% endif %}>予定</option>
+                                <option value="in_progress" {% if request.GET.status == 'in_progress' %}selected{% endif %}>実施中</option>
+                                <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>完了</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-filter"></i> フィルター
+                                </button>
+                                <a href="{% url 'surveys:field_survey_list' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i> クリア
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 調査一覧 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clipboard-list"></i> 調査リスト
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if surveys %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>調査日時</th>
+                                        <th>現場</th>
+                                        <th>ステータス</th>
+                                        <th class="text-center">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for survey in surveys %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">{{ survey.scheduled_date|date:"Y/m/d" }}</div>
+                                            {% if survey.scheduled_start_time %}
+                                                <small class="text-muted">{{ survey.scheduled_start_time|time:"H:i" }}〜</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">{{ survey.project.site_name }}</div>
+                                            <small class="text-muted">{{ survey.project.site_address }}</small>
+                                        </td>
+                                        <td>
+                                            {% if survey.status == 'scheduled' %}
+                                                <span class="badge bg-warning text-dark">予定</span>
+                                            {% elif survey.status == 'in_progress' %}
+                                                <span class="badge bg-info">実施中</span>
+                                            {% elif survey.status == 'completed' %}
+                                                <span class="badge bg-success">完了</span>
+                                            {% elif survey.status == 'cancelled' %}
+                                                <span class="badge bg-secondary">キャンセル</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if survey.status == 'scheduled' %}
+                                                <a href="{% url 'surveys:survey_start' survey.pk %}" class="btn btn-success btn-sm">
+                                                    <i class="fas fa-play"></i> 開始
+                                                </a>
+                                            {% elif survey.status == 'in_progress' %}
+                                                <a href="{% url 'surveys:survey_form' survey.pk %}" class="btn btn-info btn-sm">
+                                                    <i class="fas fa-edit"></i> 記録
+                                                </a>
+                                            {% elif survey.status == 'completed' %}
+                                                <a href="{% url 'surveys:survey_detail' survey.pk %}" class="btn btn-outline-success btn-sm">
+                                                    <i class="fas fa-eye"></i> 詳細
+                                                </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- ページネーション -->
+                        {% if is_paginated %}
+                        <div class="card-footer">
+                            <nav aria-label="調査一覧ページネーション">
+                                <ul class="pagination justify-content-center mb-0">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">最初</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">前</a>
+                                        </li>
+                                    {% endif %}
+
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                                    </li>
+
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">次</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">最後</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">調査がありません</h5>
+                            <p class="text-muted">現在、担当している調査はありません。</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // アクティブなナビゲーション項目をハイライト
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+
+    navLinks.forEach(function(link) {
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+        }
+    });
+});
+</script>
+{% endblock %}

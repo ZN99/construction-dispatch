@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>調査済み物件一覧 - 建築派遣SaaS</title>
+    <link rel="stylesheet" href="../css/simple_theme.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- 既存スタイル互換性のため一部保持 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .status-tabs {
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+        .status-tab {
+            display: inline-block;
+            padding: 12px 20px;
+            margin-right: 10px;
+            background: #f8f9fa;
+            color: #6c757d;
+            text-decoration: none;
+            border-radius: 10px 10px 0 0;
+            border: 2px solid #e9ecef;
+            border-bottom: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .status-tab.active {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+        .status-tab:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+        .status-tab.active:hover {
+            background: #28a745;
+            color: white;
+        }
+        .projects-table {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .table th {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-weight: 600;
+        }
+        .table td {
+            padding: 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .table tbody tr:hover {
+            background: rgba(40, 167, 69, 0.05);
+        }
+        .project-row {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .project-row:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .status-survey-completed {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        .status-material-input {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        .status-auto-quote {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        .status-adjustment {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        .status-completed {
+            background: #e4e9f2;
+            color: #3f51b5;
+        }
+        .construction-type-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 14px;
+            color: white;
+        }
+        .icon-kitchen { background: #ff9800; }
+        .icon-bathroom { background: #2196f3; }
+        .icon-flooring { background: #795548; }
+        .icon-wallpaper { background: #e91e63; }
+        .icon-electrical { background: #ffc107; color: #333; }
+        .icon-plumbing { background: #607d8b; }
+        .icon-custom { background: #9c27b0; }
+        .action-btn {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .search-section {
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .summary-cards {
+            margin: 20px 0;
+        }
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+        .summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .card-total { border-left-color: #17a2b8; }
+        .card-pending { border-left-color: #ffc107; }
+        .card-progress { border-left-color: #28a745; }
+        .card-completed { border-left-color: #6f42c1; }
+    </style>
+</head>
+<body>
+    <div class="header-section">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-clipboard-check"></i> 調査済み物件一覧</h2>
+                    <p class="mb-0">現地調査完了案件の管理・進捗確認</p>
+                </div>
+                <div>
+                    <span class="badge bg-light text-dark fs-6" id="userRoleBadge">アクセス権限</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Summary Cards -->
+        <div class="row summary-cards">
+            <div class="col-md-3">
+                <div class="summary-card card-total">
+                    <h3 class="text-info mb-2" id="totalProjects">15</h3>
+                    <h6>総案件数</h6>
+                    <small class="text-muted">調査完了済み</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card card-pending">
+                    <h3 class="text-warning mb-2" id="pendingProjects">8</h3>
+                    <h6>材料費入力待ち</h6>
+                    <small class="text-muted">次のアクション必要</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card card-progress">
+                    <h3 class="text-success mb-2" id="progressProjects">5</h3>
+                    <h6>処理進行中</h6>
+                    <small class="text-muted">見積作成中</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card card-completed">
+                    <h3 class="text-primary mb-2" id="completedProjects">2</h3>
+                    <h6>見積完了</h6>
+                    <small class="text-muted">顧客送信済み</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search & Filter Section -->
+        <div class="search-section">
+            <div class="row align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">案件検索</label>
+                    <input type="text" class="form-control" id="searchInput" placeholder="案件番号・顧客名で検索">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">工事種別</label>
+                    <select class="form-control" id="constructionTypeFilter">
+                        <option value="">すべて</option>
+                        <option value="kitchen">キッチンリフォーム</option>
+                        <option value="bathroom">バスルーム改修</option>
+                        <option value="flooring">フローリング張替え</option>
+                        <option value="wallpaper">壁紙貼替え</option>
+                        <option value="electrical">電気工事</option>
+                        <option value="plumbing">配管工事</option>
+                        <option value="custom">その他</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">調査日</label>
+                    <input type="date" class="form-control" id="dateFilter">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">担当者</label>
+                    <select class="form-control" id="surveyorFilter">
+                        <option value="">すべて</option>
+                        <option value="派遣太郎">派遣太郎</option>
+                        <option value="調査次郎">調査次郎</option>
+                        <option value="現場三郎">現場三郎</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">並び順</label>
+                    <select class="form-control" id="sortOrder">
+                        <option value="date_desc">調査日（新しい順）</option>
+                        <option value="date_asc">調査日（古い順）</option>
+                        <option value="status">ステータス順</option>
+                        <option value="type">工事種別順</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Tabs -->
+        <div class="filter-section">
+            <div class="status-tabs">
+                <a class="status-tab active" data-status="all" onclick="switchStatusTab('all')">
+                    すべて <span class="badge bg-secondary ms-1" id="tabAll">15</span>
+                </a>
+                <a class="status-tab" data-status="material_input" onclick="switchStatusTab('material_input')">
+                    材料費入力待ち <span class="badge bg-warning ms-1" id="tabMaterial">8</span>
+                </a>
+                <a class="status-tab" data-status="auto_quote" onclick="switchStatusTab('auto_quote')">
+                    自動見積中 <span class="badge bg-info ms-1" id="tabAuto">3</span>
+                </a>
+                <a class="status-tab" data-status="adjustment" onclick="switchStatusTab('adjustment')">
+                    調整中 <span class="badge bg-success ms-1" id="tabAdjust">2</span>
+                </a>
+                <a class="status-tab" data-status="completed" onclick="switchStatusTab('completed')">
+                    完了 <span class="badge bg-primary ms-1" id="tabCompleted">2</span>
+                </a>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="text-muted">表示件数: </span>
+                    <select class="form-select d-inline-block w-auto" id="itemsPerPage">
+                        <option value="10">10件</option>
+                        <option value="25" selected>25件</option>
+                        <option value="50">50件</option>
+                        <option value="100">すべて</option>
+                    </select>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-success" onclick="startNewSurvey()">
+                        <i class="bi bi-plus"></i> 新規調査開始
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projects Table -->
+        <div class="projects-table">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 12%">案件番号</th>
+                        <th style="width: 15%">顧客名</th>
+                        <th style="width: 12%">調査日時</th>
+                        <th style="width: 18%">工事種別</th>
+                        <th style="width: 12%">調査担当者</th>
+                        <th style="width: 15%">ステータス</th>
+                        <th style="width: 16%">アクション</th>
+                    </tr>
+                </thead>
+                <tbody id="projectsTableBody">
+                    <!-- Projects will be populated here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <div class="text-muted">
+                <span id="pageInfo">1-25 / 25件中</span>
+            </div>
+            <nav>
+                <ul class="pagination" id="pagination">
+                    <!-- Pagination will be populated here -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Project Detail Modal -->
+    <div class="modal fade" id="projectDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-eye"></i> 案件詳細</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="projectDetailContent">
+                    <!-- Project details will be populated here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                    <button type="button" class="btn btn-primary" id="proceedToNextStep">次のステップへ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/simple_ui.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/quotation_workflow.js"></script>
+    <script>
+        class SurveyedProjectsList {
+            constructor() {
+                this.projects = [];
+                this.filteredProjects = [];
+                this.currentStatus = 'all';
+                this.currentPage = 1;
+                this.itemsPerPage = 25;
+                this.workflow = new QuotationWorkflow();
+                this.initializeApp();
+            }
+
+            initializeApp() {
+                this.validateAccess();
+                this.loadProjectsData();
+                this.setupEventListeners();
+                this.updateSummaryCards();
+                this.filterAndDisplayProjects();
+            }
+
+            validateAccess() {
+                const userRole = this.workflow.getUserRole();
+                if (!['employee', 'temporary'].includes(userRole)) {
+                    alert('アクセス権限がありません。');
+                    window.location.href = '../index_manager.html';
+                    return;
+                }
+
+                // Display user role
+                const badge = document.getElementById('userRoleBadge');
+                if (userRole === 'employee') {
+                    badge.textContent = '社員';
+                    badge.className = 'badge bg-success fs-6';
+                } else {
+                    badge.textContent = '派遣スタッフ';
+                    badge.className = 'badge bg-info fs-6';
+                }
+            }
+
+            loadProjectsData() {
+                // Load projects from localStorage and generate sample data
+                const storedProjects = JSON.parse(localStorage.getItem('completedConstructionSurveys') || '[]');
+                const sampleProjects = this.generateSampleProjects();
+
+                this.projects = [...storedProjects, ...sampleProjects];
+                this.projects.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+            }
+
+            generateSampleProjects() {
+                const customers = ['田中建設(株)', '山田不動産', '佐藤マンション管理', '鈴木工務店', '高橋ハウジング', '渡辺建築', '伊藤住宅', '中村不動産', '小林建設', '加藤工業'];
+                const surveyors = ['派遣太郎', '調査次郎', '現場三郎'];
+                const types = ['kitchen', 'bathroom', 'flooring', 'wallpaper', 'electrical', 'plumbing'];
+                const statuses = ['material_input', 'auto_quote', 'adjustment', 'completed'];
+
+                const projects = [];
+                for (let i = 1; i <= 15; i++) {
+                    const completedDate = new Date();
+                    completedDate.setDate(completedDate.getDate() - Math.floor(Math.random() * 30));
+
+                    projects.push({
+                        surveyId: `PRJ${String(i).padStart(4, '0')}`,
+                        projectNumber: `2024-${String(i).padStart(3, '0')}`,
+                        customerName: customers[Math.floor(Math.random() * customers.length)],
+                        constructionType: types[Math.floor(Math.random() * types.length)],
+                        constructionTypeName: this.getConstructionTypeName(types[Math.floor(Math.random() * types.length)]),
+                        surveyor: surveyors[Math.floor(Math.random() * surveyors.length)],
+                        completedAt: completedDate.toISOString(),
+                        status: i <= 8 ? 'material_input' : statuses[Math.floor(Math.random() * statuses.length)],
+                        urgency: Math.random() > 0.7 ? '緊急' : '通常',
+                        photos: Array(Math.floor(Math.random() * 5) + 3).fill().map((_, idx) => ({
+                            dataUrl: `placeholder_photo_${idx}.jpg`,
+                            timestamp: completedDate.toISOString()
+                        })),
+                        measurements: this.generateSampleMeasurements(types[Math.floor(Math.random() * types.length)]),
+                        workScope: this.generateSampleWorkScope(types[Math.floor(Math.random() * types.length)])
+                    });
+                }
+
+                return projects;
+            }
+
+            getConstructionTypeName(type) {
+                const names = {
+                    kitchen: 'キッチンリフォーム',
+                    bathroom: 'バスルーム改修',
+                    flooring: 'フローリング張替え',
+                    wallpaper: '壁紙貼替え',
+                    electrical: '電気工事',
+                    plumbing: '配管工事',
+                    custom: 'その他カスタム工事'
+                };
+                return names[type] || type;
+            }
+
+            generateSampleMeasurements(type) {
+                const measurements = {};
+                switch (type) {
+                    case 'kitchen':
+                        measurements.kitchen_width = 2550;
+                        measurements.kitchen_depth = 650;
+                        measurements.kitchen_height = 2400;
+                        break;
+                    case 'bathroom':
+                        measurements.bathroom_width = 1600;
+                        measurements.bathroom_depth = 1600;
+                        measurements.bathroom_height = 2200;
+                        break;
+                    case 'flooring':
+                        measurements.flooring_width = 3600;
+                        measurements.flooring_depth = 5400;
+                        measurements.flooring_area = 19.44;
+                        break;
+                }
+                return measurements;
+            }
+
+            generateSampleWorkScope(type) {
+                const scopes = {
+                    kitchen: ['システムキッチン本体交換', 'シンク・水栓交換'],
+                    bathroom: ['ユニットバス交換', '給排水配管工事'],
+                    flooring: ['既存床材撤去', '新規床材施工']
+                };
+                return (scopes[type] || []).map(name => ({ name }));
+            }
+
+            setupEventListeners() {
+                // Search and filter
+                document.getElementById('searchInput').addEventListener('input', () => {
+                    this.filterAndDisplayProjects();
+                });
+
+                ['constructionTypeFilter', 'dateFilter', 'surveyorFilter', 'sortOrder'].forEach(id => {
+                    document.getElementById(id).addEventListener('change', () => {
+                        this.filterAndDisplayProjects();
+                    });
+                });
+
+                // Items per page
+                document.getElementById('itemsPerPage').addEventListener('change', (e) => {
+                    this.itemsPerPage = parseInt(e.target.value);
+                    this.currentPage = 1;
+                    this.filterAndDisplayProjects();
+                });
+            }
+
+            switchStatusTab(status) {
+                // Update active tab
+                document.querySelectorAll('.status-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelector(`[data-status="${status}"]`).classList.add('active');
+
+                this.currentStatus = status;
+                this.currentPage = 1;
+                this.filterAndDisplayProjects();
+            }
+
+            filterAndDisplayProjects() {
+                let filtered = [...this.projects];
+
+                // Status filter
+                if (this.currentStatus !== 'all') {
+                    filtered = filtered.filter(project => project.status === this.currentStatus);
+                }
+
+                // Search filter
+                const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+                if (searchTerm) {
+                    filtered = filtered.filter(project =>
+                        project.projectNumber.toLowerCase().includes(searchTerm) ||
+                        project.customerName.toLowerCase().includes(searchTerm) ||
+                        project.constructionTypeName.toLowerCase().includes(searchTerm)
+                    );
+                }
+
+                // Construction type filter
+                const typeFilter = document.getElementById('constructionTypeFilter').value;
+                if (typeFilter) {
+                    filtered = filtered.filter(project => project.constructionType === typeFilter);
+                }
+
+                // Date filter
+                const dateFilter = document.getElementById('dateFilter').value;
+                if (dateFilter) {
+                    filtered = filtered.filter(project => {
+                        const projectDate = new Date(project.completedAt).toISOString().split('T')[0];
+                        return projectDate === dateFilter;
+                    });
+                }
+
+                // Surveyor filter
+                const surveyorFilter = document.getElementById('surveyorFilter').value;
+                if (surveyorFilter) {
+                    filtered = filtered.filter(project => project.surveyor === surveyorFilter);
+                }
+
+                // Sort
+                const sortOrder = document.getElementById('sortOrder').value;
+                this.sortProjects(filtered, sortOrder);
+
+                this.filteredProjects = filtered;
+                this.displayProjects();
+                this.updatePagination();
+            }
+
+            sortProjects(projects, sortOrder) {
+                switch (sortOrder) {
+                    case 'date_desc':
+                        projects.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+                        break;
+                    case 'date_asc':
+                        projects.sort((a, b) => new Date(a.completedAt) - new Date(b.completedAt));
+                        break;
+                    case 'status':
+                        projects.sort((a, b) => a.status.localeCompare(b.status));
+                        break;
+                    case 'type':
+                        projects.sort((a, b) => a.constructionTypeName.localeCompare(b.constructionTypeName));
+                        break;
+                }
+            }
+
+            displayProjects() {
+                const tbody = document.getElementById('projectsTableBody');
+                const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+                const endIndex = this.itemsPerPage === 100 ? this.filteredProjects.length : startIndex + this.itemsPerPage;
+                const pageProjects = this.filteredProjects.slice(startIndex, endIndex);
+
+                tbody.innerHTML = pageProjects.map(project => `
+                    <tr class="project-row" onclick="showProjectDetail('${project.surveyId}')">
+                        <td>
+                            <strong>${project.projectNumber}</strong>
+                            ${project.urgency === '緊急' ? '<br><span class="badge bg-danger">緊急</span>' : ''}
+                        </td>
+                        <td>${project.customerName}</td>
+                        <td>
+                            <div>${new Date(project.completedAt).toLocaleDateString('ja-JP')}</div>
+                            <small class="text-muted">${new Date(project.completedAt).toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'})}</small>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="construction-type-icon icon-${project.constructionType}">
+                                    <i class="bi bi-${this.getConstructionTypeIcon(project.constructionType)}"></i>
+                                </div>
+                                <div>
+                                    <div>${project.constructionTypeName}</div>
+                                    <small class="text-muted">${project.photos?.length || 0}枚の写真</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${project.surveyor}</td>
+                        <td>
+                            <span class="status-badge status-${project.status}">
+                                ${this.getStatusLabel(project.status)}
+                            </span>
+                        </td>
+                        <td>
+                            ${this.getActionButton(project)}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            getConstructionTypeIcon(type) {
+                const icons = {
+                    kitchen: 'house-door',
+                    bathroom: 'droplet',
+                    flooring: 'grid-3x3',
+                    wallpaper: 'palette',
+                    electrical: 'lightning',
+                    plumbing: 'wrench',
+                    custom: 'tools'
+                };
+                return icons[type] || 'tools';
+            }
+
+            getStatusLabel(status) {
+                const labels = {
+                    material_input: '材料費入力待ち',
+                    auto_quote: '自動見積中',
+                    adjustment: '社員調整中',
+                    completed: '見積完了'
+                };
+                return labels[status] || status;
+            }
+
+            getActionButton(project) {
+                const userRole = this.workflow.getUserRole();
+
+                switch (project.status) {
+                    case 'material_input':
+                        return `<a href="material_procurement.html?id=${project.surveyId}" class="action-btn btn btn-warning btn-sm">
+                            <i class="bi bi-calculator"></i> 材料費入力
+                        </a>`;
+                    case 'auto_quote':
+                        return `<a href="auto_quotation.html?id=${project.surveyId}" class="action-btn btn btn-info btn-sm">
+                            <i class="bi bi-gear"></i> 自動見積確認
+                        </a>`;
+                    case 'adjustment':
+                        if (userRole === 'employee') {
+                            return `<a href="quotation_adjustment.html?id=${project.surveyId}" class="action-btn btn btn-success btn-sm">
+                                <i class="bi bi-sliders"></i> 見積調整
+                            </a>`;
+                        } else {
+                            return `<span class="text-muted">社員による調整中</span>`;
+                        }
+                    case 'completed':
+                        return `<a href="quotation_generated.html?id=${project.surveyId}" class="action-btn btn btn-primary btn-sm">
+                            <i class="bi bi-file-earmark-text"></i> 見積確認
+                        </a>`;
+                    default:
+                        return `<span class="text-muted">-</span>`;
+                }
+            }
+
+            updateSummaryCards() {
+                const total = this.projects.length;
+                const pending = this.projects.filter(p => p.status === 'material_input').length;
+                const progress = this.projects.filter(p => ['auto_quote', 'adjustment'].includes(p.status)).length;
+                const completed = this.projects.filter(p => p.status === 'completed').length;
+
+                document.getElementById('totalProjects').textContent = total;
+                document.getElementById('pendingProjects').textContent = pending;
+                document.getElementById('progressProjects').textContent = progress;
+                document.getElementById('completedProjects').textContent = completed;
+
+                // Update tab badges
+                document.getElementById('tabAll').textContent = total;
+                document.getElementById('tabMaterial').textContent = pending;
+                document.getElementById('tabAuto').textContent = this.projects.filter(p => p.status === 'auto_quote').length;
+                document.getElementById('tabAdjust').textContent = this.projects.filter(p => p.status === 'adjustment').length;
+                document.getElementById('tabCompleted').textContent = completed;
+            }
+
+            updatePagination() {
+                const totalPages = this.itemsPerPage === 100 ? 1 : Math.ceil(this.filteredProjects.length / this.itemsPerPage);
+                const startItem = (this.currentPage - 1) * this.itemsPerPage + 1;
+                const endItem = Math.min(this.currentPage * this.itemsPerPage, this.filteredProjects.length);
+
+                document.getElementById('pageInfo').textContent =
+                    `${startItem}-${endItem} / ${this.filteredProjects.length}件中`;
+
+                const pagination = document.getElementById('pagination');
+                let paginationHTML = '';
+
+                if (totalPages > 1) {
+                    // Previous button
+                    paginationHTML += `
+                        <li class="page-item ${this.currentPage === 1 ? 'disabled' : ''}">
+                            <a class="page-link" href="#" onclick="app.changePage(${this.currentPage - 1})">前へ</a>
+                        </li>
+                    `;
+
+                    // Page numbers
+                    for (let i = 1; i <= totalPages; i++) {
+                        if (i === this.currentPage || i === 1 || i === totalPages ||
+                            (i >= this.currentPage - 1 && i <= this.currentPage + 1)) {
+                            paginationHTML += `
+                                <li class="page-item ${i === this.currentPage ? 'active' : ''}">
+                                    <a class="page-link" href="#" onclick="app.changePage(${i})">${i}</a>
+                                </li>
+                            `;
+                        } else if (i === this.currentPage - 2 || i === this.currentPage + 2) {
+                            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                        }
+                    }
+
+                    // Next button
+                    paginationHTML += `
+                        <li class="page-item ${this.currentPage === totalPages ? 'disabled' : ''}">
+                            <a class="page-link" href="#" onclick="app.changePage(${this.currentPage + 1})">次へ</a>
+                        </li>
+                    `;
+                }
+
+                pagination.innerHTML = paginationHTML;
+            }
+
+            changePage(page) {
+                const totalPages = Math.ceil(this.filteredProjects.length / this.itemsPerPage);
+                if (page >= 1 && page <= totalPages && page !== this.currentPage) {
+                    this.currentPage = page;
+                    this.displayProjects();
+                    this.updatePagination();
+                }
+            }
+
+            showProjectDetail(surveyId) {
+                const project = this.projects.find(p => p.surveyId === surveyId);
+                if (!project) return;
+
+                const modalContent = document.getElementById('projectDetailContent');
+                modalContent.innerHTML = this.generateProjectDetailHTML(project);
+
+                const modal = new bootstrap.Modal(document.getElementById('projectDetailModal'));
+                modal.show();
+
+                // Update proceed button
+                const proceedBtn = document.getElementById('proceedToNextStep');
+                const nextStepUrl = this.getNextStepUrl(project);
+                if (nextStepUrl) {
+                    proceedBtn.style.display = 'block';
+                    proceedBtn.onclick = () => {
+                        window.location.href = nextStepUrl;
+                    };
+                } else {
+                    proceedBtn.style.display = 'none';
+                }
+            }
+
+            generateProjectDetailHTML(project) {
+                return `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>基本情報</h6>
+                            <table class="table table-sm">
+                                <tr><td>案件番号</td><td>${project.projectNumber}</td></tr>
+                                <tr><td>顧客名</td><td>${project.customerName}</td></tr>
+                                <tr><td>工事種別</td><td>${project.constructionTypeName}</td></tr>
+                                <tr><td>調査日時</td><td>${new Date(project.completedAt).toLocaleString('ja-JP')}</td></tr>
+                                <tr><td>調査担当者</td><td>${project.surveyor}</td></tr>
+                                <tr><td>緊急度</td><td>${project.urgency}</td></tr>
+                                <tr><td>ステータス</td><td><span class="status-badge status-${project.status}">${this.getStatusLabel(project.status)}</span></td></tr>
+                            </table>
+
+                            <h6>測定値</h6>
+                            <ul>
+                                ${Object.entries(project.measurements || {}).map(([key, value]) =>
+                                    `<li>${key}: ${value}</li>`
+                                ).join('')}
+                            </ul>
+
+                            <h6>工事範囲</h6>
+                            <ul>
+                                ${(project.workScope || []).map(scope =>
+                                    `<li>${scope.name}</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>現場写真 (${project.photos?.length || 0}枚)</h6>
+                            <div class="row">
+                                ${(project.photos || []).slice(0, 6).map((photo, index) =>
+                                    `<div class="col-4 mb-2">
+                                        <div class="bg-light p-3 rounded text-center">
+                                            <i class="bi bi-image fs-4"></i><br>
+                                            <small>写真${index + 1}</small>
+                                        </div>
+                                    </div>`
+                                ).join('')}
+                            </div>
+
+                            ${project.additionalInfo?.notes ? `
+                                <h6>特記事項</h6>
+                                <p>${project.additionalInfo.notes}</p>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            getNextStepUrl(project) {
+                switch (project.status) {
+                    case 'material_input':
+                        return `material_procurement.html?id=${project.surveyId}`;
+                    case 'auto_quote':
+                        return `auto_quotation.html?id=${project.surveyId}`;
+                    case 'adjustment':
+                        const userRole = this.workflow.getUserRole();
+                        return userRole === 'employee' ? `quotation_adjustment.html?id=${project.surveyId}` : null;
+                    case 'completed':
+                        return `quotation_generated.html?id=${project.surveyId}`;
+                    default:
+                        return null;
+                }
+            }
+        }
+
+        // Global functions
+        function switchStatusTab(status) {
+            app.switchStatusTab(status);
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('constructionTypeFilter').value = '';
+            document.getElementById('dateFilter').value = '';
+            document.getElementById('surveyorFilter').value = '';
+            document.getElementById('sortOrder').value = 'date_desc';
+            app.filterAndDisplayProjects();
+        }
+
+        function startNewSurvey() {
+            window.location.href = '../surveys/construction_type_survey.html';
+        }
+
+        function showProjectDetail(surveyId) {
+            app.showProjectDetail(surveyId);
+        }
+
+        // Initialize app
+        let app;
+        document.addEventListener('DOMContentLoaded', () => {
+            app = new SurveyedProjectsList();
+        });
+    </script>
+</body>
+</html>

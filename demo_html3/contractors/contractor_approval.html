@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建築派遣SaaS - 協力会社手配承認</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        .approval-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin: 20px 0;
+            border: 1px solid #e9ecef;
+        }
+        .approval-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            padding: 20px;
+        }
+        .approval-urgent {
+            border-left: 4px solid #dc3545;
+            background: #fff5f5;
+        }
+        .approval-normal {
+            border-left: 4px solid #17a2b8;
+            background: #f8f9fa;
+        }
+        .contractor-details {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .cost-breakdown {
+            background: #fff8e1;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .timeline-item {
+            position: relative;
+            padding-left: 30px;
+            margin: 15px 0;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 6px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+        }
+        .approval-actions {
+            background: #f8f9fa;
+            border-radius: 0 0 12px 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .risk-assessment {
+            background: #ffeaa7;
+            border: 2px solid #fdcb6e;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .comparison-table {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .status-badge {
+            font-size: 0.9em;
+            padding: 6px 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <h5 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>メインメニュー</span>
+                    </h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="../index.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../projects/project_list.html">
+                                <i class="fas fa-project-diagram me-2"></i>案件管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="notification_system.html">
+                                <i class="fas fa-bell me-2"></i>通知管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="contractor_approval.html">
+                                <i class="fas fa-check-double me-2"></i>承認管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="project_schedule_create.html">
+                                <i class="fas fa-calendar-plus me-2"></i>工程表作成
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">
+                        <i class="fas fa-check-double me-3"></i>協力会社手配承認
+                    </h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button class="btn btn-outline-primary" onclick="refreshApprovalList()">
+                            <i class="fas fa-sync me-1"></i>更新
+                        </button>
+                        <button class="btn btn-outline-secondary ms-2" onclick="exportApprovalData()">
+                            <i class="fas fa-download me-1"></i>エクスポート
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 承認待ち一覧 -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-exclamation-circle me-2"></i>承認待ち案件
+                                    <span class="badge bg-danger ms-2">3件</span>
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>案件名</th>
+                                                <th>派遣スタッフ</th>
+                                                <th>協力会社</th>
+                                                <th>見積金額</th>
+                                                <th>緊急度</th>
+                                                <th>受信日時</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="table-warning">
+                                                <td>
+                                                    <strong>港区ワンルーム原状回復</strong><br>
+                                                    <small class="text-muted">クロス・水道工事</small>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar bg-primary text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                                            田
+                                                        </div>
+                                                        田中太郎
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    東京クロス工業<br>
+                                                    <small class="text-muted">責任者: 山田部長</small>
+                                                </td>
+                                                <td>
+                                                    <span class="fw-bold text-success">¥180,000</span><br>
+                                                    <small class="text-muted">予算内</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-warning status-badge">
+                                                        <i class="fas fa-clock me-1"></i>通常
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    2分前<br>
+                                                    <small class="text-muted">15:30</small>
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-primary btn-sm" onclick="reviewApproval('approval_001')">
+                                                        <i class="fas fa-eye me-1"></i>詳細確認
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <strong>新宿1K原状回復</strong><br>
+                                                    <small class="text-muted">水道設備工事</small>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar bg-success text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                                            佐
+                                                        </div>
+                                                        佐藤花子
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    新宿水道設備<br>
+                                                    <small class="text-muted">責任者: 鈴木課長</small>
+                                                </td>
+                                                <td>
+                                                    <span class="fw-bold text-success">¥45,000</span><br>
+                                                    <small class="text-muted">予算内</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-info status-badge">
+                                                        <i class="fas fa-info-circle me-1"></i>低
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    1時間前<br>
+                                                    <small class="text-muted">14:45</small>
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-primary btn-sm" onclick="reviewApproval('approval_002')">
+                                                        <i class="fas fa-eye me-1"></i>詳細確認
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr class="table-danger">
+                                                <td>
+                                                    <strong>渋谷2DK緊急修繕</strong><br>
+                                                    <small class="text-muted">電気・配管緊急対応</small>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar bg-warning text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                                            高
+                                                        </div>
+                                                        高橋次郎
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    渋谷電気工事<br>
+                                                    <small class="text-muted">責任者: 伊藤所長</small>
+                                                </td>
+                                                <td>
+                                                    <span class="fw-bold text-danger">¥320,000</span><br>
+                                                    <small class="text-muted">予算超過</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-danger status-badge">
+                                                        <i class="fas fa-exclamation-triangle me-1"></i>緊急
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    30分前<br>
+                                                    <small class="text-muted">15:00</small>
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-danger btn-sm" onclick="reviewApproval('approval_003')">
+                                                        <i class="fas fa-exclamation-triangle me-1"></i>緊急確認
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 詳細承認画面 (最初は非表示) -->
+                <div id="approvalDetailView" class="approval-card" style="display: none;">
+                    <div class="approval-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0">
+                                    <i class="fas fa-check-double me-2"></i>承認詳細確認
+                                </h4>
+                                <p class="mb-0 mt-2">協力会社手配の最終承認を行います</p>
+                            </div>
+                            <button class="btn btn-outline-light" onclick="closeApprovalDetail()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-4">
+                        <!-- 案件情報 -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-project-diagram me-2"></i>案件情報</h5>
+                                <div id="projectInfo">
+                                    <p><strong>案件名:</strong> <span id="projectName">港区ワンルーム原状回復</span></p>
+                                    <p><strong>住所:</strong> <span id="projectAddress">東京都港区○○1-2-3</span></p>
+                                    <p><strong>顧客:</strong> <span id="customerName">港区賃貸管理株式会社</span></p>
+                                    <p><strong>予算:</strong> <span id="projectBudget">¥200,000</span></p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-user me-2"></i>派遣スタッフ情報</h5>
+                                <div id="staffInfo">
+                                    <p><strong>担当者:</strong> <span id="staffName">田中太郎</span></p>
+                                    <p><strong>調整日時:</strong> <span id="coordinationDate">2025年1月16日 15:30</span></p>
+                                    <p><strong>連絡方法:</strong> <span id="contactMethod">電話 + メール</span></p>
+                                    <p><strong>経験レベル:</strong> <span id="experienceLevel">中級 (3年)</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 協力会社詳細 -->
+                        <div class="contractor-details">
+                            <h5><i class="fas fa-building me-2"></i>協力会社詳細</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>会社名:</strong> <span id="contractorName">東京クロス工業株式会社</span></p>
+                                    <p><strong>責任者:</strong> <span id="contractorContact">山田部長 (090-1234-5678)</span></p>
+                                    <p><strong>過去実績:</strong> <span id="contractorHistory">15件 (成功率: 100%)</span></p>
+                                    <p><strong>評価:</strong>
+                                        <span class="text-warning">
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star-half-alt"></i>
+                                        </span>
+                                        <span class="ms-2">4.5/5.0</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>専門分野:</strong> <span id="contractorSpecialty">壁紙・クロス工事、水道設備</span></p>
+                                    <p><strong>対応可能期間:</strong> <span id="availablePeriod">2025年1月20日〜22日</span></p>
+                                    <p><strong>作業時間:</strong> <span id="workingHours">9:00-17:00 (3日間)</span></p>
+                                    <p><strong>特記事項:</strong> <span id="specialNotes">入居者立会い対応可能</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- コスト詳細 -->
+                        <div class="cost-breakdown">
+                            <h5><i class="fas fa-yen-sign me-2"></i>コスト詳細</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>項目</th>
+                                            <th>数量</th>
+                                            <th>単価</th>
+                                            <th>小計</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>クロス貼り替え (6畳)</td>
+                                            <td>25㎡</td>
+                                            <td>¥3,000/㎡</td>
+                                            <td>¥75,000</td>
+                                        </tr>
+                                        <tr>
+                                            <td>水道設備修理</td>
+                                            <td>1式</td>
+                                            <td>¥45,000</td>
+                                            <td>¥45,000</td>
+                                        </tr>
+                                        <tr>
+                                            <td>清掃・養生</td>
+                                            <td>1式</td>
+                                            <td>¥15,000</td>
+                                            <td>¥15,000</td>
+                                        </tr>
+                                        <tr>
+                                            <td>作業員人件費 (3日)</td>
+                                            <td>2名</td>
+                                            <td>¥22,500/日</td>
+                                            <td>¥45,000</td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-warning">
+                                            <th colspan="3">合計</th>
+                                            <th>¥180,000</th>
+                                        </tr>
+                                        <tr class="table-success">
+                                            <th colspan="3">予算との差額</th>
+                                            <th>¥20,000 (予算内)</th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 工程タイムライン -->
+                        <div class="mb-4">
+                            <h5><i class="fas fa-calendar-alt me-2"></i>作業工程</h5>
+                            <div class="timeline-item">
+                                <strong>1日目 (1/20)</strong> - 現場準備・養生・クロス剥がし
+                            </div>
+                            <div class="timeline-item">
+                                <strong>2日目 (1/21)</strong> - 水道設備修理・下地処理・クロス貼り
+                            </div>
+                            <div class="timeline-item">
+                                <strong>3日目 (1/22)</strong> - 仕上げ・清掃・入居者立会い (16:00)
+                            </div>
+                        </div>
+
+                        <!-- リスク評価 -->
+                        <div class="risk-assessment">
+                            <h5><i class="fas fa-exclamation-triangle me-2"></i>リスク評価</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>工期リスク:</strong> <span class="badge bg-success">低</span></p>
+                                    <p><strong>予算リスク:</strong> <span class="badge bg-success">低</span></p>
+                                    <p><strong>品質リスク:</strong> <span class="badge bg-warning">中</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>天候リスク:</strong> <span class="badge bg-info">低</span></p>
+                                    <p><strong>人材リスク:</strong> <span class="badge bg-success">低</span></p>
+                                    <p><strong>総合リスク:</strong> <span class="badge bg-success">許容範囲</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 承認コメント -->
+                        <div class="mb-4">
+                            <label for="approvalComment" class="form-label">
+                                <i class="fas fa-comment me-2"></i>承認コメント
+                            </label>
+                            <textarea class="form-control" id="approvalComment" rows="4" placeholder="承認に関するコメント、条件、特記事項などを入力してください...">協力会社の実績と見積内容を確認しました。予算内で適切な工程が組まれており、承認いたします。
+
+条件：
+- 作業開始前に詳細な作業手順書の提出
+- 進捗報告を毎日16:00に実施
+- 入居者立会いの時間厳守</textarea>
+                        </div>
+                    </div>
+
+                    <!-- 承認アクション -->
+                    <div class="approval-actions">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <button class="btn btn-danger w-100" onclick="rejectApproval()">
+                                    <i class="fas fa-times me-2"></i>却下
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-warning w-100" onclick="requestModification()">
+                                    <i class="fas fa-edit me-2"></i>修正依頼
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-success w-100" onclick="approveRequest()">
+                                    <i class="fas fa-check me-2"></i>承認
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- 承認完了モーダル -->
+    <div class="modal fade" id="approvalCompletionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-check-circle me-2"></i>承認完了
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                        <h4 class="mt-3">承認が完了しました</h4>
+                        <p class="text-muted">協力会社への最終確認を派遣スタッフに指示します。</p>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>次のステップ:</strong><br>
+                        • 派遣スタッフに承認結果を通知<br>
+                        • 協力会社への最終確認依頼<br>
+                        • 工程表の確定・共有<br>
+                        • プロジェクト開始準備
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" onclick="proceedToStep5()">
+                        <i class="fas fa-arrow-right me-1"></i>STEP 5へ進む
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // STEP 4: 社員用確認・承認機能の実装
+
+        // 承認データの管理
+        const approvalData = {
+            'approval_001': {
+                projectName: '港区ワンルーム原状回復',
+                projectAddress: '東京都港区○○1-2-3',
+                customerName: '港区賃貸管理株式会社',
+                projectBudget: '¥200,000',
+                staffName: '田中太郎',
+                coordinationDate: '2025年1月16日 15:30',
+                contactMethod: '電話 + メール',
+                experienceLevel: '中級 (3年)',
+                contractorName: '東京クロス工業株式会社',
+                contractorContact: '山田部長 (090-1234-5678)',
+                contractorHistory: '15件 (成功率: 100%)',
+                contractorSpecialty: '壁紙・クロス工事、水道設備',
+                availablePeriod: '2025年1月20日〜22日',
+                workingHours: '9:00-17:00 (3日間)',
+                specialNotes: '入居者立会い対応可能'
+            },
+            'approval_002': {
+                projectName: '新宿1K原状回復',
+                projectAddress: '東京都新宿区△△2-3-4',
+                customerName: '新宿不動産管理',
+                projectBudget: '¥80,000',
+                staffName: '佐藤花子',
+                coordinationDate: '2025年1月16日 14:45',
+                contactMethod: '電話',
+                experienceLevel: '上級 (5年)',
+                contractorName: '新宿水道設備',
+                contractorContact: '鈴木課長 (080-9876-5432)',
+                contractorHistory: '8件 (成功率: 100%)',
+                contractorSpecialty: '水道設備専門',
+                availablePeriod: '2025年1月18日〜19日',
+                workingHours: '9:00-16:00 (2日間)',
+                specialNotes: '緊急時24時間対応可能'
+            }
+        };
+
+        // 承認詳細表示
+        function reviewApproval(approvalId) {
+            console.log('STEP 4: 承認詳細確認開始:', approvalId);
+
+            const data = approvalData[approvalId];
+            if (!data) {
+                alert('承認データが見つかりません。');
+                return;
+            }
+
+            // 詳細データを画面に反映
+            document.getElementById('projectName').textContent = data.projectName;
+            document.getElementById('projectAddress').textContent = data.projectAddress;
+            document.getElementById('customerName').textContent = data.customerName;
+            document.getElementById('projectBudget').textContent = data.projectBudget;
+            document.getElementById('staffName').textContent = data.staffName;
+            document.getElementById('coordinationDate').textContent = data.coordinationDate;
+            document.getElementById('contactMethod').textContent = data.contactMethod;
+            document.getElementById('experienceLevel').textContent = data.experienceLevel;
+            document.getElementById('contractorName').textContent = data.contractorName;
+            document.getElementById('contractorContact').textContent = data.contractorContact;
+            document.getElementById('contractorHistory').textContent = data.contractorHistory;
+            document.getElementById('contractorSpecialty').textContent = data.contractorSpecialty;
+            document.getElementById('availablePeriod').textContent = data.availablePeriod;
+            document.getElementById('workingHours').textContent = data.workingHours;
+            document.getElementById('specialNotes').textContent = data.specialNotes;
+
+            // 詳細ビューを表示
+            document.getElementById('approvalDetailView').style.display = 'block';
+
+            // スムーズスクロール
+            document.getElementById('approvalDetailView').scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+
+        // 詳細ビューを閉じる
+        function closeApprovalDetail() {
+            document.getElementById('approvalDetailView').style.display = 'none';
+        }
+
+        // 承認処理
+        function approveRequest() {
+            const comment = document.getElementById('approvalComment').value;
+
+            console.log('STEP 4: 承認処理実行');
+            console.log('承認コメント:', comment);
+
+            // 承認完了モーダルを表示
+            const modal = new bootstrap.Modal(document.getElementById('approvalCompletionModal'));
+            modal.show();
+
+            // 承認済みとしてマーク
+            updateApprovalStatus('approved');
+        }
+
+        // 却下処理
+        function rejectApproval() {
+            const reason = prompt('却下理由を入力してください:');
+            if (reason) {
+                console.log('STEP 4: 却下処理実行');
+                console.log('却下理由:', reason);
+
+                alert('承認を却下しました。\n派遣スタッフに再調整を依頼します。');
+                updateApprovalStatus('rejected');
+                closeApprovalDetail();
+            }
+        }
+
+        // 修正依頼
+        function requestModification() {
+            const modifications = prompt('修正内容を入力してください:');
+            if (modifications) {
+                console.log('STEP 4: 修正依頼処理実行');
+                console.log('修正内容:', modifications);
+
+                alert('修正依頼を送信しました。\n派遣スタッフに修正内容を通知します。');
+                updateApprovalStatus('modification_requested');
+                closeApprovalDetail();
+            }
+        }
+
+        // 承認ステータス更新
+        function updateApprovalStatus(status) {
+            // 承認待ち件数を減らす
+            const badgeElement = document.querySelector('.card-header .badge');
+            if (badgeElement) {
+                const currentCount = parseInt(badgeElement.textContent);
+                if (currentCount > 0) {
+                    badgeElement.textContent = `${currentCount - 1}件`;
+                }
+            }
+
+            console.log('承認ステータス更新:', status);
+        }
+
+        // STEP 5への移行
+        function proceedToStep5() {
+            console.log('STEP 4完了: STEP 5への移行準備');
+
+            // モーダルを閉じる
+            const modal = bootstrap.Modal.getInstance(document.getElementById('approvalCompletionModal'));
+            modal.hide();
+
+            // 詳細ビューも閉じる
+            closeApprovalDetail();
+
+            // STEP 5の画面に移動
+            setTimeout(() => {
+                console.log('STEP 5: 派遣用決定事項伝達画面へ移行');
+                window.location.href = 'contractor_notification.html';
+            }, 1000);
+        }
+
+        // その他のユーティリティ関数
+        function refreshApprovalList() {
+            console.log('承認リスト更新中...');
+
+            // 更新アニメーション
+            const refreshBtn = event.target.closest('button');
+            const icon = refreshBtn.querySelector('i');
+            icon.classList.add('fa-spin');
+
+            setTimeout(() => {
+                icon.classList.remove('fa-spin');
+                alert('承認リストを更新しました');
+            }, 1500);
+        }
+
+        function exportApprovalData() {
+            console.log('承認データエクスポート開始');
+            alert('承認データをCSV形式でエクスポートします。');
+        }
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('STEP 4: 社員用確認・承認画面初期化完了');
+
+            // URLパラメータから承認IDを取得して自動表示
+            const urlParams = new URLSearchParams(window.location.search);
+            const requestId = urlParams.get('request');
+            if (requestId) {
+                setTimeout(() => {
+                    reviewApproval(requestId);
+                }, 500);
+            }
+        });
+    </script>
+</body>
+</html>

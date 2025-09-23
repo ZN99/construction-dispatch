@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>現地調査アプリ - 建築派遣SaaS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .mobile-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .progress-indicator {
+            background-color: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            height: 8px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background-color: #28a745;
+            height: 100%;
+            transition: width 0.3s;
+        }
+        .task-card {
+            background: white;
+            border-radius: 12px;
+            margin: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+        }
+        .task-card.completed {
+            border-color: #28a745;
+            background-color: #f8fff9;
+        }
+        .task-card.current {
+            border-color: #007bff;
+            border-width: 2px;
+        }
+        .access-denied {
+            background: #ffebee;
+            border: 2px solid #f44336;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px;
+        }
+        .temporary-staff-only {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px;
+            text-align: center;
+        }
+        .task-type-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .measurement-badge { background-color: #e3f2fd; color: #1976d2; }
+        .photo-badge { background-color: #e8f5e8; color: #388e3c; }
+        .inspection-badge { background-color: #fff3e0; color: #f57c00; }
+        .input-badge { background-color: #f3e5f5; color: #7b1fa2; }
+
+        .camera-input {
+            width: 100%;
+            height: 200px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fafafa;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .camera-input:hover {
+            border-color: #007bff;
+            background: #f0f8ff;
+        }
+        .camera-input.has-image {
+            padding: 0;
+            border: none;
+        }
+        .preview-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .measurement-input {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .safety-alert {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px;
+            border-left: 4px solid #ffc107;
+        }
+        .navigation-buttons {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            gap: 10px;
+        }
+        .status-indicator {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 10px;
+        }
+        .btn-upload {
+            background: #28a745;
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(40,167,69,0.3);
+        }
+        .sync-status {
+            background: rgba(40,167,69,0.1);
+            color: #28a745;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin: 15px;
+            text-align: center;
+        }
+        @media (max-width: 768px) {
+            .task-card { margin: 10px; padding: 15px; }
+            .navigation-buttons { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 権限確認 -->
+    <div class="temporary-staff-only" id="temporaryAccess">
+        <i class="fas fa-mobile-alt me-2"></i><strong>派遣スタッフ専用機能</strong>
+        現地調査実行権限
+    </div>
+
+    <div class="access-denied" id="accessDenied" style="display: none;">
+        <i class="fas fa-lock fa-3x text-danger mb-3"></i>
+        <h4 class="text-danger">アクセス制限</h4>
+        <p class="mb-3">この機能は派遣スタッフ専用です。<br>社員は調査チェックリストの作成・承認機能をご利用ください。</p>
+        <a href="survey_checklist_create.html" class="btn btn-primary">
+            <i class="fas fa-tasks me-1"></i>チェックリスト作成へ
+        </a>
+        <a href="survey_approval.html" class="btn btn-success ms-2">
+            <i class="fas fa-check-double me-1"></i>調査承認へ
+        </a>
+    </div>
+
+    <!-- ヘッダー -->
+    <div class="mobile-header" id="mobileHeader">
+        <h4><i class="fas fa-mobile-alt me-2"></i>現地調査アプリ</h4>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+            <small>港区ワンルーム現地調査</small>
+            <small id="current-time"></small>
+        </div>
+        <div class="progress-indicator">
+            <div class="progress-bar" id="overall-progress" style="width: 25%"></div>
+        </div>
+        <small class="mt-2 d-block">進捗: <span id="progress-text">1/4 完了</span></small>
+    </div>
+
+    <!-- STEP 2 説明 -->
+    <div class="alert alert-info mx-3 mt-3">
+        <strong>STEP 2: 派遣スタッフの役割（現地作業・情報入力）</strong><br>
+        アプリの指示に従い、測定・撮影を行い、客観的データを入力してください。
+    </div>
+
+    <!-- 安全注意事項 -->
+    <div class="safety-alert">
+        <h6><i class="fas fa-exclamation-triangle me-2"></i>安全注意事項</h6>
+        <ul class="mb-0">
+            <li>ヘルメットを必ず着用してください</li>
+            <li>脚立使用時は安定した場所に設置してください</li>
+            <li>作業前後の写真撮影を忘れずに</li>
+        </ul>
+    </div>
+
+    <!-- リアルタイム同期状況 -->
+    <div class="sync-status" id="sync-status">
+        <i class="fas fa-cloud-upload-alt me-2"></i>リアルタイム同期中...
+    </div>
+
+    <!-- タスク一覧 -->
+    <div id="task-container">
+        <!-- タスク1: リビング壁面積測定 -->
+        <div class="task-card current" id="task-1">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="task-type-badge measurement-badge">
+                        <i class="fas fa-ruler me-1"></i>測定タスク
+                    </div>
+                    <h5>リビング壁面積測定</h5>
+                    <p class="text-muted">幅・高さを測定してください</p>
+                </div>
+                <div class="status-indicator bg-primary" id="status-1">1</div>
+            </div>
+
+            <div class="measurement-input">
+                <h6>測定値入力</h6>
+                <div class="row">
+                    <div class="col-6">
+                        <label class="form-label">幅 (m)</label>
+                        <input type="number" class="form-control" id="width-1" step="0.1" placeholder="3.5">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">高さ (m)</label>
+                        <input type="number" class="form-control" id="height-1" step="0.1" placeholder="2.4">
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">計算結果: <span id="area-1" class="fw-bold">0 m²</span></small>
+                </div>
+            </div>
+
+            <button class="btn btn-success w-100 mt-3" onclick="completeTask(1)">
+                <i class="fas fa-check me-2"></i>測定完了
+            </button>
+        </div>
+
+        <!-- タスク2: キッチン撮影 -->
+        <div class="task-card" id="task-2">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="task-type-badge photo-badge">
+                        <i class="fas fa-camera me-1"></i>撮影タスク
+                    </div>
+                    <h5>キッチン状況撮影</h5>
+                    <p class="text-muted">全体とシンク下を撮影してください</p>
+                </div>
+                <div class="status-indicator bg-secondary" id="status-2">2</div>
+            </div>
+
+            <div class="camera-input" id="camera-input-2" onclick="openCamera(2)">
+                <div class="text-center">
+                    <i class="fas fa-camera fa-3x text-muted mb-2"></i>
+                    <p class="text-muted mb-0">タップして撮影</p>
+                </div>
+            </div>
+            <input type="file" accept="image/*" capture="camera" style="display: none;" id="file-input-2" onchange="handlePhoto(2)">
+
+            <button class="btn btn-success w-100 mt-3" onclick="completeTask(2)" disabled id="complete-btn-2">
+                <i class="fas fa-check me-2"></i>撮影完了
+            </button>
+        </div>
+
+        <!-- タスク3: 浴室撮影 -->
+        <div class="task-card" id="task-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="task-type-badge photo-badge">
+                        <i class="fas fa-camera me-1"></i>撮影タスク
+                    </div>
+                    <h5>浴室状況撮影</h5>
+                    <p class="text-muted">タイル目地の劣化状況を撮影してください</p>
+                </div>
+                <div class="status-indicator bg-secondary" id="status-3">3</div>
+            </div>
+
+            <div class="camera-input" id="camera-input-3" onclick="openCamera(3)">
+                <div class="text-center">
+                    <i class="fas fa-camera fa-3x text-muted mb-2"></i>
+                    <p class="text-muted mb-0">タップして撮影</p>
+                </div>
+            </div>
+            <input type="file" accept="image/*" capture="camera" style="display: none;" id="file-input-3" onchange="handlePhoto(3)">
+
+            <button class="btn btn-success w-100 mt-3" onclick="completeTask(3)" disabled id="complete-btn-3">
+                <i class="fas fa-check me-2"></i>撮影完了
+            </button>
+        </div>
+
+        <!-- タスク4: クロス面積計算 -->
+        <div class="task-card" id="task-4">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="task-type-badge measurement-badge">
+                        <i class="fas fa-calculator me-1"></i>計算タスク
+                    </div>
+                    <h5>クロス面積計算</h5>
+                    <p class="text-muted">各壁面の面積を計算してください</p>
+                </div>
+                <div class="status-indicator bg-secondary" id="status-4">4</div>
+            </div>
+
+            <div class="measurement-input">
+                <h6>壁面データ</h6>
+                <div class="mb-2">
+                    <label class="form-label">北側壁面積 (m²)</label>
+                    <input type="number" class="form-control" id="north-wall" step="0.1" placeholder="8.4">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">南側壁面積 (m²)</label>
+                    <input type="number" class="form-control" id="south-wall" step="0.1" placeholder="8.4">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">東側壁面積 (m²)</label>
+                    <input type="number" class="form-control" id="east-wall" step="0.1" placeholder="5.7">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">西側壁面積 (m²)</label>
+                    <input type="number" class="form-control" id="west-wall" step="0.1" placeholder="5.7">
+                </div>
+                <div class="alert alert-light">
+                    <strong>合計面積: <span id="total-wall-area">0 m²</span></strong>
+                </div>
+            </div>
+
+            <button class="btn btn-success w-100 mt-3" onclick="completeTask(4)">
+                <i class="fas fa-check me-2"></i>計算完了
+            </button>
+        </div>
+    </div>
+
+    <!-- 最終送信ボタン -->
+    <div class="text-center my-4" id="final-submit" style="display: none;">
+        <button class="btn btn-upload btn-lg" onclick="submitAllData()">
+            <i class="fas fa-cloud-upload-alt me-2"></i>調査データを送信
+        </button>
+        <p class="text-muted mt-2 small">全データが自動で見積システムに連携されます</p>
+    </div>
+
+    <!-- ナビゲーションボタン -->
+    <div class="navigation-buttons">
+        <button class="btn btn-outline-secondary flex-fill" onclick="goBack()">
+            <i class="fas fa-arrow-left me-2"></i>前に戻る
+        </button>
+        <button class="btn btn-primary flex-fill" onclick="saveProgress()">
+            <i class="fas fa-save me-2"></i>進捗保存
+        </button>
+    </div>
+
+    <!-- パディング（ナビゲーションボタン分） -->
+    <div style="height: 80px;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let completedTasks = [];
+        let currentTask = 1;
+        let uploadedImages = {};
+        let allMeasurements = {};
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 権限確認（派遣スタッフ専用）
+            checkUserRole();
+
+            updateTime();
+            setInterval(updateTime, 1000);
+
+            // 測定値の自動計算
+            setupMeasurementCalculation();
+
+            // 進捗をローカルストレージから復元
+            restoreProgress();
+        });
+
+        // 権限確認（派遣スタッフ専用機能）
+        function checkUserRole() {
+            const userRole = localStorage.getItem('userRole');
+
+            if (userRole === 'employee') {
+                // 社員の場合はアクセス拒否
+                document.getElementById('temporaryAccess').style.display = 'none';
+                document.getElementById('mobileHeader').style.display = 'none';
+                document.getElementById('task-container').style.display = 'none';
+                document.getElementById('accessDenied').style.display = 'block';
+                document.querySelector('.navigation-buttons').style.display = 'none';
+                return;
+            }
+
+            // 派遣スタッフまたは未設定の場合は通常表示
+            document.getElementById('temporaryAccess').style.display = 'block';
+            document.getElementById('accessDenied').style.display = 'none';
+            document.getElementById('mobileHeader').style.display = 'block';
+            document.getElementById('task-container').style.display = 'block';
+        }
+
+        // 現在時刻の更新
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent =
+                now.getHours().toString().padStart(2, '0') + ':' +
+                now.getMinutes().toString().padStart(2, '0');
+        }
+
+        // 測定値計算の設定
+        function setupMeasurementCalculation() {
+            // リビング面積計算
+            ['width-1', 'height-1'].forEach(id => {
+                document.getElementById(id).addEventListener('input', function() {
+                    const width = parseFloat(document.getElementById('width-1').value) || 0;
+                    const height = parseFloat(document.getElementById('height-1').value) || 0;
+                    const area = (width * height).toFixed(1);
+                    document.getElementById('area-1').textContent = area + ' m²';
+                });
+            });
+
+            // 壁面積合計計算
+            ['north-wall', 'south-wall', 'east-wall', 'west-wall'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', calculateTotalWallArea);
+                }
+            });
+        }
+
+        function calculateTotalWallArea() {
+            const north = parseFloat(document.getElementById('north-wall').value) || 0;
+            const south = parseFloat(document.getElementById('south-wall').value) || 0;
+            const east = parseFloat(document.getElementById('east-wall').value) || 0;
+            const west = parseFloat(document.getElementById('west-wall').value) || 0;
+            const total = (north + south + east + west).toFixed(1);
+            document.getElementById('total-wall-area').textContent = total + ' m²';
+        }
+
+        // カメラ起動
+        function openCamera(taskId) {
+            document.getElementById(`file-input-${taskId}`).click();
+        }
+
+        // 写真処理
+        function handlePhoto(taskId) {
+            const fileInput = document.getElementById(`file-input-${taskId}`);
+            const file = fileInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const cameraInput = document.getElementById(`camera-input-${taskId}`);
+                    cameraInput.innerHTML = `<img src="${e.target.result}" class="preview-image" alt="撮影画像">`;
+                    cameraInput.classList.add('has-image');
+
+                    // 完了ボタンを有効化
+                    document.getElementById(`complete-btn-${taskId}`).disabled = false;
+
+                    // 画像データを保存
+                    uploadedImages[taskId] = e.target.result;
+
+                    // クラウドに自動アップロード（模擬）
+                    simulateCloudUpload(taskId);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // クラウドアップロード模擬
+        function simulateCloudUpload(taskId) {
+            updateSyncStatus('アップロード中...', 'warning');
+
+            setTimeout(() => {
+                updateSyncStatus('同期完了', 'success');
+                console.log(`Task ${taskId} - 画像をクラウドにアップロードしました`);
+            }, 1500);
+        }
+
+        // 同期状況更新
+        function updateSyncStatus(message, type) {
+            const syncStatus = document.getElementById('sync-status');
+            syncStatus.innerHTML = `<i class="fas fa-cloud-upload-alt me-2"></i>${message}`;
+
+            syncStatus.className = 'sync-status';
+            if (type === 'success') {
+                syncStatus.style.background = 'rgba(40,167,69,0.1)';
+                syncStatus.style.color = '#28a745';
+            } else if (type === 'warning') {
+                syncStatus.style.background = 'rgba(255,193,7,0.1)';
+                syncStatus.style.color = '#ffc107';
+            }
+        }
+
+        // タスク完了
+        function completeTask(taskId) {
+            // データ収集
+            if (taskId === 1) {
+                const width = document.getElementById('width-1').value;
+                const height = document.getElementById('height-1').value;
+                if (!width || !height) {
+                    alert('幅と高さを入力してください');
+                    return;
+                }
+                allMeasurements[taskId] = { width, height, area: width * height };
+            } else if (taskId === 4) {
+                const walls = {
+                    north: document.getElementById('north-wall').value,
+                    south: document.getElementById('south-wall').value,
+                    east: document.getElementById('east-wall').value,
+                    west: document.getElementById('west-wall').value
+                };
+
+                if (!walls.north || !walls.south || !walls.east || !walls.west) {
+                    alert('すべての壁面積を入力してください');
+                    return;
+                }
+
+                allMeasurements[taskId] = walls;
+            } else if ((taskId === 2 || taskId === 3) && !uploadedImages[taskId]) {
+                alert('写真を撮影してください');
+                return;
+            }
+
+            // タスクを完了状態に
+            completedTasks.push(taskId);
+
+            const taskCard = document.getElementById(`task-${taskId}`);
+            const statusIndicator = document.getElementById(`status-${taskId}`);
+
+            taskCard.classList.add('completed');
+            taskCard.classList.remove('current');
+
+            statusIndicator.innerHTML = '<i class="fas fa-check"></i>';
+            statusIndicator.className = 'status-indicator bg-success';
+
+            // 次のタスクを現在のタスクに
+            if (taskId < 4) {
+                currentTask = taskId + 1;
+                const nextTaskCard = document.getElementById(`task-${currentTask}`);
+                nextTaskCard.classList.add('current');
+            }
+
+            // 進捗更新
+            updateProgress();
+
+            // データ送信
+            sendTaskData(taskId);
+
+            // 全タスク完了チェック
+            if (completedTasks.length === 4) {
+                showFinalSubmit();
+            }
+        }
+
+        // 進捗更新
+        function updateProgress() {
+            const progress = (completedTasks.length / 4) * 100;
+            document.getElementById('overall-progress').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = `${completedTasks.length}/4 完了`;
+        }
+
+        // タスクデータ送信
+        function sendTaskData(taskId) {
+            const taskData = {
+                taskId: taskId,
+                timestamp: new Date().toISOString(),
+                measurements: allMeasurements[taskId] || null,
+                image: uploadedImages[taskId] || null
+            };
+
+            // リアルタイムでサーバーに送信（模擬）
+            console.log('送信データ:', taskData);
+            updateSyncStatus('データ送信完了', 'success');
+        }
+
+        // 最終送信表示
+        function showFinalSubmit() {
+            document.getElementById('final-submit').style.display = 'block';
+            updateSyncStatus('全データ準備完了', 'success');
+        }
+
+        // 全データ送信
+        function submitAllData() {
+            const finalData = {
+                surveyId: 'survey-' + Date.now(),
+                projectName: '港区ワンルーム現地調査',
+                completedAt: new Date().toISOString(),
+                tasks: completedTasks,
+                measurements: allMeasurements,
+                images: uploadedImages,
+                totalProgress: 100
+            };
+
+            // サーバーに最終データを送信
+            console.log('最終送信データ:', finalData);
+
+            // 見積自動生成トリガー
+            triggerAutomaticEstimation(finalData);
+
+            alert('調査データを送信しました！\n自動で見積が生成され、担当社員に通知されます。');
+
+            // 完了画面に遷移
+            window.location.href = 'survey_completed.html';
+        }
+
+        // 自動見積生成トリガー
+        function triggerAutomaticEstimation(surveyData) {
+            // STEP 3: 自動処理・通知の開始
+            console.log('STEP 3: 自動見積生成を開始します');
+
+            // 単価マスタとの連携（模擬）
+            const unitPrices = {
+                wallpaper: 1200, // クロス単価/m²
+                cleaning: 800,   // クリーニング単価/m²
+                measurement: 5000 // 測定基本料
+            };
+
+            // 概算見積計算
+            let totalArea = 0;
+            if (surveyData.measurements[4]) {
+                const walls = surveyData.measurements[4];
+                totalArea = parseFloat(walls.north) + parseFloat(walls.south) +
+                           parseFloat(walls.east) + parseFloat(walls.west);
+            }
+
+            const estimation = {
+                wallpaperCost: Math.round(totalArea * unitPrices.wallpaper),
+                cleaningCost: Math.round(totalArea * unitPrices.cleaning),
+                measurementCost: unitPrices.measurement,
+                totalCost: Math.round(totalArea * (unitPrices.wallpaper + unitPrices.cleaning) + unitPrices.measurement)
+            };
+
+            console.log('自動生成見積:', estimation);
+
+            // 担当社員への通知送信
+            sendNotificationToEmployee(surveyData, estimation);
+        }
+
+        // 社員への通知送信
+        function sendNotificationToEmployee(surveyData, estimation) {
+            console.log('担当社員に通知を送信しました');
+            console.log('通知内容:', {
+                message: '現地調査が完了し、概算見積が生成されました',
+                surveyData: surveyData,
+                estimation: estimation
+            });
+        }
+
+        // 進捗保存
+        function saveProgress() {
+            const progressData = {
+                completedTasks: completedTasks,
+                currentTask: currentTask,
+                measurements: allMeasurements,
+                images: uploadedImages,
+                timestamp: new Date().toISOString()
+            };
+
+            localStorage.setItem('surveyProgress', JSON.stringify(progressData));
+            updateSyncStatus('進捗保存完了', 'success');
+        }
+
+        // 進捗復元
+        function restoreProgress() {
+            const saved = localStorage.getItem('surveyProgress');
+            if (saved) {
+                const progressData = JSON.parse(saved);
+                completedTasks = progressData.completedTasks || [];
+                currentTask = progressData.currentTask || 1;
+                allMeasurements = progressData.measurements || {};
+                uploadedImages = progressData.images || {};
+
+                // UI復元
+                completedTasks.forEach(taskId => {
+                    const taskCard = document.getElementById(`task-${taskId}`);
+                    const statusIndicator = document.getElementById(`status-${taskId}`);
+
+                    if (taskCard && statusIndicator) {
+                        taskCard.classList.add('completed');
+                        statusIndicator.innerHTML = '<i class="fas fa-check"></i>';
+                        statusIndicator.className = 'status-indicator bg-success';
+                    }
+                });
+
+                if (currentTask <= 4) {
+                    const currentTaskCard = document.getElementById(`task-${currentTask}`);
+                    if (currentTaskCard) {
+                        currentTaskCard.classList.add('current');
+                    }
+                }
+
+                updateProgress();
+            }
+        }
+
+        // 戻るボタン
+        function goBack() {
+            window.history.back();
+        }
+    </script>
+</body>
+</html>

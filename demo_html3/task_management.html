@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>タスク管理 - 建築派遣SaaS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-size: 16px; /* モバイルファースト対応 */
+        }
+        .task-card {
+            background: white;
+            border-radius: 12px;
+            margin: 10px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+        .task-card.urgent {
+            border-left-color: #dc3545;
+            background: linear-gradient(to right, #fff5f5, #ffffff);
+        }
+        .task-card.normal {
+            border-left-color: #17a2b8;
+            background: linear-gradient(to right, #f0f9ff, #ffffff);
+        }
+        .task-card.completed {
+            border-left-color: #28a745;
+            background: linear-gradient(to right, #f0fff4, #ffffff);
+            opacity: 0.8;
+        }
+        .task-header {
+            padding: 15px 20px 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .task-body {
+            padding: 15px 20px;
+        }
+        .task-action {
+            padding: 10px 20px 15px;
+            text-align: center;
+        }
+        .checklist-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0;
+        }
+        .priority-badge {
+            font-size: 0.8em;
+            padding: 4px 8px;
+        }
+        .progress-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: conic-gradient(#28a745 0deg, #e9ecef 0deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .mobile-friendly {
+            padding: 10px;
+        }
+        @media (max-width: 768px) {
+            .task-card {
+                margin: 15px 10px;
+                box-shadow: 0 1px 6px rgba(0,0,0,0.12);
+            }
+            .task-header, .task-body, .task-action {
+                padding: 12px 15px;
+            }
+            .btn {
+                padding: 10px 20px;
+                font-size: 16px;
+            }
+        }
+        .location-info {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .completion-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-pending { background-color: #6c757d; }
+        .status-progress { background-color: #ffc107; }
+        .status-completed { background-color: #28a745; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mobile-friendly">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <h5 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>派遣スタッフメニュー</span>
+                    </h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="task_management.html">
+                                <i class="fas fa-tasks me-2"></i>タスク管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="surveys/survey_mobile.html">
+                                <i class="fas fa-mobile-alt me-2"></i>現地調査
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="contractors/contractor_coordination.html">
+                                <i class="fas fa-phone me-2"></i>協力会社連絡
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="contractors/contractor_notification.html">
+                                <i class="fas fa-bell me-2"></i>決定事項確認
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-0 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">
+                        <i class="fas fa-tasks me-3"></i>今日のタスク
+                        <small class="text-muted">— 2025年1月16日</small>
+                    </h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button class="btn btn-outline-primary" onclick="refreshTasks()">
+                            <i class="fas fa-sync me-1"></i>更新
+                        </button>
+                    </div>
+                </div>
+
+                <!-- タスク統計 -->
+                <div class="row mb-4">
+                    <div class="col-6 col-md-3">
+                        <div class="card bg-warning text-white text-center">
+                            <div class="card-body">
+                                <h4 class="mb-0" id="totalTasks">5</h4>
+                                <small>総タスク</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="card bg-info text-white text-center">
+                            <div class="card-body">
+                                <h4 class="mb-0" id="pendingTasks">3</h4>
+                                <small>未着手</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="card bg-primary text-white text-center">
+                            <div class="card-body">
+                                <h4 class="mb-0" id="progressTasks">1</h4>
+                                <small>実行中</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="card bg-success text-white text-center">
+                            <div class="card-body">
+                                <h4 class="mb-0" id="completedTasks">1</h4>
+                                <small>完了</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- タスク一覧 -->
+                <div class="row">
+                    <div class="col-12">
+                        <!-- タスク1: 現地調査（進行中） -->
+                        <div class="task-card urgent" id="task001">
+                            <div class="task-header">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h5 class="mb-1">
+                                            <span class="badge bg-danger priority-badge me-2">緊急</span>
+                                            現地調査実施
+                                        </h5>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>10:00 - 12:00
+                                            <i class="fas fa-calendar ms-3 me-1"></i>本日
+                                        </small>
+                                    </div>
+                                    <div class="completion-status">
+                                        <span class="status-indicator status-progress"></span>
+                                        <small>実行中</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="task-body">
+                                <div class="location-info">
+                                    <h6 class="mb-2">
+                                        <i class="fas fa-map-marker-alt me-2"></i>港区賃貸管理株式会社
+                                    </h6>
+                                    <p class="mb-1"><strong>住所:</strong> 東京都港区○○1-2-3 ワンルーム</p>
+                                    <p class="mb-0"><strong>調査内容:</strong> リビング壁面・水道設備確認</p>
+                                </div>
+
+                                <h6 class="mt-3 mb-2">調査チェックリスト:</h6>
+                                <div class="checklist-item">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="check001_1" checked>
+                                        <label class="form-check-label" for="check001_1">
+                                            リビング壁（幅）<span class="text-danger">*</span>
+                                        </label>
+                                        <div class="mt-2">
+                                            <input type="number" class="form-control form-control-sm" placeholder="幅 (mm)" value="3600" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="checklist-item">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="check001_2" checked>
+                                        <label class="form-check-label" for="check001_2">
+                                            リビング壁（高さ）<span class="text-danger">*</span>
+                                        </label>
+                                        <div class="mt-2">
+                                            <input type="number" class="form-control form-control-sm" placeholder="高さ (mm)" value="2400" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="checklist-item">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="check001_3">
+                                        <label class="form-check-label" for="check001_3">
+                                            水道設備写真<span class="text-danger">*</span>
+                                        </label>
+                                        <div class="mt-2">
+                                            <input type="file" class="form-control form-control-sm" accept="image/*">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="task-action">
+                                <button class="btn btn-success btn-lg w-100" onclick="completeTask('task001')">
+                                    <i class="fas fa-check me-2"></i>調査完了を報告
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- タスク2: 協力会社連絡（待機中） -->
+                        <div class="task-card normal" id="task002">
+                            <div class="task-header">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h5 class="mb-1">
+                                            <span class="badge bg-info priority-badge me-2">通常</span>
+                                            協力会社への見積依頼
+                                        </h5>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>14:00まで
+                                            <i class="fas fa-calendar ms-3 me-1"></i>本日
+                                        </small>
+                                    </div>
+                                    <div class="completion-status">
+                                        <span class="status-indicator status-pending"></span>
+                                        <small>待機中</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="task-body">
+                                <div class="location-info">
+                                    <h6 class="mb-2">
+                                        <i class="fas fa-building me-2"></i>品川マンション管理
+                                    </h6>
+                                    <p class="mb-1"><strong>連絡先:</strong> A建設株式会社 (山田部長)</p>
+                                    <p class="mb-0"><strong>内容:</strong> 1DK原状回復工事の見積依頼</p>
+                                </div>
+
+                                <h6 class="mt-3 mb-2">連絡指示事項:</h6>
+                                <div class="alert alert-info">
+                                    <small>
+                                        <strong>社員からの指示:</strong><br>
+                                        • クロス張り替え（20㎡）の見積<br>
+                                        • 水道設備修理の見積<br>
+                                        • 作業期間は3日以内で調整<br>
+                                        • 責任者（山田部長）に直接連絡すること
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="task-action">
+                                <button class="btn btn-primary btn-lg w-100" onclick="startTask('task002')">
+                                    <i class="fas fa-phone me-2"></i>連絡・調整開始
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- タスク3: 完了済みタスク -->
+                        <div class="task-card completed" id="task003">
+                            <div class="task-header">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h5 class="mb-1">
+                                            <span class="badge bg-success priority-badge me-2">完了</span>
+                                            決定事項伝達
+                                        </h5>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>09:30
+                                            <i class="fas fa-calendar ms-3 me-1"></i>本日
+                                        </small>
+                                    </div>
+                                    <div class="completion-status">
+                                        <span class="status-indicator status-completed"></span>
+                                        <small>完了</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="task-body">
+                                <div class="location-info">
+                                    <h6 class="mb-2">
+                                        <i class="fas fa-check-circle me-2"></i>新宿不動産管理
+                                    </h6>
+                                    <p class="mb-1"><strong>完了内容:</strong> 工期確定の最終連絡完了</p>
+                                    <p class="mb-0"><strong>完了時刻:</strong> 2025年1月16日 09:45</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- タスク4: 午後の予定 -->
+                        <div class="task-card normal" id="task004">
+                            <div class="task-header">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h5 class="mb-1">
+                                            <span class="badge bg-warning priority-badge me-2">予定</span>
+                                            現地調査（午後）
+                                        </h5>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>14:30 - 16:30
+                                            <i class="fas fa-calendar ms-3 me-1"></i>本日
+                                        </small>
+                                    </div>
+                                    <div class="completion-status">
+                                        <span class="status-indicator status-pending"></span>
+                                        <small>予定</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="task-body">
+                                <div class="location-info">
+                                    <h6 class="mb-2">
+                                        <i class="fas fa-map-marker-alt me-2"></i>新宿不動産管理
+                                    </h6>
+                                    <p class="mb-1"><strong>住所:</strong> 東京都新宿区△△2-3-4 1K</p>
+                                    <p class="mb-0"><strong>調査内容:</strong> 水道設備・電気設備確認</p>
+                                </div>
+                                <div class="alert alert-warning">
+                                    <small><i class="fas fa-exclamation-triangle me-1"></i>午前の調査完了後に詳細指示を確認してください</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- タスク5: 明日の準備 -->
+                        <div class="task-card normal" id="task005">
+                            <div class="task-header">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h5 class="mb-1">
+                                            <span class="badge bg-secondary priority-badge me-2">明日</span>
+                                            資料準備
+                                        </h5>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>17:00まで
+                                            <i class="fas fa-calendar ms-3 me-1"></i>本日
+                                        </small>
+                                    </div>
+                                    <div class="completion-status">
+                                        <span class="status-indicator status-pending"></span>
+                                        <small>未着手</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="task-body">
+                                <div class="location-info">
+                                    <h6 class="mb-2">
+                                        <i class="fas fa-file-alt me-2"></i>明日の調査準備
+                                    </h6>
+                                    <p class="mb-1"><strong>内容:</strong> 調査機材の確認・充電</p>
+                                    <p class="mb-0"><strong>対象:</strong> カメラ・測定器・チェックリスト印刷</p>
+                                </div>
+                            </div>
+                            <div class="task-action">
+                                <button class="btn btn-outline-primary btn-lg w-100" onclick="startPreparation('task005')">
+                                    <i class="fas fa-clipboard-check me-2"></i>準備開始
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- 完了確認モーダル -->
+    <div class="modal fade" id="taskCompletionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-check-circle me-2"></i>タスク完了確認
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>タスクを完了しますか？</p>
+                    <div class="alert alert-info">
+                        <small><i class="fas fa-info-circle me-1"></i>完了報告は担当社員に自動通知されます</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-success" onclick="finalizeTaskCompletion()">
+                        <i class="fas fa-check me-1"></i>完了報告
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // タスク管理機能（派遣スタッフ専用）
+
+        let currentTaskId = null;
+
+        // タスク開始
+        function startTask(taskId) {
+            console.log('タスク開始:', taskId);
+
+            const taskCard = document.getElementById(taskId);
+            const statusIndicator = taskCard.querySelector('.status-indicator');
+            const statusText = taskCard.querySelector('.completion-status small');
+            const actionButton = taskCard.querySelector('.task-action button');
+
+            // ステータス更新
+            statusIndicator.className = 'status-indicator status-progress';
+            statusText.textContent = '実行中';
+
+            // ボタンの更新
+            if (taskId === 'task002') {
+                actionButton.innerHTML = '<i class="fas fa-external-link-alt me-2"></i>協力会社連絡画面へ';
+                actionButton.onclick = () => window.location.href = 'contractors/contractor_coordination.html';
+            }
+
+            // 統計更新
+            updateTaskStats();
+
+            alert('タスクを開始しました。がんばってください！');
+        }
+
+        // タスク完了
+        function completeTask(taskId) {
+            console.log('タスク完了確認:', taskId);
+            currentTaskId = taskId;
+
+            // 必須項目のチェック
+            if (taskId === 'task001') {
+                const requiredChecks = ['check001_1', 'check001_2', 'check001_3'];
+                const unchecked = requiredChecks.filter(id => !document.getElementById(id).checked);
+
+                if (unchecked.length > 0) {
+                    alert('すべてのチェックリスト項目を完了してください。');
+                    return;
+                }
+            }
+
+            // 完了確認モーダル表示
+            const modal = new bootstrap.Modal(document.getElementById('taskCompletionModal'));
+            modal.show();
+        }
+
+        // タスク完了の確定
+        function finalizeTaskCompletion() {
+            if (!currentTaskId) return;
+
+            const taskCard = document.getElementById(currentTaskId);
+            const statusIndicator = taskCard.querySelector('.status-indicator');
+            const statusText = taskCard.querySelector('.completion-status small');
+            const priorityBadge = taskCard.querySelector('.priority-badge');
+            const actionDiv = taskCard.querySelector('.task-action');
+
+            // ビジュアル更新
+            taskCard.className = 'task-card completed';
+            statusIndicator.className = 'status-indicator status-completed';
+            statusText.textContent = '完了';
+            priorityBadge.className = 'badge bg-success priority-badge me-2';
+            priorityBadge.textContent = '完了';
+
+            // アクションボタンを非表示
+            actionDiv.style.display = 'none';
+
+            // 統計更新
+            updateTaskStats();
+
+            // モーダルを閉じる
+            const modal = bootstrap.Modal.getInstance(document.getElementById('taskCompletionModal'));
+            modal.hide();
+
+            // 成功メッセージ
+            setTimeout(() => {
+                alert('タスクが完了しました！\n担当社員に完了報告を送信しました。');
+            }, 500);
+
+            currentTaskId = null;
+        }
+
+        // 準備開始
+        function startPreparation(taskId) {
+            console.log('準備開始:', taskId);
+
+            alert('資料準備を開始してください。\n\n確認項目:\n• カメラの充電\n• 測定器の動作確認\n• チェックリストの印刷\n• 明日のスケジュール確認');
+
+            startTask(taskId);
+        }
+
+        // 統計更新
+        function updateTaskStats() {
+            const tasks = document.querySelectorAll('.task-card');
+            let total = tasks.length;
+            let pending = 0;
+            let progress = 0;
+            let completed = 0;
+
+            tasks.forEach(task => {
+                const status = task.querySelector('.status-indicator');
+                if (status.classList.contains('status-pending')) {
+                    pending++;
+                } else if (status.classList.contains('status-progress')) {
+                    progress++;
+                } else if (status.classList.contains('status-completed')) {
+                    completed++;
+                }
+            });
+
+            document.getElementById('totalTasks').textContent = total;
+            document.getElementById('pendingTasks').textContent = pending;
+            document.getElementById('progressTasks').textContent = progress;
+            document.getElementById('completedTasks').textContent = completed;
+        }
+
+        // タスク更新
+        function refreshTasks() {
+            console.log('タスクリスト更新中...');
+
+            // 更新アニメーション
+            const refreshBtn = event.target.closest('button');
+            const icon = refreshBtn.querySelector('i');
+            icon.classList.add('fa-spin');
+
+            setTimeout(() => {
+                icon.classList.remove('fa-spin');
+                alert('タスクリストを更新しました');
+            }, 1000);
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('タスク管理画面初期化');
+
+            // 初期統計計算
+            updateTaskStats();
+
+            // モバイル対応の確認
+            if (window.innerWidth <= 768) {
+                console.log('モバイルビュー対応');
+                document.body.classList.add('mobile-view');
+            }
+
+            // 自動更新設定（5分ごと）
+            setInterval(() => {
+                console.log('タスクステータス自動チェック');
+            }, 300000);
+        });
+    </script>
+</body>
+</html>

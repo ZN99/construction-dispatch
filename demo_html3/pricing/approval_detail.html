@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>見積詳細承認 - 社員専用</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/role-separation.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .approval-actions-fixed {
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 1000;
+            padding: 20px 0;
+            border-bottom: 3px solid #007bff;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .case-summary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .price-highlight {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #28a745;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn-xl {
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .btn-xl:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .detail-tabs .nav-tabs {
+            border-bottom: 3px solid #007bff;
+        }
+
+        .detail-tabs .nav-link {
+            font-weight: bold;
+            padding: 15px 25px;
+            border: none;
+            color: #6c757d;
+            transition: all 0.3s ease;
+        }
+
+        .detail-tabs .nav-link.active {
+            background: #007bff;
+            color: white;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .tab-content {
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .info-card {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .profit-analysis {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .risk-item {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .risk-item:hover {
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .risk-low {
+            border-left: 4px solid #28a745;
+        }
+
+        .risk-medium {
+            border-left: 4px solid #ffc107;
+        }
+
+        .risk-high {
+            border-left: 4px solid #dc3545;
+        }
+
+        .estimate-breakdown {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .estimate-breakdown .table th {
+            background: #007bff;
+            color: white;
+            border: none;
+        }
+
+        .estimate-breakdown .table td {
+            border-color: #e9ecef;
+        }
+
+        .history-item {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .history-item::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 20px;
+            width: 20px;
+            height: 20px;
+            background: #007bff;
+            border-radius: 50%;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .approval-badge {
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            border-radius: 25px;
+        }
+
+        .urgency-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            animation: pulse-urgent 2s infinite;
+        }
+
+        @keyframes pulse-urgent {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .comparison-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .comparison-table .table-header {
+            background: #6c757d;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body data-user-role="employee">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="approval_center.html">
+                <i class="fas fa-arrow-left me-2"></i>見積詳細承認
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link text-white" href="approval_center.html">
+                    <i class="fas fa-list me-1"></i>承認センター
+                </a>
+                <a class="nav-link text-white" href="approval_history.html">
+                    <i class="fas fa-history me-1"></i>承認履歴
+                </a>
+                <a href="../index_manager.html" class="btn btn-outline-light btn-sm ms-3">
+                    <i class="fas fa-home me-1"></i>ダッシュボード
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 承認アクションエリア（画面上部固定） -->
+    <div class="container-fluid">
+        <div class="approval-actions-fixed">
+            <div class="container">
+                <div class="case-summary position-relative">
+                    <div class="urgency-indicator" id="urgencyIndicator">
+                        <span class="badge bg-danger fs-6">緊急</span>
+                    </div>
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h4 class="mb-2">案件#001 - 田中様1K 原状回復工事</h4>
+                            <div class="price-highlight">見積金額: ¥280,000</div>
+                            <div class="row mt-3">
+                                <div class="col-md-3">
+                                    <strong>利益率:</strong> 23%
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>工期:</strong> 3日
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>面積:</strong> 25㎡(1K)
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>期限:</strong> 今日 17:00
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="approval-badge bg-warning text-dark">
+                                <i class="fas fa-clock me-1"></i>承認待ち
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-success btn-xl" onclick="approveProject()">
+                        <i class="fas fa-check me-2"></i>承認する
+                    </button>
+                    <button class="btn btn-warning btn-xl" onclick="requestRevision()">
+                        <i class="fas fa-edit me-2"></i>修正要求
+                    </button>
+                    <button class="btn btn-danger btn-xl" onclick="rejectProject()">
+                        <i class="fas fa-times me-2"></i>差し戻し
+                    </button>
+                    <button class="btn btn-info btn-xl" onclick="addNote()">
+                        <i class="fas fa-comment me-2"></i>メモ追加
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 詳細情報タブ -->
+        <div class="container">
+            <div class="detail-tabs">
+                <nav class="nav nav-tabs" id="detailTabs">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#estimateTab">
+                        <i class="fas fa-calculator me-1"></i>見積詳細
+                    </a>
+                    <a class="nav-link" data-bs-toggle="tab" href="#profitTab">
+                        <i class="fas fa-chart-line me-1"></i>利益分析
+                    </a>
+                    <a class="nav-link" data-bs-toggle="tab" href="#riskTab">
+                        <i class="fas fa-exclamation-triangle me-1"></i>リスク評価
+                    </a>
+                    <a class="nav-link" data-bs-toggle="tab" href="#historyTab">
+                        <i class="fas fa-history me-1"></i>履歴・コメント
+                    </a>
+                    <a class="nav-link" data-bs-toggle="tab" href="#comparisonTab">
+                        <i class="fas fa-balance-scale me-1"></i>競合比較
+                    </a>
+                </nav>
+
+                <div class="tab-content">
+                    <!-- 見積詳細タブ -->
+                    <div class="tab-pane fade show active" id="estimateTab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-card">
+                                    <h6><i class="fas fa-user me-2"></i>顧客情報</h6>
+                                    <table class="table table-sm">
+                                        <tr><td>顧客名</td><td>田中太郎様</td></tr>
+                                        <tr><td>住所</td><td>東京都新宿区○○1-2-3</td></tr>
+                                        <tr><td>電話番号</td><td>03-1234-5678</td></tr>
+                                        <tr><td>顧客ランク</td><td><span class="badge bg-primary">A</span></td></tr>
+                                        <tr><td>取引履歴</td><td>6ヶ月前にバスルーム改修</td></tr>
+                                    </table>
+                                </div>
+
+                                <div class="info-card">
+                                    <h6><i class="fas fa-home me-2"></i>物件情報</h6>
+                                    <table class="table table-sm">
+                                        <tr><td>建物種別</td><td>賃貸アパート</td></tr>
+                                        <tr><td>築年数</td><td>12年</td></tr>
+                                        <tr><td>工事面積</td><td>25㎡(1K)</td></tr>
+                                        <tr><td>工事内容</td><td>原状回復(クリーニング・壁紙張替)</td></tr>
+                                        <tr><td>特記事項</td><td>照明器具清掃あり</td></tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="estimate-breakdown">
+                                    <div class="table-responsive">
+                                        <table class="table mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>工事項目</th>
+                                                    <th>数量</th>
+                                                    <th>単価</th>
+                                                    <th>金額</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>クリーニング作業</td>
+                                                    <td>25㎡</td>
+                                                    <td>¥2,800</td>
+                                                    <td>¥70,000</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>壁紙張替工事</td>
+                                                    <td>80㎡</td>
+                                                    <td>¥1,800</td>
+                                                    <td>¥144,000</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>照明器具清掃</td>
+                                                    <td>6台</td>
+                                                    <td>¥2,500</td>
+                                                    <td>¥15,000</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>畳・フローリング清掃</td>
+                                                    <td>15㎡</td>
+                                                    <td>¥1,200</td>
+                                                    <td>¥18,000</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>廃材処理</td>
+                                                    <td>1式</td>
+                                                    <td>¥12,000</td>
+                                                    <td>¥12,000</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>諸経費</td>
+                                                    <td>1式</td>
+                                                    <td>¥21,000</td>
+                                                    <td>¥21,000</td>
+                                                </tr>
+                                                <tr class="table-primary">
+                                                    <td><strong>合計</strong></td>
+                                                    <td colspan="2"></td>
+                                                    <td><strong>¥280,000</strong></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="info-card mt-3">
+                                    <h6><i class="fas fa-calendar me-2"></i>工程表</h6>
+                                    <div class="timeline">
+                                        <div class="timeline-item">
+                                            <strong>1日目:</strong> 照明器具清掃・室内クリーニング
+                                        </div>
+                                        <div class="timeline-item">
+                                            <strong>2日目:</strong> 壁紙剥がし・下地清掃
+                                        </div>
+                                        <div class="timeline-item">
+                                            <strong>3日目:</strong> 新規壁紙張替・最終清掃・引渡し
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 利益分析タブ -->
+                    <div class="tab-pane fade" id="profitTab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="profit-analysis">
+                                    <h5><i class="fas fa-chart-pie me-2"></i>利益構造分析</h5>
+                                    <div class="row text-center mt-3">
+                                        <div class="col-4">
+                                            <h3>¥280,000</h3>
+                                            <p>売上高</p>
+                                        </div>
+                                        <div class="col-4">
+                                            <h3>¥215,600</h3>
+                                            <p>原価</p>
+                                        </div>
+                                        <div class="col-4">
+                                            <h3>¥64,400</h3>
+                                            <p>粗利益</p>
+                                        </div>
+                                    </div>
+                                    <div class="progress mt-3" style="height: 25px;">
+                                        <div class="progress-bar bg-success" style="width: 23%">
+                                            利益率 23%
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="info-card">
+                                    <h6><i class="fas fa-coins me-2"></i>原価内訳</h6>
+                                    <table class="table table-sm">
+                                        <tr><td>材料費</td><td>¥144,000</td><td>66.8%</td></tr>
+                                        <tr><td>労務費</td><td>¥48,600</td><td>22.5%</td></tr>
+                                        <tr><td>外注費</td><td>¥15,000</td><td>7.0%</td></tr>
+                                        <tr><td>その他経費</td><td>¥8,000</td><td>3.7%</td></tr>
+                                        <tr class="table-secondary"><td><strong>合計</strong></td><td><strong>¥215,600</strong></td><td><strong>100%</strong></td></tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <canvas id="profitChart" width="400" height="300"></canvas>
+                                </div>
+
+                                <div class="comparison-table mt-3">
+                                    <div class="table-header">
+                                        <i class="fas fa-chart-bar me-2"></i>業界平均との比較
+                                    </div>
+                                    <table class="table mb-0">
+                                        <tr>
+                                            <td>当社利益率</td>
+                                            <td><span class="badge bg-success">23%</span></td>
+                                            <td><i class="fas fa-arrow-up text-success"></i> +3%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>業界平均</td>
+                                            <td><span class="badge bg-secondary">20%</span></td>
+                                            <td>基準値</td>
+                                        </tr>
+                                        <tr>
+                                            <td>社内目標</td>
+                                            <td><span class="badge bg-primary">25%</span></td>
+                                            <td><i class="fas fa-arrow-down text-warning"></i> -2%</td>
+                                        </tr>
+                                    </table>
+                                </div>
+
+                                <div class="info-card mt-3">
+                                    <h6><i class="fas fa-lightbulb me-2"></i>利益最適化提案</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-check-circle text-success me-2"></i>適正な利益率を確保</li>
+                                        <li><i class="fas fa-info-circle text-info me-2"></i>配管工事の外注コスト削減可能</li>
+                                        <li><i class="fas fa-exclamation-circle text-warning me-2"></i>材料費交渉の余地あり</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- リスク評価タブ -->
+                    <div class="tab-pane fade" id="riskTab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-shield-alt me-2"></i>プロジェクトリスク評価</h6>
+
+                                <div class="risk-item risk-low">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">技術的リスク</h6>
+                                            <p class="mb-0">標準的な原状回復作業</p>
+                                        </div>
+                                        <span class="badge bg-success">低</span>
+                                    </div>
+                                </div>
+
+                                <div class="risk-item risk-medium">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">工期リスク</h6>
+                                            <p class="mb-0">短期間作業で入居日に影響なし</p>
+                                        </div>
+                                        <span class="badge bg-warning">中</span>
+                                    </div>
+                                </div>
+
+                                <div class="risk-item risk-low">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">支払いリスク</h6>
+                                            <p class="mb-0">既存顧客・良好な支払い実績</p>
+                                        </div>
+                                        <span class="badge bg-success">低</span>
+                                    </div>
+                                </div>
+
+                                <div class="risk-item risk-medium">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">材料調達リスク</h6>
+                                            <p class="mb-0">壁紙・清掃用品は常時在庫あり</p>
+                                        </div>
+                                        <span class="badge bg-warning">中</span>
+                                    </div>
+                                </div>
+
+                                <div class="risk-item risk-low">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">品質リスク</h6>
+                                            <p class="mb-0">経験豊富な職人が担当</p>
+                                        </div>
+                                        <span class="badge bg-success">低</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <canvas id="riskChart" width="400" height="300"></canvas>
+                                </div>
+
+                                <div class="info-card mt-3">
+                                    <h6><i class="fas fa-clipboard-check me-2"></i>リスク対策</h6>
+                                    <div class="accordion" id="riskAccordion">
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#risk1">
+                                                    工期遅延対策
+                                                </button>
+                                            </h2>
+                                            <div id="risk1" class="accordion-collapse collapse show" data-bs-parent="#riskAccordion">
+                                                <div class="accordion-body">
+                                                    • 材料の事前発注完了<br>
+                                                    • 予備職人の確保<br>
+                                                    • 工程の2日間バッファ設定
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#risk2">
+                                                    材料調達対策
+                                                </button>
+                                            </h2>
+                                            <div id="risk2" class="accordion-collapse collapse" data-bs-parent="#riskAccordion">
+                                                <div class="accordion-body">
+                                                    • 複数サプライヤーとの契約<br>
+                                                    • 代替品リストの準備<br>
+                                                    • 早期発注による在庫確保
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="info-card">
+                                    <h6><i class="fas fa-chart-line me-2"></i>総合リスクスコア</h6>
+                                    <div class="text-center">
+                                        <div class="display-4 text-success">2.3</div>
+                                        <p class="mb-0">5点満点中（低リスク）</p>
+                                        <div class="progress mt-2">
+                                            <div class="progress-bar bg-success" style="width: 46%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 履歴・コメントタブ -->
+                    <div class="tab-pane fade" id="historyTab">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6><i class="fas fa-history me-2"></i>承認履歴</h6>
+
+                                <div class="history-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">見積作成</h6>
+                                            <p class="mb-1">営業部 鈴木一郎が見積を作成しました</p>
+                                            <small class="text-muted">2024-12-21 09:30</small>
+                                        </div>
+                                        <span class="badge bg-info">作成</span>
+                                    </div>
+                                </div>
+
+                                <div class="history-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">技術レビュー</h6>
+                                            <p class="mb-1">工事部 田中二郎が技術内容を確認しました</p>
+                                            <small class="text-muted">2024-12-21 11:15</small>
+                                        </div>
+                                        <span class="badge bg-success">承認</span>
+                                    </div>
+                                </div>
+
+                                <div class="history-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">見積修正</h6>
+                                            <p class="mb-1">配管工事費用を120,000円に修正</p>
+                                            <small class="text-muted">2024-12-21 13:45</small>
+                                        </div>
+                                        <span class="badge bg-warning">修正</span>
+                                    </div>
+                                </div>
+
+                                <div class="history-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">最終承認待ち</h6>
+                                            <p class="mb-1">部長承認待ちの状態になりました</p>
+                                            <small class="text-muted">2024-12-21 14:00</small>
+                                        </div>
+                                        <span class="badge bg-primary">待機中</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="info-card">
+                                    <h6><i class="fas fa-comments me-2"></i>コメント追加</h6>
+                                    <form id="commentForm">
+                                        <div class="mb-3">
+                                            <textarea class="form-control" id="newComment" rows="4" placeholder="承認コメントを入力してください..."></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fas fa-plus me-1"></i>コメント追加
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <div class="info-card">
+                                    <h6><i class="fas fa-users me-2"></i>関係者</h6>
+                                    <div class="list-group list-group-flush">
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="fw-bold">鈴木一郎</div>
+                                                <small>営業担当</small>
+                                            </div>
+                                            <span class="badge bg-info">作成者</span>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="fw-bold">田中二郎</div>
+                                                <small>工事部</small>
+                                            </div>
+                                            <span class="badge bg-success">承認済</span>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="fw-bold">山田部長</div>
+                                                <small>最終承認者</small>
+                                            </div>
+                                            <span class="badge bg-warning">承認待ち</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 競合比較タブ -->
+                    <div class="tab-pane fade" id="comparisonTab">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6><i class="fas fa-balance-scale me-2"></i>競合他社との比較</h6>
+
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>項目</th>
+                                                <th>当社</th>
+                                                <th>A社</th>
+                                                <th>B社</th>
+                                                <th>C社</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>見積金額</strong></td>
+                                                <td class="text-success"><strong>¥850,000</strong></td>
+                                                <td>¥920,000</td>
+                                                <td>¥780,000</td>
+                                                <td>¥1,050,000</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>工期</strong></td>
+                                                <td class="text-success"><strong>14日</strong></td>
+                                                <td>18日</td>
+                                                <td>21日</td>
+                                                <td>12日</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>保証期間</strong></td>
+                                                <td class="text-success"><strong>5年</strong></td>
+                                                <td>3年</td>
+                                                <td>2年</td>
+                                                <td>5年</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>キッチン品質</strong></td>
+                                                <td class="text-success"><strong>高級品</strong></td>
+                                                <td>標準品</td>
+                                                <td>標準品</td>
+                                                <td>高級品</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>配管工事</strong></td>
+                                                <td class="text-success"><strong>含む</strong></td>
+                                                <td>別途</td>
+                                                <td>含む</td>
+                                                <td>含む</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="chart-container mt-3">
+                                    <canvas id="comparisonChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="info-card">
+                                    <h6><i class="fas fa-trophy me-2"></i>競合優位性</h6>
+                                    <ul class="list-unstyled">
+                                        <li class="mb-2">
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            <strong>価格競争力:</strong> 中位価格帯で高品質
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            <strong>工期:</strong> 最短クラスで実現
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            <strong>保証:</strong> 最長5年保証
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            <strong>総合力:</strong> コスパ最優秀
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div class="info-card">
+                                    <h6><i class="fas fa-lightbulb me-2"></i>受注確度</h6>
+                                    <div class="text-center">
+                                        <div class="display-4 text-success">85%</div>
+                                        <p class="mb-0">受注確度</p>
+                                        <div class="progress mt-2">
+                                            <div class="progress-bar bg-success" style="width: 85%"></div>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted mt-2 d-block">
+                                        既存顧客・価格競争力・工期の優位性を総合評価
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 承認確認モーダル -->
+    <div class="modal fade" id="approvalModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">最終承認確認</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-success">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>重要:</strong> この操作により見積が正式に承認され、顧客への提示が可能になります。
+                    </div>
+                    <div class="approval-summary">
+                        <h6>承認内容確認</h6>
+                        <table class="table">
+                            <tr><td>案件</td><td>田中様1K 原状回復工事</td></tr>
+                            <tr><td>見積金額</td><td class="text-success fw-bold">¥280,000</td></tr>
+                            <tr><td>利益率</td><td>23%</td></tr>
+                            <tr><td>リスクレベル</td><td><span class="badge bg-success">低</span></td></tr>
+                            <tr><td>承認者</td><td>山田部長</td></tr>
+                            <tr><td>承認日時</td><td id="approvalDateTime"></td></tr>
+                        </table>
+                    </div>
+                    <div class="approval-comment mt-3">
+                        <label class="form-label">承認コメント（必須）</label>
+                        <textarea class="form-control" id="finalApprovalComment" placeholder="承認理由や特記事項を入力してください" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-success btn-lg" onclick="executeFinalApproval()">
+                        <i class="fas fa-check me-1"></i>承認実行
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 役割制御の強制実行
+            if (typeof window.roleManager !== 'undefined') {
+                window.roleManager.enforceRoleSeparation();
+                window.roleManager.hideFinancialInfo();
+            }
+
+            // 法令遵守のための監査ログ記録
+            logAuditEvent('APPROVAL_DETAIL_ACCESS', 'approval_detail.html?id=001', 'APPROVAL_REVIEW');
+
+            // チャート初期化
+            initializeProfitChart();
+            initializeRiskChart();
+            initializeComparisonChart();
+
+            // 現在日時の設定
+            document.getElementById('approvalDateTime').textContent = new Date().toLocaleString('ja-JP');
+
+            // コメントフォームの処理
+            document.getElementById('commentForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                addComment();
+            });
+        });
+
+        function initializeProfitChart() {
+            const ctx = document.getElementById('profitChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['粗利益', '材料費', '労務費', '外注費', 'その他'],
+                    datasets: [{
+                        data: [195500, 520000, 84000, 35000, 15500],
+                        backgroundColor: [
+                            '#28a745',
+                            '#007bff',
+                            '#ffc107',
+                            '#fd7e14',
+                            '#6c757d'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: '利益構造'
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeRiskChart() {
+            const ctx = document.getElementById('riskChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['技術リスク', '工期リスク', '支払いリスク', '材料調達', '品質リスク'],
+                    datasets: [{
+                        label: 'リスクレベル',
+                        data: [1, 3, 1, 3, 1],
+                        backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                        borderColor: '#ffc107',
+                        pointBackgroundColor: '#ffc107'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 5
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeComparisonChart() {
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['当社', 'A社', 'B社', 'C社'],
+                    datasets: [{
+                        label: '見積金額(万円)',
+                        data: [85, 92, 78, 105],
+                        backgroundColor: ['#28a745', '#6c757d', '#6c757d', '#6c757d']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '競合比較 - 見積金額'
+                        }
+                    }
+                }
+            });
+        }
+
+        function approveProject() {
+            logAuditEvent('FINAL_APPROVAL_INITIATED', 'Project ID: 001', 'APPROVAL_ACTION');
+            new bootstrap.Modal(document.getElementById('approvalModal')).show();
+        }
+
+        function executeFinalApproval() {
+            const comment = document.getElementById('finalApprovalComment').value;
+            if (!comment.trim()) {
+                alert('承認コメントの入力は必須です。');
+                return;
+            }
+
+            logAuditEvent('FINAL_APPROVAL_EXECUTED', `Project ID: 001, Comment: ${comment}`, 'APPROVAL_COMPLETED');
+
+            // 承認完了処理
+            showSuccessMessage('案件#001の見積が正式に承認されました。顧客への提示準備が完了します。');
+
+            // モーダルを閉じる
+            bootstrap.Modal.getInstance(document.getElementById('approvalModal')).hide();
+
+            // 承認センターに戻る
+            setTimeout(() => {
+                window.location.href = 'approval_center.html';
+            }, 2000);
+        }
+
+        function requestRevision() {
+            logAuditEvent('REVISION_REQUEST_INITIATED', 'Project ID: 001', 'APPROVAL_REVISION');
+            const reason = prompt('修正要求の理由を入力してください:');
+            if (reason) {
+                alert(`修正要求を送信しました。\n理由: ${reason}`);
+                logAuditEvent('REVISION_REQUEST_SENT', `Reason: ${reason}`, 'APPROVAL_REVISION');
+            }
+        }
+
+        function rejectProject() {
+            logAuditEvent('PROJECT_REJECTION_INITIATED', 'Project ID: 001', 'APPROVAL_REJECTION');
+            const reason = prompt('差し戻しの理由を入力してください:');
+            if (reason) {
+                if (confirm('この見積を差し戻しますか？この操作は取り消せません。')) {
+                    alert(`見積を差し戻しました。\n理由: ${reason}`);
+                    logAuditEvent('PROJECT_REJECTED', `Reason: ${reason}`, 'APPROVAL_REJECTION');
+                }
+            }
+        }
+
+        function addNote() {
+            const note = prompt('メモを入力してください:');
+            if (note) {
+                alert(`メモを追加しました: ${note}`);
+                logAuditEvent('APPROVAL_NOTE_ADDED', `Note: ${note}`, 'APPROVAL_ANNOTATION');
+            }
+        }
+
+        function addComment() {
+            const comment = document.getElementById('newComment').value;
+            if (comment.trim()) {
+                // コメント追加処理
+                const historyContainer = document.querySelector('#historyTab .col-md-8');
+                const newComment = document.createElement('div');
+                newComment.className = 'history-item';
+                newComment.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">承認コメント</h6>
+                            <p class="mb-1">${comment}</p>
+                            <small class="text-muted">${new Date().toLocaleString('ja-JP')}</small>
+                        </div>
+                        <span class="badge bg-info">コメント</span>
+                    </div>
+                `;
+                historyContainer.appendChild(newComment);
+
+                // フォームをリセット
+                document.getElementById('newComment').value = '';
+
+                logAuditEvent('COMMENT_ADDED', `Comment: ${comment}`, 'APPROVAL_COMMENT');
+            }
+        }
+
+        function showSuccessMessage(message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 400px;';
+            alertDiv.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        function logAuditEvent(action, details, category) {
+            const auditLog = {
+                timestamp: new Date().toISOString(),
+                action: action,
+                details: details,
+                category: category,
+                userId: 'current_user',
+                userRole: 'employee',
+                module: 'approval_detail',
+                projectId: '001'
+            };
+
+            console.log('見積承認詳細監査ログ:', auditLog);
+        }
+    </script>
+</body>
+</html>

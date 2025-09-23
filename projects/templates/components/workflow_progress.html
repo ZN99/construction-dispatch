@@ -1,0 +1,230 @@
+<!-- ワークフロープログレスバーコンポーネント -->
+{% if workflow_progress %}
+<div class="workflow-progress-container mb-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="fas fa-tasks me-2"></i>プロジェクト進捗
+            </h6>
+            <div class="progress-info">
+                <span class="badge bg-{{ workflow_progress.current_stage.color }}">
+                    {{ workflow_progress.current_stage.name }}
+                </span>
+                <span class="text-muted small ms-2">
+                    {{ workflow_progress.completed_stages }}/{{ workflow_progress.total_stages }} 完了
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- プログレスバー -->
+            <div class="progress mb-3" style="height: 8px;">
+                <div class="progress-bar bg-{{ workflow_progress.current_stage.color }}"
+                     role="progressbar"
+                     style="width: {{ workflow_progress.progress_percentage }}%"
+                     aria-valuenow="{{ workflow_progress.progress_percentage }}"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                </div>
+            </div>
+
+            <!-- ステージステップ -->
+            <div class="workflow-steps">
+                <div class="row">
+                    {% for stage in workflow_progress.stages %}
+                    <div class="col-md-2 col-sm-4 col-6 mb-3">
+                        <div class="step-item text-center {% if stage.completed %}completed{% elif forloop.counter0 == workflow_progress.current_stage_index %}current{% else %}pending{% endif %}">
+                            <div class="step-icon mb-2">
+                                <div class="step-circle {% if stage.completed %}bg-{{ stage.color }}{% elif forloop.counter0 == workflow_progress.current_stage_index %}bg-{{ stage.color }}{% else %}bg-light{% endif %}">
+                                    <i class="{{ stage.icon }} {% if stage.completed or forloop.counter0 == workflow_progress.current_stage_index %}text-white{% else %}text-muted{% endif %}"></i>
+                                </div>
+                            </div>
+                            <div class="step-content">
+                                <div class="step-title small fw-bold">{{ stage.name }}</div>
+                                <div class="step-description text-muted" style="font-size: 0.7rem;">{{ stage.description }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 進捗詳細 -->
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <small class="text-muted">現在のステップ:</small>
+                    <div class="fw-bold text-{{ workflow_progress.current_stage.color }}">
+                        <i class="{{ workflow_progress.current_stage.icon }} me-1"></i>
+                        {{ workflow_progress.current_stage.name }}
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small class="text-muted">進捗率:</small>
+                    <div class="fw-bold text-{{ workflow_progress.current_stage.color }}">
+                        {{ workflow_progress.progress_percentage }}%
+                        {% if workflow_progress.is_complete %}
+                            <i class="fas fa-check-circle text-success ms-1"></i>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- アクションボタン (プロジェクト進捗に応じて) -->
+            {% if not workflow_progress.is_complete %}
+            <div class="mt-3 pt-3 border-top">
+                <small class="text-muted d-block mb-2">次のアクション:</small>
+                {% if workflow_progress.current_stage.name == "調査予定作成" %}
+                    {% if project.requires_survey and not project.survey %}
+                        <a href="{% url 'survey_create' %}?project={{ project.id }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-calendar-plus me-1"></i>調査予定を作成
+                        </a>
+                    {% endif %}
+                {% elif workflow_progress.current_stage.name == "調査員アサイン" %}
+                    {% if project.survey and not project.survey.surveyor %}
+                        <a href="{% url 'survey_assign' project.survey.id %}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-user-check me-1"></i>調査員をアサイン
+                        </a>
+                    {% endif %}
+                {% elif workflow_progress.current_stage.name == "調査実行" %}
+                    {% if project.survey and project.survey.status == "scheduled" %}
+                        <a href="{% url 'survey_start' project.survey.id %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-play me-1"></i>調査を開始
+                        </a>
+                    {% endif %}
+                {% elif workflow_progress.current_stage.name == "調査完了" %}
+                    {% if project.survey and project.survey.status == "in_progress" %}
+                        <a href="{% url 'survey_complete' project.survey.id %}" class="btn btn-sm btn-success">
+                            <i class="fas fa-check me-1"></i>調査を完了
+                        </a>
+                    {% endif %}
+                {% elif workflow_progress.current_stage.name == "職人アサイン準備" %}
+                    {% if project.status == "draft" %}
+                        <button class="btn btn-sm btn-dark" onclick="confirmProject({{ project.id }})">
+                            <i class="fas fa-check me-1"></i>案件を確定
+                        </button>
+                    {% endif %}
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="mt-3 pt-3 border-top">
+                <div class="alert alert-success mb-0">
+                    <i class="fas fa-check-circle me-2"></i>
+                    ワークフローが完了しました！職人アサインを開始できます。
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.workflow-progress-container {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    padding: 5px;
+}
+
+.workflow-steps {
+    position: relative;
+}
+
+.step-item {
+    position: relative;
+}
+
+.step-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    transition: all 0.3s ease;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.step-item.pending .step-circle {
+    background-color: #f8f9fa !important;
+    border-color: #dee2e6;
+}
+
+.step-item.current .step-circle {
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.step-item.completed .step-circle {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.step-title {
+    margin-top: 8px;
+    font-size: 0.75rem;
+}
+
+.step-description {
+    font-size: 0.65rem;
+    margin-top: 2px;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .step-circle {
+        width: 40px;
+        height: 40px;
+    }
+
+    .step-title {
+        font-size: 0.7rem;
+    }
+
+    .step-description {
+        font-size: 0.6rem;
+    }
+}
+
+/* アニメーション */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+    }
+}
+
+.step-item.current .step-circle {
+    animation: pulse 2s infinite;
+}
+</style>
+
+<script>
+function confirmProject(projectId) {
+    if (confirm('案件を確定しますか？確定後は職人アサインが可能になります。')) {
+        fetch(`/api/projects/${projectId}/confirm/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('エラーが発生しました: ' + (data.error || '不明なエラー'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('ネットワークエラーが発生しました');
+        });
+    }
+}
+</script>
+{% endif %}

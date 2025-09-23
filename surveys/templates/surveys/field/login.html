@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>現場調査員ログイン</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+
+        .login-container {
+            max-width: 400px;
+            margin: auto;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .login-header i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+
+        .login-body {
+            padding: 2rem;
+        }
+
+        .form-floating {
+            margin-bottom: 1rem;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .login-footer {
+            text-align: center;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .alert {
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+
+        /* モバイル対応 */
+        @media (max-width: 576px) {
+            .login-container {
+                margin: 1rem;
+            }
+
+            .login-body {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <div class="login-card">
+                <!-- ヘッダー -->
+                <div class="login-header">
+                    <i class="fas fa-search"></i>
+                    <h3 class="mb-0">現場調査システム</h3>
+                    <small class="opacity-75">調査員用ログイン</small>
+                </div>
+
+                <!-- ログインフォーム -->
+                <div class="login-body">
+                    <!-- メッセージ表示 -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {% if message.tags == 'error' %}
+                                    <i class="fas fa-times-circle me-2"></i>
+                                {% elif message.tags == 'warning' %}
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle me-2"></i>
+                                {% endif %}
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" id="loginForm">
+                        {% csrf_token %}
+
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="username" name="username"
+                                   placeholder="社員番号またはユーザー名" required>
+                            <label for="username">
+                                <i class="fas fa-user me-2"></i>社員番号またはユーザー名
+                            </label>
+                        </div>
+
+                        <div class="form-floating">
+                            <input type="password" class="form-control" id="password" name="password"
+                                   placeholder="パスワード" required>
+                            <label for="password">
+                                <i class="fas fa-lock me-2"></i>パスワード
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-login">
+                            <i class="fas fa-sign-in-alt me-2"></i>ログイン
+                        </button>
+                    </form>
+
+                    <!-- 本部システムへのリンク -->
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            本部システムは
+                            <a href="{% url 'dashboard' %}" class="text-primary">こちら</a>
+                        </small>
+                    </div>
+                </div>
+
+                <!-- フッター -->
+                <div class="login-footer">
+                    <small>
+                        <i class="fas fa-shield-alt me-1"></i>
+                        現場調査員専用システム
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        // ログインフォームの送信処理
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            // ボタンを無効化してローディング表示
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>ログイン中...';
+
+            // 3秒後にボタンを復活（エラー時の対策）
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }, 3000);
+        });
+
+        // フォーカス時のアニメーション
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'scale(1.02)';
+            });
+
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>

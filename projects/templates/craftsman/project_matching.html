@@ -1,0 +1,238 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}プロジェクトマッチング - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-handshake me-2"></i>プロジェクトマッチング</h2>
+                    <p class="text-muted">案件に最適な職人を自動マッチングします</p>
+                </div>
+                <a href="{% url 'craftsman_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>ダッシュボード
+                </a>
+            </div>
+
+            <!-- 検索フォーム -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-search me-2"></i>マッチング条件</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.project.id_for_label }}" class="form-label">案件</label>
+                                {{ form.project }}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.start_date.id_for_label }}" class="form-label">開始予定日</label>
+                                {{ form.start_date }}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.end_date.id_for_label }}" class="form-label">終了予定日</label>
+                                {{ form.end_date }}
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="{{ form.max_results.id_for_label }}" class="form-label">表示件数</label>
+                                {{ form.max_results }}
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-1"></i>マッチング実行
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if project %}
+            <!-- 案件情報 -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>案件情報</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>{{ project.title }}</h6>
+                            <p class="mb-1"><strong>顧客:</strong> {{ project.customer.name }}</p>
+                            <p class="mb-1"><strong>工種:</strong> {{ project.project_type.name }}</p>
+                            <p class="mb-1"><strong>場所:</strong> {{ project.address }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>予算:</strong> {{ project.formatted_amount }}</p>
+                            <p class="mb-1"><strong>期間:</strong> {{ project.start_date }} 〜 {{ project.end_date }}</p>
+                            <p class="mb-1"><strong>ステータス:</strong>
+                                <span class="badge bg-{{ project.status }}">{{ project.get_status_display }}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- マッチング結果 -->
+            {% if matches %}
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-star me-2"></i>マッチング結果 ({{ matches|length }}件)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for match in matches %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card border-{% if match.total_score >= 80 %}success{% elif match.total_score >= 60 %}warning{% else %}secondary{% endif %}">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">{{ match.craftsman.name }}</h6>
+                                    <div>
+                                        <span class="badge bg-{% if match.total_score >= 80 %}success{% elif match.total_score >= 60 %}warning{% else %}secondary{% endif %} fs-6">
+                                            {{ match.total_score|floatformat:0 }}点
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <!-- 基本情報 -->
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between">
+                                            <small><strong>技能レベル:</strong></small>
+                                            <small>{{ match.craftsman.get_skill_level_display }}</small>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <small><strong>時給:</strong></small>
+                                            <small>{{ match.craftsman.hourly_rate }}円</small>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <small><strong>評価:</strong></small>
+                                            <small>
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= match.craftsman.average_rating %}
+                                                        <i class="fas fa-star text-warning"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star text-muted"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                                ({{ match.craftsman.average_rating }})
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    <!-- スコア詳細 -->
+                                    <div class="mb-3">
+                                        <small class="text-muted"><strong>マッチング詳細:</strong></small>
+
+                                        <!-- 空き時間スコア -->
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small>空き時間</small>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress" style="width: 60px; height: 6px;">
+                                                    <div class="progress-bar bg-primary" style="width: {{ match.availability_score }}%"></div>
+                                                </div>
+                                                <small class="ms-2">{{ match.availability_score|floatformat:0 }}</small>
+                                            </div>
+                                        </div>
+
+                                        <!-- 技能スコア -->
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small>技能マッチ</small>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress" style="width: 60px; height: 6px;">
+                                                    <div class="progress-bar bg-info" style="width: {{ match.skill_score }}%"></div>
+                                                </div>
+                                                <small class="ms-2">{{ match.skill_score|floatformat:0 }}</small>
+                                            </div>
+                                        </div>
+
+                                        <!-- 地域スコア -->
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small>地域近接</small>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress" style="width: 60px; height: 6px;">
+                                                    <div class="progress-bar bg-success" style="width: {{ match.location_score }}%"></div>
+                                                </div>
+                                                <small class="ms-2">{{ match.location_score|floatformat:0 }}</small>
+                                            </div>
+                                        </div>
+
+                                        <!-- コストスコア -->
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small>コスト</small>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress" style="width: 60px; height: 6px;">
+                                                    <div class="progress-bar bg-warning" style="width: {{ match.cost_score }}%"></div>
+                                                </div>
+                                                <small class="ms-2">{{ match.cost_score|floatformat:0 }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 対応エリア -->
+                                    <div class="mb-3">
+                                        <small class="text-muted"><strong>対応エリア:</strong></small>
+                                        <div>
+                                            {% for area in match.craftsman.coverage_area_list %}
+                                                <span class="badge bg-light text-dark me-1">{{ area }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <!-- アクションボタン -->
+                                    <div class="d-grid gap-2">
+                                        <a href="{% url 'assignment_create_craftsman' match.craftsman.id %}?project={{ project.id }}"
+                                           class="btn btn-primary btn-sm">
+                                            <i class="fas fa-paper-plane me-1"></i>打診する
+                                        </a>
+                                        <a href="{% url 'craftsman_detail' match.craftsman.id %}"
+                                           class="btn btn-outline-info btn-sm">
+                                            <i class="fas fa-user me-1"></i>詳細を見る
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% elif project %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                条件に合う職人が見つかりませんでした。条件を変更して再度お試しください。
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.progress {
+    background-color: #e9ecef;
+}
+
+.card-header h6 {
+    margin-bottom: 0;
+}
+
+.badge.fs-6 {
+    font-size: 0.9rem !important;
+}
+
+.list-group-item small {
+    font-size: 0.8rem;
+}
+
+.progress {
+    border-radius: 3px;
+}
+
+.progress-bar {
+    border-radius: 3px;
+}
+</style>
+{% endblock %}

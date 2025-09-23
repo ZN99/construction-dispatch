@@ -1,0 +1,590 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}進捗報告作成 - {{ project.title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-plus-circle me-2"></i>進捗報告作成</h2>
+                    <h4 class="text-muted">{{ project.title }}</h4>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'project_progress_detail' project.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>戻る
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-edit me-2"></i>進捗情報入力
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+
+                                <!-- 職人選択 -->
+                                <div class="mb-3">
+                                    <label for="craftsman" class="form-label">報告職人</label>
+                                    <select name="craftsman" class="form-select" required>
+                                        <option value="">職人を選択してください</option>
+                                        {% for assignment in assigned_craftsmen %}
+                                        <option value="{{ assignment.craftsman.id }}">
+                                            {{ assignment.craftsman.name }} ({{ assignment.craftsman.specialties }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <!-- 進捗率 -->
+                                        <div class="mb-3">
+                                            <label for="{{ form.progress_rate.id_for_label }}" class="form-label">進捗率（%）</label>
+                                            {{ form.progress_rate }}
+                                            {% if form.progress_rate.errors %}
+                                                <div class="text-danger small">{{ form.progress_rate.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <!-- 報告手段 -->
+                                        <div class="mb-3">
+                                            <label for="{{ form.reported_by.id_for_label }}" class="form-label">報告手段</label>
+                                            {{ form.reported_by }}
+                                            {% if form.reported_by.errors %}
+                                                <div class="text-danger small">{{ form.reported_by.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 作業内容 -->
+                                <div class="mb-3">
+                                    <label for="{{ form.work_description.id_for_label }}" class="form-label">作業内容</label>
+                                    {{ form.work_description }}
+                                    {% if form.work_description.errors %}
+                                        <div class="text-danger small">{{ form.work_description.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- 問題・課題 -->
+                                <div class="mb-3">
+                                    <label for="{{ form.issues.id_for_label }}" class="form-label">問題・課題</label>
+                                    {{ form.issues }}
+                                    {% if form.issues.errors %}
+                                        <div class="text-danger small">{{ form.issues.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- 翌日予定 -->
+                                <div class="mb-3">
+                                    <label for="{{ form.next_plan.id_for_label }}" class="form-label">翌日予定</label>
+                                    {{ form.next_plan }}
+                                    {% if form.next_plan.errors %}
+                                        <div class="text-danger small">{{ form.next_plan.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <!-- 作業人数 -->
+                                        <div class="mb-3">
+                                            <label for="{{ form.worker_count.id_for_label }}" class="form-label">作業人数</label>
+                                            {{ form.worker_count }}
+                                            {% if form.worker_count.errors %}
+                                                <div class="text-danger small">{{ form.worker_count.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <!-- 開始時刻 -->
+                                        <div class="mb-3">
+                                            <label for="{{ form.start_time.id_for_label }}" class="form-label">開始時刻</label>
+                                            {{ form.start_time }}
+                                            {% if form.start_time.errors %}
+                                                <div class="text-danger small">{{ form.start_time.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <!-- 終了時刻 -->
+                                        <div class="mb-3">
+                                            <label for="{{ form.end_time.id_for_label }}" class="form-label">終了時刻</label>
+                                            {{ form.end_time }}
+                                            {% if form.end_time.errors %}
+                                                <div class="text-danger small">{{ form.end_time.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <!-- 天候 -->
+                                        <div class="mb-3">
+                                            <label for="{{ form.weather.id_for_label }}" class="form-label">天候</label>
+                                            {{ form.weather }}
+                                            {% if form.weather.errors %}
+                                                <div class="text-danger small">{{ form.weather.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 追加項目 -->
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        追加項目
+                                        <small class="text-muted">（必要に応じて）</small>
+                                    </label>
+                                    <div class="border rounded p-3" style="background-color: #f8f9fa;">
+                                        <div id="additional-items-area">
+                                            <!-- 最初の項目は非表示にして、必要時のみ表示 -->
+                                        </div>
+                                        <div class="text-center">
+                                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addAdditionalItem()">
+                                                <i class="fas fa-plus me-1"></i>追加項目を追加
+                                            </button>
+                                        </div>
+                                        <div id="additional-items-preview" class="mt-3" style="display: none;">
+                                            <small class="text-muted">
+                                                <strong>保存される追加項目:</strong>
+                                            </small>
+                                            <div id="preview-content" class="mt-1"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 写真アップロード -->
+                                <div class="mb-3">
+                                    <label class="form-label">進捗写真</label>
+                                    <div id="photo-upload-area">
+                                        <div class="photo-upload-item mb-2">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <input type="file" name="photos" class="form-control" accept="image/*">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <select name="photo_types" class="form-select">
+                                                        <option value="before">施工前</option>
+                                                        <option value="during" selected>施工中</option>
+                                                        <option value="after">完了</option>
+                                                        <option value="issue">問題箇所</option>
+                                                        <option value="safety">安全対策</option>
+                                                        <option value="materials">資材状況</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <input type="text" name="photo_descriptions" class="form-control" placeholder="写真説明">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addPhotoUpload()">
+                                        <i class="fas fa-plus me-1"></i>写真を追加
+                                    </button>
+                                </div>
+
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="{% url 'project_progress_detail' project.id %}" class="btn btn-outline-secondary">
+                                        キャンセル
+                                    </a>
+                                    <button type="button" class="btn btn-info me-2" onclick="previewSubmission()">
+                                        <i class="fas fa-eye me-1"></i>内容確認
+                                    </button>
+                                    <button type="submit" class="btn btn-primary" id="submit-btn">
+                                        <i class="fas fa-save me-1"></i>進捗報告保存
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- サイドバー -->
+                <div class="col-md-4">
+                    <!-- 案件情報 -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>案件情報</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>顧客:</strong> {{ project.customer.name }}</p>
+                            <p class="mb-1"><strong>工種:</strong> {{ project.project_type.name }}</p>
+                            <p class="mb-1"><strong>場所:</strong> {{ project.address }}</p>
+                            <p class="mb-1"><strong>期間:</strong> {{ project.start_date }} 〜 {{ project.end_date }}</p>
+                            <p class="mb-0"><strong>状況:</strong> {{ project.get_status_display }}</p>
+                        </div>
+                    </div>
+
+                    <!-- 進捗報告のポイント -->
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>報告のポイント</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="small mb-3">
+                                <li>進捗率は正確に入力してください</li>
+                                <li>作業内容は具体的に記述しましょう</li>
+                                <li>問題があれば必ず報告してください</li>
+                                <li>写真は工程が分かるように撮影</li>
+                                <li>安全対策の実施状況も報告</li>
+                                <li>翌日の予定を明確にしましょう</li>
+                            </ul>
+                            <div class="alert alert-info small mb-0">
+                                <strong><i class="fas fa-plus me-1"></i>追加項目について</strong><br>
+                                使用材料、特記事項、顧客要望など、必要に応じて追加できます。
+                                入力後はプレビューで確認してから保存しましょう。
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 担当職人情報 -->
+                    {% if assigned_craftsmen %}
+                    <div class="card mt-3">
+                        <div class="card-header bg-warning text-white">
+                            <h6 class="mb-0"><i class="fas fa-users me-2"></i>担当職人</h6>
+                        </div>
+                        <div class="card-body">
+                            {% for assignment in assigned_craftsmen %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong>{{ assignment.craftsman.name }}</strong><br>
+                                    <small class="text-muted">{{ assignment.craftsman.specialties }}</small>
+                                </div>
+                                <span class="badge bg-{{ assignment.status }}">
+                                    {{ assignment.get_status_display }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.form-label {
+    font-weight: bold;
+}
+
+.photo-upload-item, .additional-item {
+    border: 1px dashed #dee2e6;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+}
+
+.badge.bg-confirmed {
+    background-color: #198754 !important;
+}
+
+.badge.bg-in_progress {
+    background-color: #0d6efd !important;
+}
+</style>
+
+<script>
+// 追加項目管理
+let additionalItemCount = 0;
+
+function addAdditionalItem() {
+    const itemsArea = document.getElementById('additional-items-area');
+    const newItem = document.createElement('div');
+    newItem.className = 'additional-item mb-2';
+    newItem.setAttribute('data-item-id', additionalItemCount++);
+    newItem.innerHTML = `
+        <div class="row">
+            <div class="col-md-4">
+                <input type="text" name="additional_item_keys[]" class="form-control additional-key"
+                       placeholder="項目名（例：使用材料）" onchange="updateAdditionalItemsPreview()">
+            </div>
+            <div class="col-md-7">
+                <input type="text" name="additional_item_values[]" class="form-control additional-value"
+                       placeholder="内容" onchange="updateAdditionalItemsPreview()">
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeAdditionalItem(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    itemsArea.appendChild(newItem);
+    updateAdditionalItemsPreview();
+
+    // フォーカスを新しい項目名フィールドに設定
+    newItem.querySelector('.additional-key').focus();
+}
+
+function removeAdditionalItem(button) {
+    button.closest('.additional-item').remove();
+    updateAdditionalItemsPreview();
+}
+
+function updateAdditionalItemsPreview() {
+    const keys = document.querySelectorAll('input[name="additional_item_keys[]"]');
+    const values = document.querySelectorAll('input[name="additional_item_values[]"]');
+    const preview = document.getElementById('additional-items-preview');
+    const previewContent = document.getElementById('preview-content');
+
+    let hasItems = false;
+    let previewHtml = '';
+
+    for (let i = 0; i < keys.length; i++) {
+        const key = keys[i].value.trim();
+        const value = values[i].value.trim();
+
+        if (key || value) {
+            hasItems = true;
+            previewHtml += `
+                <div class="d-flex justify-content-between align-items-center mb-1 p-1 bg-white rounded">
+                    <small><strong>${key || '（項目名未入力）'}:</strong> ${value || '（内容未入力）'}</small>
+                    ${!key || !value ? '<span class="badge bg-warning">未完了</span>' : '<span class="badge bg-success">完了</span>'}
+                </div>
+            `;
+        }
+    }
+
+    if (hasItems) {
+        previewContent.innerHTML = previewHtml;
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+// 写真アップロード管理
+function addPhotoUpload() {
+    const uploadArea = document.getElementById('photo-upload-area');
+    const newItem = document.createElement('div');
+    newItem.className = 'photo-upload-item mb-2';
+    newItem.innerHTML = `
+        <div class="row">
+            <div class="col-md-4">
+                <input type="file" name="photos" class="form-control" accept="image/*" onchange="updatePhotoPreview()">
+            </div>
+            <div class="col-md-4">
+                <select name="photo_types" class="form-select">
+                    <option value="before">施工前</option>
+                    <option value="during" selected>施工中</option>
+                    <option value="after">完了</option>
+                    <option value="issue">問題箇所</option>
+                    <option value="safety">安全対策</option>
+                    <option value="materials">資材状況</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="photo_descriptions" class="form-control" placeholder="写真説明">
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removePhotoUpload(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    uploadArea.appendChild(newItem);
+}
+
+function removePhotoUpload(button) {
+    button.closest('.photo-upload-item').remove();
+    updatePhotoPreview();
+}
+
+function updatePhotoPreview() {
+    // 写真数をカウントして表示を更新
+    const photoInputs = document.querySelectorAll('input[name="photos"]');
+    let photoCount = 0;
+    photoInputs.forEach(input => {
+        if (input.files && input.files.length > 0) {
+            photoCount++;
+        }
+    });
+
+    // 写真数の表示を更新（必要に応じて）
+}
+
+// 送信前プレビュー機能
+function previewSubmission() {
+    const form = document.querySelector('form');
+    const formData = new FormData(form);
+
+    // 基本情報を取得
+    const craftsman = document.querySelector('select[name="craftsman"]').selectedOptions[0]?.text || '未選択';
+    const progressRate = formData.get('progress_rate') || '0';
+    const workDescription = formData.get('work_description') || '';
+    const issues = formData.get('issues') || '';
+    const nextPlan = formData.get('next_plan') || '';
+
+    // 追加項目を取得
+    const additionalKeys = formData.getAll('additional_item_keys[]');
+    const additionalValues = formData.getAll('additional_item_values[]');
+    let additionalItemsHtml = '';
+
+    for (let i = 0; i < additionalKeys.length; i++) {
+        const key = additionalKeys[i].trim();
+        const value = additionalValues[i].trim();
+        if (key && value) {
+            additionalItemsHtml += `<li><strong>${key}:</strong> ${value}</li>`;
+        }
+    }
+
+    // 写真数を取得
+    const photoInputs = document.querySelectorAll('input[name="photos"]');
+    let photoCount = 0;
+    photoInputs.forEach(input => {
+        if (input.files && input.files.length > 0) {
+            photoCount++;
+        }
+    });
+
+    // プレビューモーダルを表示
+    const modalContent = `
+        <div class="modal fade" id="previewModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">進捗報告内容確認</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-user me-1"></i>担当職人</h6>
+                                <p>${craftsman}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-percentage me-1"></i>進捗率</h6>
+                                <p>${progressRate}%</p>
+                            </div>
+                        </div>
+
+                        <h6><i class="fas fa-tasks me-1"></i>作業内容</h6>
+                        <p>${workDescription || '（未入力）'}</p>
+
+                        ${issues ? `<h6><i class="fas fa-exclamation-triangle me-1 text-warning"></i>問題・課題</h6><p class="text-warning">${issues}</p>` : ''}
+
+                        ${nextPlan ? `<h6><i class="fas fa-calendar me-1"></i>翌日予定</h6><p>${nextPlan}</p>` : ''}
+
+                        ${additionalItemsHtml ? `<h6><i class="fas fa-plus me-1"></i>追加項目</h6><ul>${additionalItemsHtml}</ul>` : ''}
+
+                        <h6><i class="fas fa-camera me-1"></i>添付写真</h6>
+                        <p>${photoCount}枚の写真が添付されます</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">修正する</button>
+                        <button type="button" class="btn btn-primary" onclick="confirmSubmission()">
+                            <i class="fas fa-save me-1"></i>この内容で保存
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 既存のモーダルを削除
+    const existingModal = document.getElementById('previewModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // 新しいモーダルを追加
+    document.body.insertAdjacentHTML('beforeend', modalContent);
+
+    // モーダルを表示
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    modal.show();
+}
+
+function confirmSubmission() {
+    // モーダルを閉じる
+    const modal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
+    modal.hide();
+
+    // フォームを送信
+    document.querySelector('form').submit();
+}
+
+// 進捗率に応じたバリデーション
+document.addEventListener('DOMContentLoaded', function() {
+    const progressInput = document.getElementById('{{ form.progress_rate.id_for_label }}');
+    if (progressInput) {
+        progressInput.addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= 100) {
+                showNotification('進捗率が100%の場合は、完了写真の添付をお忘れなく！', 'warning');
+            }
+        });
+    }
+
+    // フォーム送信時の最終確認
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>保存中...';
+
+        // 追加項目の最終確認とデバッグ
+        const keys = document.querySelectorAll('input[name="additional_item_keys[]"]');
+        const values = document.querySelectorAll('input[name="additional_item_values[]"]');
+        let additionalItemsCount = 0;
+
+        console.log('=== 進捗作成フォーム送信時 ===');
+        console.log('追加項目フィールド数:', keys.length);
+
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i].value.trim();
+            const value = values[i] ? values[i].value.trim() : '';
+            console.log(`追加項目 ${i}: "${key}" = "${value}"`);
+            if (key && value) {
+                additionalItemsCount++;
+            }
+        }
+
+        console.log(`有効な追加項目数: ${additionalItemsCount}`);
+        console.log('=== フォーム送信デバッグ終了 ===');
+
+        if (additionalItemsCount > 0) {
+            console.log(`追加項目 ${additionalItemsCount} 件を保存します`);
+        }
+    });
+});
+
+// 通知機能
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(notification);
+
+    // 5秒後に自動削除
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

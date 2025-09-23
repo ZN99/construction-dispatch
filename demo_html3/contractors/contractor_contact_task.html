@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建築派遣SaaS - 協力会社連絡業務（派遣専用）</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        .contact-card {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .contact-card:hover {
+            border-color: #007bff;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+        }
+
+        .contact-card.completed {
+            border-color: #28a745;
+            background-color: #f8fff9;
+        }
+
+        .template-message {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+        }
+
+        .floating-submit {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            border-radius: 50px;
+            padding: 15px 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-indicator {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: conic-gradient(#28a745 0deg, #28a745 var(--progress), #e9ecef var(--progress));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .contact-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .contact-status.pending {
+            background-color: #6c757d;
+        }
+
+        .contact-status.in-progress {
+            background-color: #ffc107;
+            animation: pulse 1.5s infinite;
+        }
+
+        .contact-status.completed {
+            background-color: #28a745;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Header -->
+    <div class="bg-success text-white p-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">協力会社連絡業務</h5>
+                <small>派遣スタッフ: 佐藤花子</small>
+            </div>
+            <div class="progress-indicator" style="--progress: 0deg;">
+                <span id="progressText">0%</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid px-3 py-3">
+        <!-- 指示内容表示 -->
+        <div class="alert alert-info mb-3">
+            <h6 class="alert-heading">
+                <i class="fas fa-clipboard-list me-2"></i>社員からの指示
+            </h6>
+            <p class="mb-1">以下の協力会社に指定された内容で連絡を行ってください。</p>
+            <ul class="mb-0">
+                <li>定型文を使用してください（編集不可）</li>
+                <li>回答は選択肢から選んでください</li>
+                <li>すべての連絡完了後に報告してください</li>
+            </ul>
+        </div>
+
+        <!-- 連絡先リスト -->
+        <div id="contactList">
+            <!-- 連絡先1 -->
+            <div class="contact-card" id="contact1">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="contact-status pending" id="status1"></span>
+                                <h6 class="mb-0">A建設工業</h6>
+                            </div>
+                            <p class="text-muted mb-1">担当: 山田部長</p>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-phone me-1"></i>03-1234-5678
+                            </p>
+                        </div>
+                        <span class="badge bg-warning">見積依頼</span>
+                    </div>
+
+                    <div class="template-message mb-3">
+                        <h6 class="mb-2">
+                            <i class="fas fa-envelope me-2"></i>送信メッセージ（定型文）
+                        </h6>
+                        <div class="border p-2 bg-white rounded">
+                            <p class="mb-1"><strong>件名:</strong> 港区ワンルーム原状回復工事の見積依頼</p>
+                            <p class="mb-0"><strong>本文:</strong></p>
+                            <p class="mb-0">いつもお世話になっております。<br>
+                            下記案件についてお見積りをお願いいたします。<br><br>
+                            【案件詳細】<br>
+                            - 物件: 港区ワンルーム<br>
+                            - 工事内容: クロス張替<br>
+                            - 希望納期: 2025年9月25日<br>
+                            - 予算: 150,000円～180,000円<br><br>
+                            ご回答は9月18日までにお願いいたします。</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>連絡方法</h6>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="method1" id="phone1" value="phone">
+                            <label class="btn btn-outline-primary" for="phone1">
+                                <i class="fas fa-phone me-1"></i>電話
+                            </label>
+                            <input type="radio" class="btn-check" name="method1" id="email1" value="email">
+                            <label class="btn btn-outline-primary" for="email1">
+                                <i class="fas fa-envelope me-1"></i>メール
+                            </label>
+                            <input type="radio" class="btn-check" name="method1" id="fax1" value="fax">
+                            <label class="btn btn-outline-primary" for="fax1">
+                                <i class="fas fa-fax me-1"></i>FAX
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="collapse" id="response1">
+                        <div class="border-top pt-3">
+                            <h6>相手方の回答</h6>
+                            <div class="mb-2">
+                                <label class="form-label">回答内容</label>
+                                <select class="form-select" id="answer1" onchange="updateContactStatus(1)">
+                                    <option value="">回答を選択...</option>
+                                    <option value="accept">見積提出可能</option>
+                                    <option value="decline">お断り</option>
+                                    <option value="condition">条件付きで対応可能</option>
+                                    <option value="later">後日回答</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">特記事項</label>
+                                <select class="form-select" id="notes1">
+                                    <option value="">なし</option>
+                                    <option value="price_up">価格要相談</option>
+                                    <option value="schedule_change">納期要相談</option>
+                                    <option value="material_check">材料確認必要</option>
+                                    <option value="site_visit">現地確認希望</option>
+                                </select>
+                            </div>
+                            <div class="text-end">
+                                <button class="btn btn-success" onclick="completeContact(1)">
+                                    <i class="fas fa-check me-1"></i>連絡完了
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button class="btn btn-primary" onclick="startContact(1)">
+                            <i class="fas fa-phone me-1"></i>連絡開始
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 連絡先2 -->
+            <div class="contact-card" id="contact2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="contact-status pending" id="status2"></span>
+                                <h6 class="mb-0">B水道サービス</h6>
+                            </div>
+                            <p class="text-muted mb-1">担当: 田中社長</p>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-phone me-1"></i>03-2345-6789
+                            </p>
+                        </div>
+                        <span class="badge bg-info">進捗確認</span>
+                    </div>
+
+                    <div class="template-message mb-3">
+                        <h6 class="mb-2">
+                            <i class="fas fa-envelope me-2"></i>送信メッセージ（定型文）
+                        </h6>
+                        <div class="border p-2 bg-white rounded">
+                            <p class="mb-1"><strong>件名:</strong> 新宿1K水道工事の進捗確認</p>
+                            <p class="mb-0"><strong>本文:</strong></p>
+                            <p class="mb-0">いつもお世話になっております。<br>
+                            下記案件の進捗についてご確認させていただきたく連絡いたします。<br><br>
+                            【案件詳細】<br>
+                            - 物件: 新宿1K<br>
+                            - 工事内容: 水道設備修理<br>
+                            - 予定: 2025年9月18日～20日<br><br>
+                            現在の進捗状況をお教えください。</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>連絡方法</h6>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="method2" id="phone2" value="phone">
+                            <label class="btn btn-outline-primary" for="phone2">
+                                <i class="fas fa-phone me-1"></i>電話
+                            </label>
+                            <input type="radio" class="btn-check" name="method2" id="email2" value="email">
+                            <label class="btn btn-outline-primary" for="email2">
+                                <i class="fas fa-envelope me-1"></i>メール
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="collapse" id="response2">
+                        <div class="border-top pt-3">
+                            <h6>相手方の回答</h6>
+                            <div class="mb-2">
+                                <label class="form-label">進捗状況</label>
+                                <select class="form-select" id="answer2" onchange="updateContactStatus(2)">
+                                    <option value="">回答を選択...</option>
+                                    <option value="on_schedule">予定通り</option>
+                                    <option value="ahead">予定より早い</option>
+                                    <option value="delay">遅れ</option>
+                                    <option value="problem">問題発生</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">特記事項</label>
+                                <select class="form-select" id="notes2">
+                                    <option value="">なし</option>
+                                    <option value="material_delay">材料調達遅れ</option>
+                                    <option value="weather">天候影響</option>
+                                    <option value="additional_work">追加作業発生</option>
+                                    <option value="equipment_issue">機材トラブル</option>
+                                </select>
+                            </div>
+                            <div class="text-end">
+                                <button class="btn btn-success" onclick="completeContact(2)">
+                                    <i class="fas fa-check me-1"></i>連絡完了
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button class="btn btn-primary" onclick="startContact(2)">
+                            <i class="fas fa-phone me-1"></i>連絡開始
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 連絡先3 -->
+            <div class="contact-card" id="contact3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="contact-status pending" id="status3"></span>
+                                <h6 class="mb-0">Cクリーニング</h6>
+                            </div>
+                            <p class="text-muted mb-1">担当: 鈴木主任</p>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-phone me-1"></i>03-3456-7890
+                            </p>
+                        </div>
+                        <span class="badge bg-secondary">スケジュール調整</span>
+                    </div>
+
+                    <div class="template-message mb-3">
+                        <h6 class="mb-2">
+                            <i class="fas fa-envelope me-2"></i>送信メッセージ（定型文）
+                        </h6>
+                        <div class="border p-2 bg-white rounded">
+                            <p class="mb-1"><strong>件名:</strong> 品川マンション清掃作業のスケジュール調整</p>
+                            <p class="mb-0"><strong>本文:</strong></p>
+                            <p class="mb-0">いつもお世話になっております。<br>
+                            下記案件のスケジュール調整についてご相談があります。<br><br>
+                            【案件詳細】<br>
+                            - 物件: 品川マンション<br>
+                            - 作業内容: ハウスクリーニング<br>
+                            - 現在予定: 2025年9月22日<br>
+                            - 変更希望: 2025年9月24日<br><br>
+                            スケジュール変更の可否をお教えください。</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>連絡方法</h6>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="method3" id="phone3" value="phone">
+                            <label class="btn btn-outline-primary" for="phone3">
+                                <i class="fas fa-phone me-1"></i>電話
+                            </label>
+                            <input type="radio" class="btn-check" name="method3" id="email3" value="email">
+                            <label class="btn btn-outline-primary" for="email3">
+                                <i class="fas fa-envelope me-1"></i>メール
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="collapse" id="response3">
+                        <div class="border-top pt-3">
+                            <h6>相手方の回答</h6>
+                            <div class="mb-2">
+                                <label class="form-label">スケジュール変更</label>
+                                <select class="form-select" id="answer3" onchange="updateContactStatus(3)">
+                                    <option value="">回答を選択...</option>
+                                    <option value="accept">変更可能</option>
+                                    <option value="decline">変更不可</option>
+                                    <option value="alternative">代案あり</option>
+                                    <option value="condition">条件付きで可能</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">特記事項</label>
+                                <select class="form-select" id="notes3">
+                                    <option value="">なし</option>
+                                    <option value="price_change">料金変更あり</option>
+                                    <option value="time_change">時間変更あり</option>
+                                    <option value="staff_change">担当者変更</option>
+                                    <option value="other_schedule">他日程提案</option>
+                                </select>
+                            </div>
+                            <div class="text-end">
+                                <button class="btn btn-success" onclick="completeContact(3)">
+                                    <i class="fas fa-check me-1"></i>連絡完了
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button class="btn btn-primary" onclick="startContact(3)">
+                            <i class="fas fa-phone me-1"></i>連絡開始
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 進捗状況 -->
+        <div class="card mt-4 mb-5">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0">連絡業務進捗</h6>
+                    <span class="fw-bold text-primary" id="progressCounter">0/3 完了</span>
+                </div>
+                <div class="progress" style="height: 20px;">
+                    <div class="progress-bar" id="progressBar" style="width: 0%">0%</div>
+                </div>
+                <small class="text-muted mt-1">すべての連絡完了後、報告を提出してください</small>
+            </div>
+        </div>
+
+        <!-- フローティング報告ボタン -->
+        <button class="btn btn-success floating-submit" id="submitBtn" onclick="submitReport()" disabled>
+            <i class="fas fa-clipboard-check me-2"></i>連絡業務完了報告
+        </button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        let completedContacts = 0;
+        const totalContacts = 3;
+        const contactData = {};
+
+        function startContact(contactId) {
+            const selectedMethod = document.querySelector(`input[name="method${contactId}"]:checked`);
+
+            if (!selectedMethod) {
+                alert('連絡方法を選択してください');
+                return;
+            }
+
+            // ステータス更新
+            const statusElement = document.getElementById(`status${contactId}`);
+            statusElement.className = 'contact-status in-progress';
+
+            // 回答エリア表示
+            const responseArea = document.getElementById(`response${contactId}`);
+            new bootstrap.Collapse(responseArea, { show: true });
+
+            // ボタン無効化
+            const startButton = document.querySelector(`#contact${contactId} .btn-primary`);
+            startButton.disabled = true;
+            startButton.innerHTML = '<i class="fas fa-phone me-1"></i>連絡中...';
+
+            // 監査ログ
+            if (window.app) {
+                window.app.logAuditEvent('CONTRACTOR_CONTACT_STARTED', {
+                    contactId: contactId,
+                    method: selectedMethod.value,
+                    staffId: 'staff_002',
+                    timestamp: new Date().toISOString()
+                });
+            }
+
+            showToast('連絡を開始しました', 'info');
+        }
+
+        function updateContactStatus(contactId) {
+            const answer = document.getElementById(`answer${contactId}`).value;
+            if (answer) {
+                // 完了ボタンを有効化
+                const completeButton = document.querySelector(`#response${contactId} .btn-success`);
+                completeButton.disabled = false;
+            }
+        }
+
+        function completeContact(contactId) {
+            const answer = document.getElementById(`answer${contactId}`).value;
+            const notes = document.getElementById(`notes${contactId}`).value;
+            const method = document.querySelector(`input[name="method${contactId}"]:checked`).value;
+
+            if (!answer) {
+                alert('回答内容を選択してください');
+                return;
+            }
+
+            // データ保存
+            contactData[contactId] = {
+                method: method,
+                answer: answer,
+                notes: notes,
+                completedAt: new Date().toISOString()
+            };
+
+            // ステータス更新
+            const statusElement = document.getElementById(`status${contactId}`);
+            statusElement.className = 'contact-status completed';
+
+            // カード完了状態
+            const contactCard = document.getElementById(`contact${contactId}`);
+            contactCard.classList.add('completed');
+
+            // ボタン更新
+            const startButton = document.querySelector(`#contact${contactId} .btn-primary`);
+            startButton.innerHTML = '<i class="fas fa-check me-1"></i>完了済み';
+            startButton.classList.remove('btn-primary');
+            startButton.classList.add('btn-success');
+
+            // 完了ボタン無効化
+            const completeButton = document.querySelector(`#response${contactId} .btn-success`);
+            completeButton.disabled = true;
+            completeButton.innerHTML = '<i class="fas fa-check me-1"></i>完了';
+
+            completedContacts++;
+            updateProgress();
+
+            // 監査ログ
+            if (window.app) {
+                window.app.logAuditEvent('CONTRACTOR_CONTACT_COMPLETED', {
+                    contactId: contactId,
+                    contactData: contactData[contactId],
+                    staffId: 'staff_002'
+                });
+            }
+
+            showToast('連絡が完了しました', 'success');
+        }
+
+        function updateProgress() {
+            const percentage = Math.round((completedContacts / totalContacts) * 100);
+
+            // プログレスバー更新
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = `${percentage}%`;
+            progressBar.textContent = `${percentage}%`;
+
+            // カウンター更新
+            const progressCounter = document.getElementById('progressCounter');
+            progressCounter.textContent = `${completedContacts}/${totalContacts} 完了`;
+
+            // 円形プログレス更新
+            const progressIndicator = document.querySelector('.progress-indicator');
+            progressIndicator.style.setProperty('--progress', `${percentage * 3.6}deg`);
+            document.getElementById('progressText').textContent = `${percentage}%`;
+
+            // 報告ボタンの有効化
+            const submitBtn = document.getElementById('submitBtn');
+            if (completedContacts === totalContacts) {
+                submitBtn.disabled = false;
+                submitBtn.classList.add('btn-pulse');
+            }
+        }
+
+        function submitReport() {
+            if (completedContacts < totalContacts) {
+                alert('すべての連絡を完了してください');
+                return;
+            }
+
+            if (confirm('連絡業務完了報告を提出しますか？')) {
+                const reportData = {
+                    staffId: 'staff_002',
+                    completedAt: new Date().toISOString(),
+                    totalContacts: totalContacts,
+                    completedContacts: completedContacts,
+                    contactDetails: contactData
+                };
+
+                // 監査ログ
+                if (window.app) {
+                    window.app.logAuditEvent('CONTRACTOR_CONTACT_REPORT_SUBMITTED', {
+                        reportData: reportData,
+                        submissionTime: new Date().toISOString()
+                    });
+                }
+
+                showSuccessMessage();
+
+                // 報告完了画面に遷移
+                setTimeout(() => {
+                    window.location.href = '../report_completion.html?type=contractor_contact';
+                }, 2000);
+            }
+        }
+
+        function showSuccessMessage() {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'alert alert-success position-fixed top-50 start-50 translate-middle';
+            successDiv.style.zIndex = '9999';
+            successDiv.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle fa-2x text-success me-3"></i>
+                    <div>
+                        <h5 class="mb-1">連絡業務完了!</h5>
+                        <p class="mb-0">報告が正常に提出されました</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(successDiv);
+
+            setTimeout(() => {
+                successDiv.remove();
+            }, 3000);
+        }
+
+        function showToast(message, type) {
+            if (window.app && window.app.showToast) {
+                window.app.showToast(message, type);
+            }
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 派遣スタッフの権限チェック
+            const userRole = localStorage.getItem('userRole');
+            if (userRole !== 'temporary' && userRole !== 'staff') {
+                alert('このページへのアクセス権限がありません');
+                window.location.href = '../index.html';
+                return;
+            }
+
+            // ページアクセスのログ
+            if (window.app) {
+                window.app.logAuditEvent('CONTRACTOR_CONTACT_PAGE_ACCESSED', {
+                    staffId: 'staff_002',
+                    accessTime: new Date().toISOString(),
+                    totalTasks: totalContacts
+                });
+            }
+
+            // 離脱時の警告
+            window.addEventListener('beforeunload', function(e) {
+                if (completedContacts > 0 && completedContacts < totalContacts) {
+                    e.preventDefault();
+                    e.returnValue = '連絡業務が完了していません。ページを離れますか？';
+                }
+            });
+
+            // 権限制限の確認
+            checkRestrictedAccess();
+        });
+
+        function checkRestrictedAccess() {
+            // 金額情報を非表示（存在する場合）
+            const priceElements = document.querySelectorAll('[data-price], .price, .cost, .profit, .budget');
+            priceElements.forEach(el => el.remove());
+
+            // 決定権要素を非表示
+            const decisionElements = document.querySelectorAll('[data-decision], .approve, .reject, .decide');
+            decisionElements.forEach(el => el.remove());
+
+            // 編集可能なテキストエリアを読み取り専用に（定型文の保護）
+            const templateTexts = document.querySelectorAll('.template-message textarea, .template-message input[type="text"]');
+            templateTexts.forEach(el => {
+                el.readOnly = true;
+                el.style.backgroundColor = '#f8f9fa';
+            });
+        }
+
+        // セキュリティ：不正な編集の監視
+        document.addEventListener('input', function(e) {
+            if (e.target.closest('.template-message')) {
+                e.preventDefault();
+                if (window.app) {
+                    window.app.logAuditEvent('UNAUTHORIZED_TEMPLATE_EDIT_ATTEMPT', {
+                        staffId: 'staff_002',
+                        element: e.target.tagName,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+                showToast('定型文は編集できません', 'warning');
+                return false;
+            }
+        });
+
+        // エラーハンドリング
+        window.addEventListener('error', function(e) {
+            if (window.app) {
+                window.app.logAuditEvent('CONTRACTOR_CONTACT_ERROR', {
+                    error: e.message,
+                    staffId: 'staff_002',
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+    </script>
+
+    <style>
+        .btn-pulse {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+
+        .form-select:focus,
+        .form-control:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+
+        .btn-check:checked + .btn {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: white;
+        }
+
+        .template-message .border {
+            cursor: not-allowed;
+        }
+
+        .template-message .border:hover {
+            background-color: #f8f9fa !important;
+        }
+    </style>
+</body>
+</html>

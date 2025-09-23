@@ -1,0 +1,328 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}調査詳細 - {{ survey.project.title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-search me-2"></i>調査詳細</h2>
+                    <h4 class="text-muted">{{ survey.project.title }}</h4>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'survey_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>調査一覧
+                    </a>
+                    {% if survey.status == 'scheduled' %}
+                        <a href="{% url 'survey_start' survey.id %}" class="btn btn-primary">
+                            <i class="fas fa-play me-1"></i>調査開始
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 基本情報 -->
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>基本情報
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">案件名</label>
+                                        <div class="fw-bold">{{ survey.project.title }}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">顧客</label>
+                                        <div>{{ survey.project.customer.name }}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">作業場所</label>
+                                        <div>{{ survey.project.address }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">調査員</label>
+                                        <div>
+                                            {% if survey.surveyor %}
+                                                <span class="badge bg-info">{{ survey.surveyor.name }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">未アサイン</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">ステータス</label>
+                                        <div>
+                                            {% if survey.status == 'scheduled' %}
+                                                <span class="badge bg-warning">予定</span>
+                                            {% elif survey.status == 'in_progress' %}
+                                                <span class="badge bg-primary">進行中</span>
+                                            {% elif survey.status == 'completed' %}
+                                                <span class="badge bg-success">完了</span>
+                                            {% elif survey.status == 'cancelled' %}
+                                                <span class="badge bg-danger">キャンセル</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ survey.get_status_display }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">優先度</label>
+                                        <div>
+                                            {% if survey.priority == 'high' %}
+                                                <span class="badge bg-danger">高</span>
+                                            {% elif survey.priority == 'normal' %}
+                                                <span class="badge bg-info">標準</span>
+                                            {% elif survey.priority == 'low' %}
+                                                <span class="badge bg-secondary">低</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ survey.get_priority_display }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- スケジュール情報 -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calendar me-2"></i>スケジュール
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">予定日時</label>
+                                        <div class="fw-bold">{{ survey.scheduled_date|date:"Y年m月d日 H:i" }}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">予定所要時間</label>
+                                        <div>{{ survey.estimated_duration }}分</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    {% if survey.actual_start_time %}
+                                        <div class="mb-3">
+                                            <label class="form-label text-muted">実際の開始時間</label>
+                                            <div>{{ survey.actual_start_time|date:"Y年m月d日 H:i" }}</div>
+                                        </div>
+                                    {% endif %}
+                                    {% if survey.actual_end_time %}
+                                        <div class="mb-3">
+                                            <label class="form-label text-muted">実際の終了時間</label>
+                                            <div>{{ survey.actual_end_time|date:"Y年m月d日 H:i" }}</div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- メモ・特記事項 -->
+                    {% if survey.notes or survey.access_info %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-sticky-note me-2"></i>メモ・特記事項
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if survey.notes %}
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">調査メモ</label>
+                                    <div class="border rounded p-3 bg-light">{{ survey.notes|linebreaks }}</div>
+                                </div>
+                            {% endif %}
+                            {% if survey.access_info %}
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">アクセス情報</label>
+                                    <div class="border rounded p-3 bg-light">{{ survey.access_info|linebreaks }}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 調査結果 -->
+                    {% if survey.is_survey_completed %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-clipboard-check me-2"></i>調査結果
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if survey.site_condition %}
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">現場状況</label>
+                                    <div class="border rounded p-3 bg-light">{{ survey.site_condition|linebreaks }}</div>
+                                </div>
+                            {% endif %}
+                            {% if survey.customer_requirements %}
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">顧客要求事項</label>
+                                    <div class="border rounded p-3 bg-light">{{ survey.customer_requirements|linebreaks }}</div>
+                                </div>
+                            {% endif %}
+                            {% if survey.technical_notes %}
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">技術的メモ</label>
+                                    <div class="border rounded p-3 bg-light">{{ survey.technical_notes|linebreaks }}</div>
+                                </div>
+                            {% endif %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted">追加作業必要</label>
+                                <div>
+                                    {% if survey.additional_work_needed %}
+                                        <span class="badge bg-warning">はい</span>
+                                    {% else %}
+                                        <span class="badge bg-success">いいえ</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- サイドバー -->
+                <div class="col-lg-4">
+                    <!-- アクションボタン -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">アクション</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if survey.status == 'scheduled' %}
+                                <a href="{% url 'survey_start' survey.id %}" class="btn btn-primary w-100 mb-2">
+                                    <i class="fas fa-play me-1"></i>調査開始
+                                </a>
+                                <a href="{% url 'survey_reschedule' survey.id %}" class="btn btn-outline-warning w-100 mb-2">
+                                    <i class="fas fa-calendar-alt me-1"></i>日程変更
+                                </a>
+                            {% elif survey.status == 'in_progress' %}
+                                <a href="{% url 'survey_complete' survey.id %}" class="btn btn-success w-100 mb-2">
+                                    <i class="fas fa-check me-1"></i>調査完了
+                                </a>
+                            {% elif survey.status == 'completed' %}
+                                <span class="badge bg-success w-100 py-2">
+                                    <i class="fas fa-check me-1"></i>調査完了済み
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 案件情報 -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">案件情報</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <small class="text-muted">工種</small>
+                                <div>{{ survey.project.project_type.name }}</div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">金額</small>
+                                <div class="fw-bold text-primary">¥{{ survey.project.amount|floatformat:0|default:"未設定" }}</div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">開始予定</small>
+                                <div>{{ survey.project.start_date|date:"Y年m月d日" }}</div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">終了予定</small>
+                                <div>{{ survey.project.end_date|date:"Y年m月d日" }}</div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">案件ステータス</small>
+                                <div>
+                                    <span class="badge bg-info">{{ survey.project.get_status_display }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 調査履歴 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">履歴</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <small class="text-muted">{{ survey.created_at|date:"Y年m月d日 H:i" }}</small>
+                                    <div>調査登録</div>
+                                </div>
+                                {% if survey.actual_start_time %}
+                                <div class="timeline-item">
+                                    <small class="text-muted">{{ survey.actual_start_time|date:"Y年m月d日 H:i" }}</small>
+                                    <div>調査開始</div>
+                                </div>
+                                {% endif %}
+                                {% if survey.actual_end_time %}
+                                <div class="timeline-item">
+                                    <small class="text-muted">{{ survey.actual_end_time|date:"Y年m月d日 H:i" }}</small>
+                                    <div>調査完了</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 20px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 5px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #007bff;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+</style>
+{% endblock %}

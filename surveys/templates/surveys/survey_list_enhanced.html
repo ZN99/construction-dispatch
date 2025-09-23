@@ -1,0 +1,620 @@
+{% extends "surveys/base.html" %}
+
+{% block title %}調査一覧管理{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-clipboard-list me-2"></i>現地調査管理</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'surveys:survey_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-1"></i>新規調査作成
+            </a>
+            <a href="{% url 'surveys:demo_survey_list' %}" class="btn btn-success">
+                <i class="fas fa-flask me-1"></i>デモ調査
+            </a>
+            <button type="button" class="btn btn-outline-secondary" onclick="exportData()">
+                <i class="fas fa-download me-1"></i>エクスポート
+            </button>
+        </div>
+        <a href="{% url 'order_management:project_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>案件一覧へ
+        </a>
+    </div>
+</div>
+
+<!-- 統計カード -->
+<div class="row mb-4">
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <h3 class="card-title text-primary mb-0">{{ total_surveys }}</h3>
+                <p class="card-text text-muted small mb-0">総調査数</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <h3 class="card-title text-warning mb-0">{{ in_progress_surveys }}</h3>
+                <p class="card-text text-muted small mb-0">進行中</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <h3 class="card-title text-info mb-0">{{ scheduled_surveys }}</h3>
+                <p class="card-text text-muted small mb-0">予定</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <h3 class="card-title text-success mb-0">{{ completed_surveys }}</h3>
+                <p class="card-text text-muted small mb-0">完了</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <h3 class="card-title text-danger mb-0">{{ cancelled_surveys|default:0 }}</h3>
+                <p class="card-text text-muted small mb-0">キャンセル</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="card border-secondary">
+            <div class="card-body text-center">
+                <h3 class="card-title text-secondary mb-0">{{ week_surveys|default:0 }}</h3>
+                <p class="card-text text-muted small mb-0">今週の予定</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 承認関連統計カード -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <h3 class="card-title text-warning mb-0">{{ pending_approval_surveys|default:0 }}</h3>
+                <p class="card-text text-muted small mb-0">承認待ち</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <h3 class="card-title text-success mb-0">{{ approved_surveys|default:0 }}</h3>
+                <p class="card-text text-muted small mb-0">承認済み</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <h3 class="card-title text-danger mb-0">{{ rejected_surveys|default:0 }}</h3>
+                <p class="card-text text-muted small mb-0">差し戻し</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <h3 class="card-title text-info mb-0">{{ pending_approval_surveys|add:approved_surveys|add:rejected_surveys|default:0 }}</h3>
+                <p class="card-text text-muted small mb-0">総承認件数</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 今日の調査スケジュール -->
+{% if today_surveys %}
+<div class="card mb-4 border-primary">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-calendar-day me-2"></i>今日の調査スケジュール
+            <span class="badge bg-light text-primary float-end">{{ today_surveys|length }}件</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for survey in today_surveys %}
+            <div class="col-md-6 col-lg-4">
+                <div class="survey-card border rounded p-3 mb-3 {% if survey.status == 'in_progress' %}border-warning{% elif survey.status == 'completed' %}border-success{% endif %}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold text-primary">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ survey.scheduled_start_time|time:"H:i" }} - {{ survey.get_estimated_end_time|time:"H:i" }}
+                            </h6>
+                            <p class="mb-1 fw-bold">{{ survey.project.site_name|truncatechars:30 }}</p>
+                            <small class="text-muted d-block">
+                                <i class="fas fa-user me-1"></i>{{ survey.surveyor.name }}
+                            </small>
+                            <small class="text-muted d-block">
+                                <i class="fas fa-map-marker-alt me-1"></i>{{ survey.project.site_address|truncatechars:25 }}
+                            </small>
+                        </div>
+                        <div>
+                            <span class="badge {% if survey.status == 'in_progress' %}bg-warning{% elif survey.status == 'completed' %}bg-success{% elif survey.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ survey.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mt-2 d-flex gap-1">
+                        <a href="{% url 'surveys:survey_record_detail' survey.pk %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye"></i> 詳細
+                        </a>
+                        {% if survey.status == 'scheduled' %}
+                            <a href="{% url 'surveys:survey_start' survey.pk %}" class="btn btn-sm btn-warning">
+                                <i class="fas fa-play"></i> 開始
+                            </a>
+                        {% elif survey.status == 'in_progress' %}
+                            <a href="{% url 'surveys:survey_start' survey.pk %}" class="btn btn-sm btn-warning">
+                                <i class="fas fa-play"></i> 続行
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 承認待ち調査一覧（親方用） -->
+{% if pending_approval_list and user.is_staff %}
+<div class="card mb-4 border-warning">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">
+            <i class="fas fa-clipboard-check me-2"></i>承認待ち調査一覧
+            <span class="badge bg-dark text-warning float-end">{{ pending_approval_list|length }}件</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th width="25%">案件名</th>
+                        <th width="15%">調査員</th>
+                        <th width="15%">実施日</th>
+                        <th width="10%">更新日時</th>
+                        <th width="35%">承認操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for survey in pending_approval_list %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'surveys:survey_record_detail' survey.pk %}" class="text-decoration-none fw-bold">
+                                {{ survey.project.site_name|truncatechars:30 }}
+                            </a>
+                            <br>
+                            <small class="text-muted">{{ survey.project.management_no }}</small>
+                        </td>
+                        <td>{{ survey.surveyor.name }}</td>
+                        <td>{{ survey.scheduled_date|date:"m/d" }}</td>
+                        <td>
+                            <small class="text-muted">{{ survey.updated_at|date:"m/d H:i" }}</small>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'surveys:survey_record_detail' survey.pk %}" class="btn btn-outline-info" title="詳細確認">
+                                    <i class="fas fa-eye"></i> 詳細
+                                </a>
+                                <button class="btn btn-success" onclick="approveSurvey({{ survey.pk }}, '{{ survey.project.site_name|escapejs }}')" title="承認">
+                                    <i class="fas fa-check"></i> 承認
+                                </button>
+                                <button class="btn btn-danger" onclick="rejectSurvey({{ survey.pk }}, '{{ survey.project.site_name|escapejs }}')" title="差し戻し">
+                                    <i class="fas fa-times"></i> 差し戻し
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- フィルター＆検索 -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" id="filterForm">
+            <div class="row align-items-end">
+                <div class="col-md-3 col-sm-6 mb-2">
+                    <label class="form-label small text-muted">ステータス</label>
+                    <select class="form-select" name="status" onchange="submitFilter()">
+                        <option value="">すべて</option>
+                        <option value="scheduled" {% if request.GET.status == 'scheduled' %}selected{% endif %}>予定</option>
+                        <option value="in_progress" {% if request.GET.status == 'in_progress' %}selected{% endif %}>進行中</option>
+                        <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>完了</option>
+                        <option value="pending_approval" {% if request.GET.status == 'pending_approval' %}selected{% endif %}>承認待ち</option>
+                        <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>承認済み</option>
+                        <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>差し戻し</option>
+                        <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>キャンセル</option>
+                    </select>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-2">
+                    <label class="form-label small text-muted">調査員</label>
+                    <select class="form-select" name="surveyor" onchange="submitFilter()">
+                        <option value="">すべて</option>
+                        {% for surveyor in surveyors %}
+                            <option value="{{ surveyor.id }}" {% if request.GET.surveyor == surveyor.id|stringformat:"s" %}selected{% endif %}>
+                                {{ surveyor.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 col-sm-6 mb-2">
+                    <label class="form-label small text-muted">開始日</label>
+                    <input type="date" class="form-control" name="date_from" value="{{ request.GET.date_from }}" onchange="submitFilter()">
+                </div>
+                <div class="col-md-2 col-sm-6 mb-2">
+                    <label class="form-label small text-muted">終了日</label>
+                    <input type="date" class="form-control" name="date_to" value="{{ request.GET.date_to }}" onchange="submitFilter()">
+                </div>
+                <div class="col-md-2 col-sm-12 mb-2">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="search" value="{{ request.GET.search }}" placeholder="案件名・管理番号">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% if filter_params %}
+            <div class="mt-2">
+                <a href="{% url 'surveys:survey_list' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i>フィルターをクリア
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- 調査一覧テーブル -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-list me-2"></i>調査一覧
+            {% if surveys.paginator.count %}
+            <span class="badge bg-secondary ms-2">{{ surveys.paginator.count }}件</span>
+            {% endif %}
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th width="5%">#</th>
+                        <th width="20%">案件名・現場名</th>
+                        <th width="12%">調査員</th>
+                        <th width="12%">予定日時</th>
+                        <th width="10%">所要時間</th>
+                        <th width="10%">ステータス</th>
+                        <th width="10%">進捗率</th>
+                        <th width="6%" class="text-center">部屋</th>
+                        <th width="6%" class="text-center">損傷</th>
+                        <th width="6%" class="text-center">写真</th>
+                        <th width="15%">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for survey in surveys %}
+                    <tr class="{% if survey.status == 'in_progress' %}table-warning{% elif survey.status == 'completed' %}table-success{% elif survey.status == 'pending_approval' %}table-warning{% elif survey.status == 'approved' %}table-success{% elif survey.status == 'rejected' %}table-danger{% elif survey.status == 'cancelled' %}table-danger{% endif %}">
+                        <td>{{ survey.id }}</td>
+                        <td>
+                            <a href="{% url 'surveys:survey_record_detail' survey.pk %}" class="text-decoration-none fw-bold">
+                                {{ survey.project.site_name|truncatechars:25 }}
+                            </a>
+                            <br>
+                            <small class="text-muted">
+                                <i class="fas fa-tag me-1"></i>{{ survey.project.management_no }}
+                                <span class="ms-2">{{ survey.project.work_type }}</span>
+                            </small>
+                        </td>
+                        <td>
+                            <small>{{ survey.surveyor.name }}</small>
+                        </td>
+                        <td>
+                            <small>
+                                {{ survey.scheduled_date|date:"m/d" }}
+                                <br>
+                                <span class="text-muted">{{ survey.scheduled_start_time|time:"H:i" }}-{{ survey.get_estimated_end_time|time:"H:i" }}</span>
+                            </small>
+                        </td>
+                        <td><small>{{ survey.estimated_duration }}分</small></td>
+                        <td>
+                            <span class="badge {% if survey.status == 'in_progress' %}bg-warning{% elif survey.status == 'completed' %}bg-success{% elif survey.status == 'pending_approval' %}bg-warning text-dark{% elif survey.status == 'approved' %}bg-success{% elif survey.status == 'rejected' %}bg-danger{% elif survey.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ survey.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% with progress=survey.get_progress_percentage %}
+                            <div class="progress" style="height: 15px;">
+                                <div class="progress-bar {% if survey.status == 'in_progress' %}bg-warning{% elif survey.status == 'completed' %}bg-success{% elif survey.status == 'pending_approval' %}bg-warning{% elif survey.status == 'approved' %}bg-success{% elif survey.status == 'rejected' %}bg-danger{% else %}bg-secondary{% endif %}"
+                                     style="width: {{ progress }}%">
+                                    <small>{{ progress }}%</small>
+                                </div>
+                            </div>
+                            {% endwith %}
+                        </td>
+                        <td class="text-center">
+                            {% if survey.rooms.count %}
+                                <span class="badge bg-info">{{ survey.rooms.count }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if survey.damages.count %}
+                                <span class="badge bg-warning">{{ survey.damages.count }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if survey.photos.count %}
+                                <span class="badge bg-success">{{ survey.photos.count }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'surveys:survey_record_detail' survey.pk %}" class="btn btn-outline-primary" title="詳細">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if survey.status == 'scheduled' %}
+                                    <a href="{% url 'surveys:survey_start' survey.pk %}" class="btn btn-outline-warning" title="開始">
+                                        <i class="fas fa-play"></i>
+                                    </a>
+                                    <a href="{% url 'surveys:survey_edit' survey.pk %}" class="btn btn-outline-secondary" title="編集">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                {% elif survey.status == 'in_progress' %}
+                                    <a href="{% url 'surveys:survey_start' survey.pk %}" class="btn btn-outline-warning" title="続行">
+                                        <i class="fas fa-play-circle"></i>
+                                    </a>
+                                    <a href="{% url 'surveys:survey_complete' survey.pk %}" class="btn btn-outline-success" title="完了">
+                                        <i class="fas fa-check"></i>
+                                    </a>
+                                {% elif survey.status == 'completed' %}
+                                    {% if user.is_staff %}
+                                        <button class="btn btn-outline-success" onclick="approveSurvey({{ survey.pk }}, '{{ survey.project.site_name|escapejs }}')" title="承認">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" onclick="rejectSurvey({{ survey.pk }}, '{{ survey.project.site_name|escapejs }}')" title="差し戻し">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    {% endif %}
+                                    <a href="{% url 'surveys:survey_report' survey.pk %}" class="btn btn-outline-info" title="レポート">
+                                        <i class="fas fa-file-alt"></i>
+                                    </a>
+                                    <button class="btn btn-outline-secondary" onclick="printReport({{ survey.pk }})" title="印刷">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                {% elif survey.status == 'pending_approval' %}
+                                    {% if user.is_staff %}
+                                        <button class="btn btn-outline-success" onclick="approveSurvey({{ survey.pk }}, '{{ survey.project.site_name|escapejs }}')" title="承認">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" onclick="rejectSurvey({{ survey.pk }}, '{{ survey.project.site_name|escapejs }}')" title="差し戻し">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    {% endif %}
+                                    <a href="{% url 'surveys:survey_report' survey.pk %}" class="btn btn-outline-info" title="レポート">
+                                        <i class="fas fa-file-alt"></i>
+                                    </a>
+                                {% elif survey.status == 'approved' %}
+                                    <a href="{% url 'surveys:survey_report' survey.pk %}" class="btn btn-outline-info" title="レポート">
+                                        <i class="fas fa-file-alt"></i>
+                                    </a>
+                                    <button class="btn btn-outline-secondary" onclick="printReport({{ survey.pk }})" title="印刷">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                    {% if survey.approved_by %}
+                                        <span class="btn btn-outline-success disabled" title="承認者: {{ survey.approved_by }}">
+                                            <i class="fas fa-check-circle"></i>
+                                        </span>
+                                    {% endif %}
+                                {% elif survey.status == 'rejected' %}
+                                    {% if user.is_staff %}
+                                        <button class="btn btn-outline-success" onclick="approveSurvey({{ survey.pk }}, '{{ survey.project.site_name|escapejs }}')" title="承認">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    {% endif %}
+                                    <a href="{% url 'surveys:survey_report' survey.pk %}" class="btn btn-outline-info" title="レポート">
+                                        <i class="fas fa-file-alt"></i>
+                                    </a>
+                                    {% if survey.approved_by %}
+                                        <span class="btn btn-outline-danger disabled" title="差し戻し者: {{ survey.approved_by }}">
+                                            <i class="fas fa-times-circle"></i>
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                                <!-- 削除ボタン（全ステータス共通） -->
+                                <button class="btn btn-outline-danger" onclick="deleteSurvey({{ survey.pk }}, '{{ survey.project.site_name|escapejs }}')" title="削除">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                            調査データがありません
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ページネーション -->
+{% if is_paginated %}
+<nav aria-label="調査一覧ページネーション" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{{ filter_params.urlencode|safe }}">
+                    <i class="fas fa-angle-double-left"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ filter_params.urlencode|safe }}">
+                    <i class="fas fa-angle-left"></i>
+                </a>
+            </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{{ filter_params.urlencode|safe }}">{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ filter_params.urlencode|safe }}">
+                    <i class="fas fa-angle-right"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{{ filter_params.urlencode|safe }}">
+                    <i class="fas fa-angle-double-right"></i>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% csrf_token %}
+<script>
+function submitFilter() {
+    document.getElementById('filterForm').submit();
+}
+
+function exportData() {
+    alert('エクスポート機能は開発中です。');
+}
+
+function printReport(surveyId) {
+    window.open('{% url "surveys:survey_report" 0 %}'.replace('0', surveyId), '_blank');
+}
+
+function deleteSurvey(surveyId, surveyName) {
+    if (confirm(`調査「${surveyName}」を削除しますか？\n\nこの操作は取り消せません。`)) {
+        const form = new FormData();
+        form.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+        fetch(`{% url "surveys:survey_delete" 0 %}`.replace('0', surveyId), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: form
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload(); // ページをリロード
+            } else {
+                alert('削除エラー: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('通信エラーが発生しました');
+        });
+    }
+}
+
+// 承認機能
+function approveSurvey(surveyId, surveyName) {
+    const notes = prompt(`調査「${surveyName}」を承認します。\n\n承認コメントを入力してください（任意）:`, '');
+    if (notes !== null) { // ユーザーがキャンセルしていない場合
+        const form = new FormData();
+        form.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        form.append('action', 'approve');
+        form.append('notes', notes);
+
+        fetch(`{% url "surveys:survey_approve" 0 %}`.replace('0', surveyId), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: form
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('承認エラー: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('通信エラーが発生しました');
+        });
+    }
+}
+
+function rejectSurvey(surveyId, surveyName) {
+    const notes = prompt(`調査「${surveyName}」を差し戻します。\n\n差し戻し理由を入力してください:`, '');
+    if (notes !== null && notes.trim() !== '') { // ユーザーがキャンセルしておらず、理由が入力されている場合
+        const form = new FormData();
+        form.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        form.append('action', 'reject');
+        form.append('notes', notes);
+
+        fetch(`{% url "surveys:survey_approve" 0 %}`.replace('0', surveyId), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: form
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('差し戻しエラー: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('通信エラーが発生しました');
+        });
+    } else if (notes !== null) {
+        alert('差し戻し理由を入力してください。');
+    }
+}
+</script>
+{% endblock %}

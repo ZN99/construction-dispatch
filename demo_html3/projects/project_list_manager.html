@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建築派遣SaaS - 案件管理（社員専用）</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <div class="d-flex align-items-center px-3 mb-3">
+                        <i class="fas fa-user-tie text-primary me-2"></i>
+                        <span class="fw-bold text-primary">社員モード</span>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="../index_manager.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="project_list_manager.html">
+                                <i class="fas fa-project-diagram me-2"></i>案件管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="project_approval.html">
+                                <i class="fas fa-check-circle me-2"></i>承認管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../task_assignment.html">
+                                <i class="fas fa-tasks me-2"></i>タスク指示
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../staff_management.html">
+                                <i class="fas fa-users me-2"></i>派遣管理
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <div>
+                        <h1 class="h2">案件管理（社員専用）</h1>
+                        <small class="text-muted">全案件の閲覧・編集・承認権限</small>
+                    </div>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-primary" onclick="createProject()">
+                                <i class="fas fa-plus me-1"></i>新規案件作成
+                            </button>
+                            <button type="button" class="btn btn-outline-success" onclick="bulkApproval()">
+                                <i class="fas fa-check-double me-1"></i>一括承認
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="exportProjectData()">
+                                <i class="fas fa-download me-1"></i>データ出力
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 統計カード（社員専用：金額情報表示） -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <i class="fas fa-project-diagram text-primary mb-2" style="font-size: 2rem;"></i>
+                                <h4 class="text-primary">24</h4>
+                                <p class="card-text">総案件数</p>
+                                <small class="text-muted">予算総額: ¥15,200,000</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <i class="fas fa-clock text-warning mb-2" style="font-size: 2rem;"></i>
+                                <h4 class="text-warning">8</h4>
+                                <p class="card-text">進行中</p>
+                                <small class="text-muted">予算: ¥6,800,000</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <i class="fas fa-search text-info mb-2" style="font-size: 2rem;"></i>
+                                <h4 class="text-info">4</h4>
+                                <p class="card-text">調査中</p>
+                                <small class="text-muted">予算: ¥2,200,000</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <i class="fas fa-check-circle text-success mb-2" style="font-size: 2rem;"></i>
+                                <h4 class="text-success">12</h4>
+                                <p class="card-text">完了</p>
+                                <small class="text-success">売上: ¥8,400,000</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 利益分析（社員専用） -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-chart-pie me-2"></i>利益率分析
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <span>高利益率 (25%以上)</span>
+                                        <span class="fw-bold text-success">8件</span>
+                                    </div>
+                                    <div class="progress mt-1" style="height: 8px;">
+                                        <div class="progress-bar bg-success" style="width: 33%"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <span>標準利益率 (15-25%)</span>
+                                        <span class="fw-bold text-primary">12件</span>
+                                    </div>
+                                    <div class="progress mt-1" style="height: 8px;">
+                                        <div class="progress-bar bg-primary" style="width: 50%"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <span>低利益率 (15%未満)</span>
+                                        <span class="fw-bold text-warning">4件</span>
+                                    </div>
+                                    <div class="progress mt-1" style="height: 8px;">
+                                        <div class="progress-bar bg-warning" style="width: 17%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>要注意案件
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-danger mb-2">
+                                    <small class="fw-bold">品川2DK追加工事</small><br>
+                                    <small>利益率: 8.5% (目標以下)</small>
+                                </div>
+                                <div class="alert alert-warning mb-2">
+                                    <small class="fw-bold">渋谷1K遅延案件</small><br>
+                                    <small>予定より7日遅延</small>
+                                </div>
+                                <div class="alert alert-info mb-0">
+                                    <small class="fw-bold">六本木高級物件</small><br>
+                                    <small>承認待ち(3日経過)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-users me-2"></i>派遣スタッフ稼働状況
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <span>田中太郎</span>
+                                        <span class="badge bg-warning">稼働中</span>
+                                    </div>
+                                    <small class="text-muted">港区案件調査(60%完了)</small>
+                                </div>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <span>佐藤花子</span>
+                                        <span class="badge bg-success">待機</span>
+                                    </div>
+                                    <small class="text-muted">アサイン可能</small>
+                                </div>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <span>鈴木一郎</span>
+                                        <span class="badge bg-info">移動中</span>
+                                    </div>
+                                    <small class="text-muted">品川案件へ向かい中</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 検索・フィルター（社員専用） -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-filter me-2"></i>検索・フィルター
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" id="searchInput" placeholder="案件名・顧客名で検索">
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">全ステータス</option>
+                                    <option value="progress">進行中</option>
+                                    <option value="survey">調査中</option>
+                                    <option value="approval">承認待ち</option>
+                                    <option value="completed">完了</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" id="profitFilter">
+                                    <option value="">利益率</option>
+                                    <option value="high">25%以上</option>
+                                    <option value="medium">15-25%</option>
+                                    <option value="low">15%未満</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" id="staffFilter">
+                                    <option value="">担当派遣</option>
+                                    <option value="田中">田中太郎</option>
+                                    <option value="佐藤">佐藤花子</option>
+                                    <option value="鈴木">鈴木一郎</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="btn-group w-100">
+                                    <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                                        <i class="fas fa-times"></i> クリア
+                                    </button>
+                                    <button class="btn btn-primary" onclick="applyFilters()">
+                                        <i class="fas fa-search"></i> 検索
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 案件一覧（社員専用：全情報表示） -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-list me-2"></i>案件一覧（管理者ビュー）
+                            </h5>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-secondary" onclick="toggleView('list')">
+                                    <i class="fas fa-list"></i> リスト
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="toggleView('grid')">
+                                    <i class="fas fa-th"></i> グリッド
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="projectTable">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            <input type="checkbox" class="form-check-input" onchange="toggleSelectAll()">
+                                        </th>
+                                        <th>案件名</th>
+                                        <th>顧客</th>
+                                        <th>担当派遣</th>
+                                        <th>予算</th>
+                                        <th>原価</th>
+                                        <th>利益率</th>
+                                        <th>ステータス</th>
+                                        <th>進捗</th>
+                                        <th>管理操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr data-status="progress" data-profit="25">
+                                        <td>
+                                            <input type="checkbox" class="form-check-input project-checkbox">
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">港区ワンルーム原状回復</div>
+                                            <small class="text-muted">ID: PRJ-001</small>
+                                        </td>
+                                        <td>港区賃貸管理株式会社</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm me-2">田</div>
+                                                <div>
+                                                    <div class="fw-bold">田中太郎</div>
+                                                    <small class="text-success">稼働中</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-success">¥180,000</div>
+                                        </td>
+                                        <td>
+                                            <div class="text-muted">¥135,000</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">25.0%</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-warning">進行中</span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 12px;">
+                                                <div class="progress-bar" style="width: 60%">60%</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="viewProjectDetail(1)" title="詳細">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-warning" onclick="editProject(1)" title="編集">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-success" onclick="approveProject(1)" title="承認">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <div class="dropdown">
+                                                    <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                                        <i class="fas fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item" onclick="assignStaff(1)">派遣指示</a></li>
+                                                        <li><a class="dropdown-item" onclick="updatePricing(1)">見積更新</a></li>
+                                                        <li><a class="dropdown-item" onclick="generateReport(1)">報告書生成</a></li>
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li><a class="dropdown-item text-danger" onclick="deleteProject(1)">削除</a></li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr data-status="survey" data-profit="22">
+                                        <td>
+                                            <input type="checkbox" class="form-check-input project-checkbox">
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">新宿1K原状回復</div>
+                                            <small class="text-muted">ID: PRJ-002</small>
+                                        </td>
+                                        <td>新宿不動産管理</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm me-2">佐</div>
+                                                <div>
+                                                    <div class="fw-bold">佐藤花子</div>
+                                                    <small class="text-info">調査予定</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-success">¥220,000</div>
+                                        </td>
+                                        <td>
+                                            <div class="text-muted">¥170,500</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">22.5%</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">調査中</span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 12px;">
+                                                <div class="progress-bar bg-info" style="width: 30%">30%</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="viewProjectDetail(2)">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-warning" onclick="editProject(2)">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info" onclick="trackSurvey(2)">
+                                                    <i class="fas fa-map-marker-alt"></i>
+                                                </button>
+                                                <div class="dropdown">
+                                                    <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                                        <i class="fas fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item" onclick="assignStaff(2)">派遣変更</a></li>
+                                                        <li><a class="dropdown-item" onclick="urgentFlag(2)">緊急フラグ</a></li>
+                                                        <li><a class="dropdown-item" onclick="contactCustomer(2)">顧客連絡</a></li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- ページネーション -->
+                        <nav class="mt-3">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" tabindex="-1">前へ</a>
+                                </li>
+                                <li class="page-item active">
+                                    <a class="page-link" href="#">1</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">2</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">3</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">次へ</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        // 社員専用案件管理機能
+
+        function createProject() {
+            window.location.href = 'project_create.html';
+        }
+
+        function viewProjectDetail(id) {
+            window.location.href = `project_detail_manager.html?id=${id}`;
+        }
+
+        function editProject(id) {
+            window.location.href = `project_edit.html?id=${id}`;
+        }
+
+        function approveProject(id) {
+            if (confirm('この案件を承認しますか？')) {
+                window.app && window.app.logAuditEvent('PROJECT_APPROVED', { projectId: id });
+                showToast('案件が承認されました', 'success');
+
+                // ステータス更新
+                const row = document.querySelector(`tr[data-status] td button[onclick="approveProject(${id})"]`).closest('tr');
+                const statusBadge = row.querySelector('.badge');
+                statusBadge.className = 'badge bg-success';
+                statusBadge.textContent = '承認済み';
+            }
+        }
+
+        function assignStaff(id) {
+            window.location.href = `../task_assignment.html?project=${id}`;
+        }
+
+        function updatePricing(id) {
+            window.location.href = `../pricing/pricing_revision.html?project=${id}`;
+        }
+
+        function trackSurvey(id) {
+            window.location.href = `../surveys/survey_tracking.html?project=${id}`;
+        }
+
+        function deleteProject(id) {
+            if (confirm('この案件を削除しますか？この操作は取り消せません。')) {
+                window.app && window.app.logAuditEvent('PROJECT_DELETED', { projectId: id });
+                showToast('案件が削除されました', 'danger');
+
+                // 行を削除
+                const row = document.querySelector(`tr[data-status] td button[onclick*="${id}"]`).closest('tr');
+                row.remove();
+            }
+        }
+
+        function bulkApproval() {
+            const checked = document.querySelectorAll('.project-checkbox:checked');
+            if (checked.length === 0) {
+                alert('承認する案件を選択してください');
+                return;
+            }
+
+            if (confirm(`選択した${checked.length}件の案件を一括承認しますか？`)) {
+                checked.forEach(checkbox => {
+                    const row = checkbox.closest('tr');
+                    const statusBadge = row.querySelector('.badge');
+                    statusBadge.className = 'badge bg-success';
+                    statusBadge.textContent = '承認済み';
+                    checkbox.checked = false;
+                });
+
+                window.app && window.app.logAuditEvent('BULK_APPROVAL', { count: checked.length });
+                showToast(`${checked.length}件の案件を一括承認しました`, 'success');
+            }
+        }
+
+        function toggleSelectAll() {
+            const selectAll = event.target;
+            const checkboxes = document.querySelectorAll('.project-checkbox');
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            const profit = document.getElementById('profitFilter').value;
+            const staff = document.getElementById('staffFilter').value;
+
+            const rows = document.querySelectorAll('#projectTable tbody tr');
+
+            rows.forEach(row => {
+                let visible = true;
+
+                // 検索フィルター
+                if (search) {
+                    const text = row.textContent.toLowerCase();
+                    visible = visible && text.includes(search);
+                }
+
+                // ステータスフィルター
+                if (status) {
+                    const rowStatus = row.getAttribute('data-status');
+                    visible = visible && rowStatus === status;
+                }
+
+                // 利益率フィルター
+                if (profit) {
+                    const rowProfit = parseInt(row.getAttribute('data-profit'));
+                    if (profit === 'high') visible = visible && rowProfit >= 25;
+                    else if (profit === 'medium') visible = visible && rowProfit >= 15 && rowProfit < 25;
+                    else if (profit === 'low') visible = visible && rowProfit < 15;
+                }
+
+                // 担当派遣フィルター
+                if (staff) {
+                    const staffText = row.querySelector('td:nth-child(4)').textContent;
+                    visible = visible && staffText.includes(staff);
+                }
+
+                row.style.display = visible ? '' : 'none';
+            });
+
+            window.app && window.app.logAuditEvent('FILTER_APPLIED', { search, status, profit, staff });
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('profitFilter').value = '';
+            document.getElementById('staffFilter').value = '';
+
+            const rows = document.querySelectorAll('#projectTable tbody tr');
+            rows.forEach(row => row.style.display = '');
+        }
+
+        function exportProjectData() {
+            if (window.app && window.app.checkPermission('EXPORT_DATA')) {
+                // 表示中のデータを取得
+                const visibleRows = document.querySelectorAll('#projectTable tbody tr[style=""]');
+                const data = Array.from(visibleRows).map(row => {
+                    const cells = row.querySelectorAll('td');
+                    return {
+                        name: cells[1].textContent.trim(),
+                        customer: cells[2].textContent.trim(),
+                        staff: cells[3].textContent.trim(),
+                        budget: cells[4].textContent.trim(),
+                        cost: cells[5].textContent.trim(),
+                        profit: cells[6].textContent.trim(),
+                        status: cells[7].textContent.trim(),
+                        progress: cells[8].textContent.trim()
+                    };
+                });
+
+                const csv = convertToCSV(data);
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `projects_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                window.app.logAuditEvent('PROJECT_DATA_EXPORT', { recordCount: data.length });
+            }
+        }
+
+        function convertToCSV(data) {
+            if (!data.length) return '';
+
+            const headers = Object.keys(data[0]);
+            const csvContent = [
+                headers.join(','),
+                ...data.map(row => headers.map(field => {
+                    const value = row[field];
+                    return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
+                }).join(','))
+            ].join('\n');
+
+            return csvContent;
+        }
+
+        function showToast(message, type) {
+            if (window.app && window.app.showToast) {
+                window.app.showToast(message, type);
+            }
+        }
+
+        // 権限チェック
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.app && !window.app.checkPermission('VIEW_PRICING')) {
+                // 社員以外は金額情報を非表示
+                const priceColumns = document.querySelectorAll('th:nth-child(5), th:nth-child(6), th:nth-child(7), td:nth-child(5), td:nth-child(6), td:nth-child(7)');
+                priceColumns.forEach(col => col.style.display = 'none');
+            }
+        });
+    </script>
+
+    <style>
+        .avatar-sm {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.875rem;
+        }
+
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            background-color: #f8f9fa;
+        }
+
+        .progress {
+            border-radius: 10px;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+        }
+
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+
+        .btn-group-sm .dropdown-menu {
+            font-size: 0.875rem;
+        }
+    </style>
+</body>
+</html>

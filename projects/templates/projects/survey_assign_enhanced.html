@@ -1,0 +1,262 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}調査員アサイン - {{ survey.project.title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-user-check me-2"></i>調査員アサイン</h2>
+                    <h4 class="text-muted">{{ survey.project.title }}</h4>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'survey_detail' survey.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>調査詳細
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-users me-2"></i>調査員選択
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+
+                                <!-- 調査員一覧 -->
+                                <div class="mb-4">
+                                    <label class="form-label">調査員を選択してください</label>
+                                    {% for surveyor in available_surveyors %}
+                                    <div class="card mb-3 surveyor-card {% if surveyor.id == form.surveyor.value %}selected{% endif %}"
+                                         onclick="selectSurveyor({{ surveyor.id }})">
+                                        <div class="card-body">
+                                            <div class="row align-items-center">
+                                                <div class="col-md-6">
+                                                    <div class="d-flex align-items-center">
+                                                        <input type="radio" name="surveyor" value="{{ surveyor.id }}"
+                                                               class="form-check-input me-3" id="surveyor_{{ surveyor.id }}"
+                                                               {% if surveyor.id == form.surveyor.value %}checked{% endif %}>
+                                                        <div>
+                                                            <h6 class="mb-1">{{ surveyor.name }}</h6>
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-map-marker-alt me-1"></i>{{ surveyor.base_location }}
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">連絡先</small>
+                                                    <div>{{ surveyor.phone }}</div>
+                                                    {% if surveyor.email %}
+                                                        <small class="text-muted">{{ surveyor.email }}</small>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">稼働状況</small>
+                                                    <div>
+                                                        <span class="badge bg-info">
+                                                            {{ surveyor.daily_capacity }}件/日
+                                                        </span>
+                                                    </div>
+                                                    <small class="text-muted">
+                                                        {{ surveyor.work_start_time }} - {{ surveyor.work_end_time }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% empty %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        利用可能な調査員がいません。
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- アサイン予定日時 -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">調査予定日</label>
+                                        <input type="datetime-local" name="scheduled_date" class="form-control"
+                                               value="{{ form.scheduled_date.value|date:'Y-m-d\TH:i' }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">予想所要時間（分）</label>
+                                        <select name="estimated_duration" class="form-select">
+                                            <option value="60">1時間</option>
+                                            <option value="90">1.5時間</option>
+                                            <option value="120" selected>2時間</option>
+                                            <option value="180">3時間</option>
+                                            <option value="240">4時間</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- 優先度 -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">優先度</label>
+                                        <select name="priority" class="form-select">
+                                            <option value="low">低</option>
+                                            <option value="normal" selected>通常</option>
+                                            <option value="high">高</option>
+                                            <option value="urgent">緊急</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- アクセス情報・メモ -->
+                                <div class="mb-3">
+                                    <label class="form-label">アクセス情報</label>
+                                    <textarea name="access_info" class="form-control" rows="3"
+                                              placeholder="駐車場、搬入経路、エレベーター等のアクセス情報"></textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">調査メモ</label>
+                                    <textarea name="notes" class="form-control" rows="3"
+                                              placeholder="特記事項や注意点"></textarea>
+                                </div>
+
+                                <!-- 送信ボタン -->
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="{% url 'survey_detail' survey.id %}" class="btn btn-secondary me-md-2">
+                                        キャンセル
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-check me-1"></i>調査員をアサイン
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- サイドバー -->
+                <div class="col-lg-4">
+                    <!-- 調査情報 -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">調査情報</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <small class="text-muted">案件名</small>
+                                <div class="fw-bold">{{ survey.project.title }}</div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">顧客</small>
+                                <div>{{ survey.project.customer.name }}</div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">作業場所</small>
+                                <div>{{ survey.project.address }}</div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">工種</small>
+                                <div>{{ survey.project.project_type.name }}</div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">金額</small>
+                                <div class="fw-bold text-primary">
+                                    ¥{{ survey.project.amount|floatformat:0 }}
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">案件期間</small>
+                                <div>
+                                    {{ survey.project.start_date|date:"Y年m月d日" }} -
+                                    {{ survey.project.end_date|date:"Y年m月d日" }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 調査要求事項 -->
+                    {% if survey.project.details or survey.project.notes %}
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">要求事項</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if survey.project.details %}
+                                <div class="mb-2">
+                                    <small class="text-muted">詳細情報</small>
+                                    <div class="border rounded p-2 bg-light small">
+                                        {% for key, value in survey.project.details.items %}
+                                            <div><strong>{{ key }}:</strong> {{ value }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if survey.project.notes %}
+                                <div class="mb-2">
+                                    <small class="text-muted">備考</small>
+                                    <div class="border rounded p-2 bg-light small">
+                                        {{ survey.project.notes|linebreaks }}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.surveyor-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.surveyor-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.surveyor-card.selected {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+    box-shadow: 0 4px 8px rgba(0,123,255,0.2);
+}
+
+.surveyor-card input[type="radio"] {
+    cursor: pointer;
+}
+</style>
+
+<script>
+function selectSurveyor(surveyorId) {
+    // 全ての調査員カードから selected クラスを削除
+    document.querySelectorAll('.surveyor-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+
+    // 対応するラジオボタンをチェック
+    const radio = document.getElementById(`surveyor_${surveyorId}`);
+    if (radio) {
+        radio.checked = true;
+        radio.closest('.surveyor-card').classList.add('selected');
+    }
+}
+
+// ページ読み込み時に選択済みのカードをハイライト
+document.addEventListener('DOMContentLoaded', function() {
+    const checkedRadio = document.querySelector('input[name="surveyor"]:checked');
+    if (checkedRadio) {
+        checkedRadio.closest('.surveyor-card').classList.add('selected');
+    }
+});
+</script>
+{% endblock %}

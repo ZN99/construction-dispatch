@@ -1,0 +1,278 @@
+{% extends "projects/base.html" %}
+
+{% block title %}案件アサイン作成 - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-plus me-2"></i>案件アサイン作成</h2>
+    <a href="{% url 'assignment_list' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-1"></i>アサイン一覧に戻る
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-edit me-1"></i>アサイン情報</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.project.id_for_label }}" class="form-label">
+                                <i class="fas fa-project-diagram me-1"></i>案件 <span class="text-danger">*</span>
+                            </label>
+                            {{ form.project }}
+                            {% if form.project.errors %}
+                                <div class="text-danger small">{{ form.project.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.craftsman.id_for_label }}" class="form-label">
+                                <i class="fas fa-user me-1"></i>職人 <span class="text-danger">*</span>
+                            </label>
+                            {{ form.craftsman }}
+                            {% if form.craftsman.errors %}
+                                <div class="text-danger small">{{ form.craftsman.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.scheduled_start_date.id_for_label }}" class="form-label">
+                                <i class="fas fa-calendar-alt me-1"></i>開始予定日 <span class="text-danger">*</span>
+                            </label>
+                            {{ form.scheduled_start_date }}
+                            {% if form.scheduled_start_date.errors %}
+                                <div class="text-danger small">{{ form.scheduled_start_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.scheduled_end_date.id_for_label }}" class="form-label">
+                                <i class="fas fa-calendar-alt me-1"></i>終了予定日 <span class="text-danger">*</span>
+                            </label>
+                            {{ form.scheduled_end_date }}
+                            {% if form.scheduled_end_date.errors %}
+                                <div class="text-danger small">{{ form.scheduled_end_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.estimated_hours.id_for_label }}" class="form-label">
+                                <i class="fas fa-clock me-1"></i>予定作業時間
+                            </label>
+                            {{ form.estimated_hours }}
+                            {% if form.estimated_hours.errors %}
+                                <div class="text-danger small">{{ form.estimated_hours.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">1日あたりの作業時間数</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.offered_rate.id_for_label }}" class="form-label">
+                                <i class="fas fa-yen-sign me-1"></i>提示単価
+                            </label>
+                            {{ form.offered_rate }}
+                            {% if form.offered_rate.errors %}
+                                <div class="text-danger small">{{ form.offered_rate.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">時間当たりの単価（円）</div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.contact_method.id_for_label }}" class="form-label">
+                                <i class="fas fa-phone me-1"></i>連絡方法
+                            </label>
+                            {{ form.contact_method }}
+                            {% if form.contact_method.errors %}
+                                <div class="text-danger small">{{ form.contact_method.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.priority.id_for_label }}" class="form-label">
+                                <i class="fas fa-exclamation-triangle me-1"></i>優先度
+                            </label>
+                            {{ form.priority }}
+                            {% if form.priority.errors %}
+                                <div class="text-danger small">{{ form.priority.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.inquiry_message.id_for_label }}" class="form-label">
+                            <i class="fas fa-comment me-1"></i>打診メッセージ
+                        </label>
+                        {{ form.inquiry_message }}
+                        {% if form.inquiry_message.errors %}
+                            <div class="text-danger small">{{ form.inquiry_message.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">職人への案件説明や詳細情報を記載してください</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.special_requirements.id_for_label }}" class="form-label">
+                            <i class="fas fa-list-ul me-1"></i>特別要件
+                        </label>
+                        {{ form.special_requirements }}
+                        {% if form.special_requirements.errors %}
+                            <div class="text-danger small">{{ form.special_requirements.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">必要なスキルや資格、注意事項など</div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-1"></i>打診を送信
+                        </button>
+                        <a href="{% url 'assignment_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>キャンセル
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        {% if craftsman %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0"><i class="fas fa-user me-1"></i>選択された職人</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <h5 class="mb-1">{{ craftsman.name }}</h5>
+                        <span class="badge bg-{{ craftsman.is_active|yesno:'success,secondary' }}">
+                            {{ craftsman.is_active|yesno:'稼働中,休止中' }}
+                        </span>
+                    </div>
+
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <div class="text-muted small">時給</div>
+                            <div class="fw-bold">¥{{ craftsman.hourly_rate|floatformat:0 }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-muted small">経験年数</div>
+                            <div class="fw-bold">{{ craftsman.experience_years }}年</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <strong>スキル:</strong> {{ craftsman.skill_category }}
+                    </div>
+
+                    {% if craftsman.phone %}
+                        <div class="mb-2">
+                            <strong>電話:</strong> {{ craftsman.phone }}
+                        </div>
+                    {% endif %}
+
+                    <div class="d-flex gap-1">
+                        <a href="{% url 'craftsman_detail' craftsman.id %}" class="btn btn-outline-primary btn-sm flex-fill">
+                            <i class="fas fa-eye me-1"></i>詳細
+                        </a>
+                        <a href="{% url 'craftsman_schedule_calendar' craftsman.id %}" class="btn btn-outline-info btn-sm flex-fill">
+                            <i class="fas fa-calendar me-1"></i>スケジュール
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if project %}
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0"><i class="fas fa-project-diagram me-1"></i>選択された案件</h6>
+                </div>
+                <div class="card-body">
+                    <h6 class="mb-2">{{ project.title }}</h6>
+
+                    <div class="mb-2">
+                        <strong>顧客:</strong> {{ project.customer.company_name }}
+                    </div>
+
+                    <div class="mb-2">
+                        <strong>案件種別:</strong> {{ project.project_type.name }}
+                    </div>
+
+                    {% if project.location %}
+                        <div class="mb-2">
+                            <strong>場所:</strong> {{ project.location }}
+                        </div>
+                    {% endif %}
+
+                    {% if project.description %}
+                        <div class="mb-2">
+                            <strong>概要:</strong>
+                            <div class="text-muted small">{{ project.description|truncatewords:20 }}</div>
+                        </div>
+                    {% endif %}
+
+                    <a href="{% url 'project_detail' project.id %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-eye me-1"></i>案件詳細
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0"><i class="fas fa-info-circle me-1"></i>アサインのポイント</h6>
+            </div>
+            <div class="card-body">
+                <ul class="small mb-0">
+                    <li>職人のスケジュールを事前に確認</li>
+                    <li>案件に必要なスキルと職人の専門分野の一致確認</li>
+                    <li>適正な単価設定で双方にメリットのある条件</li>
+                    <li>明確で詳細な作業内容の説明</li>
+                    <li>緊急度に応じた適切な連絡方法の選択</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 日付フィールドの初期化
+    const startDate = document.querySelector('input[name="scheduled_start_date"]');
+    const endDate = document.querySelector('input[name="scheduled_end_date"]');
+
+    if (startDate && endDate) {
+        startDate.addEventListener('change', function() {
+            if (this.value) {
+                endDate.min = this.value;
+                if (endDate.value && endDate.value < this.value) {
+                    endDate.value = this.value;
+                }
+            }
+        });
+    }
+
+    // 単価の自動設定
+    const craftsmanSelect = document.querySelector('select[name="craftsman"]');
+    const rateInput = document.querySelector('input[name="offered_rate"]');
+
+    if (craftsmanSelect && rateInput) {
+        craftsmanSelect.addEventListener('change', function() {
+            // 職人選択時に基本単価を設定（実際の実装では Ajax で取得）
+            if (this.value) {
+                // サンプル実装 - 実際はAjaxでデータ取得
+                console.log('職人が選択されました:', this.value);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,228 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}発注一覧 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-list me-2"></i>発注一覧</h2>
+                <div class="btn-group">
+                    <a href="{% url 'material_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>ダッシュボード
+                    </a>
+                    <a href="{% url 'material_order_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>新規発注
+                    </a>
+                </div>
+            </div>
+
+            <!-- 検索フォーム -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-search me-2"></i>検索条件</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.project.id_for_label }}" class="form-label">案件</label>
+                                {{ form.project }}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.supplier.id_for_label }}" class="form-label">業者</label>
+                                {{ form.supplier }}
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">ステータス</label>
+                                {{ form.status }}
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="{{ form.order_date_from.id_for_label }}" class="form-label">発注日（開始）</label>
+                                {{ form.order_date_from }}
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="{{ form.order_date_to.id_for_label }}" class="form-label">発注日（終了）</label>
+                                {{ form.order_date_to }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <div class="form-check">
+                                    {{ form.overdue_only }}
+                                    <label class="form-check-label" for="{{ form.overdue_only.id_for_label }}">
+                                        納期遅延のみ表示
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-9 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="fas fa-search me-1"></i>検索
+                                </button>
+                                <a href="{% url 'material_order_list' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-1"></i>クリア
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 発注一覧 -->
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table me-2"></i>発注一覧 ({{ orders|length }}件)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if orders %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>発注番号</th>
+                                        <th>案件</th>
+                                        <th>業者</th>
+                                        <th>発注者</th>
+                                        <th>金額</th>
+                                        <th>納期</th>
+                                        <th>ステータス</th>
+                                        <th>発注日</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for order in orders %}
+                                    <tr {% if order.is_overdue %}class="table-warning"{% endif %}>
+                                        <td>
+                                            <strong>{{ order.order_number }}</strong>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'project_detail' order.project.id %}" class="text-decoration-none">
+                                                {{ order.project.title }}
+                                            </a>
+                                            <br>
+                                            <small class="text-muted">{{ order.project.customer.name }}</small>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'supplier_detail' order.supplier.id %}" class="text-decoration-none">
+                                                {{ order.supplier.name }}
+                                            </a>
+                                            <br>
+                                            <small class="text-muted">{{ order.supplier.contact_person }}</small>
+                                        </td>
+                                        <td>{{ order.ordered_by.first_name }} {{ order.ordered_by.last_name }}</td>
+                                        <td>
+                                            <strong>{{ order.formatted_estimated_cost }}</strong>
+                                            {% if order.actual_cost %}
+                                                <br>
+                                                <small class="text-success">実際: {{ order.formatted_actual_cost }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if order.delivery_date %}
+                                                {{ order.delivery_date }}
+                                                {% if order.is_overdue %}
+                                                    <br>
+                                                    <small class="text-danger">
+                                                        <i class="fas fa-exclamation-triangle"></i> 遅延
+                                                    </small>
+                                                {% elif order.days_until_delivery is not None %}
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        {% if order.days_until_delivery == 0 %}
+                                                            今日
+                                                        {% elif order.days_until_delivery > 0 %}
+                                                            {{ order.days_until_delivery }}日後
+                                                        {% endif %}
+                                                    </small>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">未設定</span>
+                                            {% endif %}
+                                            {% if order.actual_delivery_date %}
+                                                <br>
+                                                <small class="text-success">
+                                                    実際: {{ order.actual_delivery_date }}
+                                                </small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ order.status }} text-white">
+                                                {{ order.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ order.order_date|date:"m/d H:i" }}</td>
+                                        <td>
+                                            <div class="btn-group-vertical btn-group-sm">
+                                                <a href="{% url 'material_order_detail' order.id %}" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-eye"></i> 詳細
+                                                </a>
+                                                {% if order.status != 'delivered' and order.status != 'cancelled' %}
+                                                <a href="{% url 'material_order_edit' order.id %}" class="btn btn-outline-warning btn-sm">
+                                                    <i class="fas fa-edit"></i> 編集
+                                                </a>
+                                                <a href="{% url 'material_order_status_update' order.id %}" class="btn btn-outline-success btn-sm">
+                                                    <i class="fas fa-check"></i> 更新
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">発注データがありません</h5>
+                            <p class="text-muted">検索条件を変更するか、新しい発注を作成してください。</p>
+                            <a href="{% url 'material_order_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>新規発注作成
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.table th {
+    border-top: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+
+.btn-group-vertical .btn {
+    margin-bottom: 2px;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.table-warning {
+    background-color: #fff3cd !important;
+}
+
+.text-decoration-none:hover {
+    text-decoration: underline !important;
+}
+</style>
+{% endblock %}

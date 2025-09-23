@@ -1,0 +1,663 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}現地調査スケジュール管理{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+<style>
+.survey-card {
+    border-left: 4px solid #007bff;
+    transition: all 0.3s ease;
+}
+
+.survey-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.survey-status {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.status-scheduled { background-color: #e3f2fd; color: #1976d2; }
+.status-in_progress { background-color: #f3e5f5; color: #7b1fa2; }
+.status-completed { background-color: #e8f5e8; color: #388e3c; }
+.status-cancelled { background-color: #ffebee; color: #d32f2f; }
+
+.time-badge {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #495057;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.fc-event {
+    cursor: pointer;
+}
+
+.surveyor-select-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid #dee2e6;
+}
+
+.surveyor-select-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.25);
+    transform: translateY(-1px);
+}
+
+.surveyor-select-card.inactive {
+    opacity: 0.6;
+}
+
+.survey-detail-modal .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.survey-form-section {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-calendar-alt text-primary"></i>
+                    現地調査スケジュール管理
+                </h2>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-primary" id="viewToggle">
+                        <i class="fas fa-list"></i> リスト表示
+                    </button>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newSurveyModal">
+                        <i class="fas fa-plus"></i> 新規調査予定
+                    </button>
+                </div>
+            </div>
+
+            <!-- 統計カード -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">今日の調査</h6>
+                                    <h3 class="mb-0">{{ today_surveys|length }}</h3>
+                                </div>
+                                <i class="fas fa-calendar-day fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">完了済み</h6>
+                                    <h3 class="mb-0">{{ completed_surveys }}</h3>
+                                </div>
+                                <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">進行中</h6>
+                                    <h3 class="mb-0">{{ in_progress_surveys }}</h3>
+                                </div>
+                                <i class="fas fa-clock fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">予定済み</h6>
+                                    <h3 class="mb-0">{{ scheduled_surveys }}</h3>
+                                </div>
+                                <i class="fas fa-calendar-check fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- カレンダー表示 -->
+            <div class="card" id="calendar-view">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar"></i> 調査スケジュール
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+
+            <!-- リスト表示 -->
+            <div class="card d-none" id="list-view">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> 調査一覧
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- フィルター -->
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <select class="form-select" id="statusFilter">
+                                <option value="">全てのステータス</option>
+                                <option value="scheduled">予定</option>
+                                <option value="in_progress">進行中</option>
+                                <option value="completed">完了</option>
+                                <option value="cancelled">キャンセル</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="surveyorFilter">
+                                <option value="">全ての調査員</option>
+                                {% for surveyor in surveyors %}
+                                <option value="{{ surveyor.id }}">{{ surveyor.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" class="form-control" id="dateFilter" placeholder="日付で絞り込み">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="searchFilter" placeholder="現場名・管理番号で検索">
+                        </div>
+                    </div>
+
+                    <!-- 調査リスト -->
+                    <div id="survey-list">
+                        {% for survey in surveys %}
+                        <div class="survey-card card mb-3" data-status="{{ survey.status }}" data-surveyor="{{ survey.surveyor.id }}" data-date="{{ survey.scheduled_date|date:'Y-m-d' }}" data-search="{{ survey.project.site_name }} {{ survey.project.management_no }}">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-3">
+                                        <h6 class="mb-1">{{ survey.project.site_name }}</h6>
+                                        <small class="text-muted">{{ survey.project.management_no }}</small>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <span class="survey-status status-{{ survey.status }}">
+                                            {{ survey.get_status_display }}
+                                        </span>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <i class="fas fa-user"></i>
+                                        {{ survey.surveyor.name }}
+                                    </div>
+                                    <div class="col-md-2">
+                                        <i class="fas fa-calendar"></i>
+                                        {{ survey.scheduled_date|date:"m/d(D)" }}
+                                    </div>
+                                    <div class="col-md-2">
+                                        <span class="time-badge">
+                                            <i class="fas fa-clock"></i>
+                                            {{ survey.scheduled_start_time|time:"H:i" }}
+                                        </span>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="showSurveyDetail({{ survey.id }})">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-search fa-3x mb-3"></i>
+                            <p>調査予定がありません</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新規調査予定モーダル -->
+<div class="modal fade" id="newSurveyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus"></i> 新規調査予定
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="newSurveyForm" method="post" action="{% url 'surveys:survey_create' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="survey-form-section">
+                        <h6 class="mb-3">基本情報</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">案件 <span class="text-danger">*</span></label>
+                                <select name="project" class="form-select" required>
+                                    <option value="">選択してください</option>
+                                    {% for project in projects %}
+                                    <option value="{{ project.id }}">
+                                        {{ project.management_no }} - {{ project.site_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">調査員 <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="text" id="selectedSurveyorName" class="form-control"
+                                           placeholder="調査員を選択してください" readonly required>
+                                    <input type="hidden" name="surveyor" id="selectedSurveyorId">
+                                    <button type="button" class="btn btn-outline-primary"
+                                            data-bs-toggle="modal" data-bs-target="#surveyorModal">
+                                        <i class="fas fa-search"></i> 選択
+                                    </button>
+                                    <a href="{% url 'surveys:surveyor_list' %}" class="btn btn-outline-secondary"
+                                       target="_blank" title="調査員管理">
+                                        <i class="fas fa-users"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="survey-form-section">
+                        <h6 class="mb-3">スケジュール</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">予定日 <span class="text-danger">*</span></label>
+                                <input type="date" name="scheduled_date" class="form-control" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">開始時刻 <span class="text-danger">*</span></label>
+                                <input type="time" name="scheduled_start_time" class="form-control" value="09:00" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">予定所要時間（分）</label>
+                                <input type="number" name="estimated_duration" class="form-control" value="120" min="30" max="480">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="survey-form-section">
+                        <h6 class="mb-3">備考</h6>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="調査の詳細や注意事項があれば記入してください"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 調査予定を作成
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 調査詳細モーダル -->
+<div class="modal fade" id="surveyDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-search"></i> 調査詳細
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="surveyDetailContent">
+                <!-- 動的に読み込まれる内容 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 調査員選択モーダル -->
+<div class="modal fade" id="surveyorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-users"></i> 調査員選択
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 検索フィルター -->
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <input type="text" id="surveyorSearch" class="form-control"
+                               placeholder="名前・社員番号・部署で検索">
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input type="checkbox" id="activeOnlyFilter" class="form-check-input" checked>
+                            <label for="activeOnlyFilter" class="form-check-label">稼働中のみ</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 調査員一覧 -->
+                <div id="surveyorList" class="row">
+                    <!-- 動的に読み込まれる内容 -->
+                </div>
+
+                <!-- ローディング -->
+                <div id="surveyorLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">読み込み中...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <a href="{% url 'surveys:surveyor_create' %}" class="btn btn-success" target="_blank">
+                    <i class="fas fa-plus"></i> 新規調査員登録
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // カレンダー初期化
+    const calendarEl = document.getElementById('calendar');
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'ja',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,listWeek'
+        },
+        events: [
+            {% for survey in surveys %}
+            {
+                id: '{{ survey.id }}',
+                title: '{{ survey.project.site_name }}',
+                start: '{{ survey.scheduled_date|date:"Y-m-d" }}T{{ survey.scheduled_start_time }}',
+                color: getStatusColor('{{ survey.status }}'),
+                extendedProps: {
+                    status: '{{ survey.status }}',
+                    surveyor: '{{ survey.surveyor.name }}',
+                    duration: {{ survey.estimated_duration }},
+                    projectNo: '{{ survey.project.management_no }}'
+                }
+            },
+            {% endfor %}
+        ],
+        eventClick: function(info) {
+            showSurveyDetail(info.event.id);
+        },
+        eventDidMount: function(info) {
+            info.el.setAttribute('title',
+                `${info.event.title} - ${info.event.extendedProps.surveyor}`
+            );
+        }
+    });
+    calendar.render();
+
+    // 表示切り替え
+    document.getElementById('viewToggle').addEventListener('click', function() {
+        const calendarView = document.getElementById('calendar-view');
+        const listView = document.getElementById('list-view');
+        const toggleBtn = this;
+
+        if (calendarView.classList.contains('d-none')) {
+            // リスト → カレンダー
+            calendarView.classList.remove('d-none');
+            listView.classList.add('d-none');
+            toggleBtn.innerHTML = '<i class="fas fa-list"></i> リスト表示';
+            toggleBtn.classList.remove('btn-primary');
+            toggleBtn.classList.add('btn-outline-primary');
+        } else {
+            // カレンダー → リスト
+            calendarView.classList.add('d-none');
+            listView.classList.remove('d-none');
+            toggleBtn.innerHTML = '<i class="fas fa-calendar"></i> カレンダー表示';
+            toggleBtn.classList.remove('btn-outline-primary');
+            toggleBtn.classList.add('btn-primary');
+        }
+    });
+
+    // フィルター機能
+    setupFilters();
+});
+
+function getStatusColor(status) {
+    const colors = {
+        'scheduled': '#17a2b8',    // info
+        'in_progress': '#6f42c1',  // purple
+        'completed': '#28a745',    // success
+        'cancelled': '#dc3545'     // danger
+    };
+    return colors[status] || '#6c757d';
+}
+
+function showSurveyDetail(surveyId) {
+    // 調査詳細をAJAXで取得してモーダル表示
+    fetch(`/surveys/${surveyId}/detail-ajax/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('surveyDetailContent').innerHTML = data.html;
+            new bootstrap.Modal(document.getElementById('surveyDetailModal')).show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('詳細情報の取得に失敗しました');
+        });
+}
+
+function setupFilters() {
+    const statusFilter = document.getElementById('statusFilter');
+    const surveyorFilter = document.getElementById('surveyorFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    const searchFilter = document.getElementById('searchFilter');
+
+    [statusFilter, surveyorFilter, dateFilter, searchFilter].forEach(filter => {
+        filter.addEventListener('change', applyFilters);
+        filter.addEventListener('input', applyFilters);
+    });
+}
+
+function applyFilters() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const surveyorFilter = document.getElementById('surveyorFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+    const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+
+    const cards = document.querySelectorAll('.survey-card');
+
+    cards.forEach(card => {
+        let show = true;
+
+        if (statusFilter && card.dataset.status !== statusFilter) {
+            show = false;
+        }
+
+        if (surveyorFilter && card.dataset.surveyor !== surveyorFilter) {
+            show = false;
+        }
+
+        if (dateFilter && card.dataset.date !== dateFilter) {
+            show = false;
+        }
+
+        if (searchFilter && !card.dataset.search.toLowerCase().includes(searchFilter)) {
+            show = false;
+        }
+
+        card.style.display = show ? 'block' : 'none';
+    });
+}
+
+// 調査員選択モーダル
+let surveyorModal;
+document.addEventListener('DOMContentLoaded', function() {
+    surveyorModal = new bootstrap.Modal(document.getElementById('surveyorModal'));
+
+    // 調査員検索
+    document.getElementById('surveyorSearch').addEventListener('input', debounce(searchSurveyors, 300));
+    document.getElementById('activeOnlyFilter').addEventListener('change', searchSurveyors);
+
+    // モーダルが開かれた時に初期検索
+    document.getElementById('surveyorModal').addEventListener('show.bs.modal', function() {
+        searchSurveyors();
+    });
+});
+
+function searchSurveyors() {
+    const search = document.getElementById('surveyorSearch').value;
+    const activeOnly = document.getElementById('activeOnlyFilter').checked;
+    const loading = document.getElementById('surveyorLoading');
+    const list = document.getElementById('surveyorList');
+
+    loading.style.display = 'block';
+    list.innerHTML = '';
+
+    const params = new URLSearchParams({
+        search: search,
+        active_only: activeOnly
+    });
+
+    fetch(`/surveys/surveyors/search-ajax/?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            loading.style.display = 'none';
+            displaySurveyors(data.surveyors);
+        })
+        .catch(error => {
+            loading.style.display = 'none';
+            console.error('Error:', error);
+            list.innerHTML = '<div class="col-12 text-center text-muted">検索に失敗しました</div>';
+        });
+}
+
+function displaySurveyors(surveyors) {
+    const list = document.getElementById('surveyorList');
+
+    if (surveyors.length === 0) {
+        list.innerHTML = '<div class="col-12 text-center text-muted">該当する調査員が見つかりません</div>';
+        return;
+    }
+
+    const html = surveyors.map(surveyor => `
+        <div class="col-md-6 mb-2">
+            <div class="card surveyor-select-card ${!surveyor.is_active ? 'inactive' : ''}"
+                 onclick="selectSurveyor(${surveyor.id}, '${surveyor.display_name}')">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">${surveyor.name}</h6>
+                            <small class="text-muted">${surveyor.employee_id} - ${surveyor.department || '未設定'}</small>
+                        </div>
+                        <span class="badge bg-${getExperienceBadgeColor(surveyor.experience_level)}">${surveyor.experience_level}</span>
+                    </div>
+                    ${surveyor.current_surveys > 0 ? `
+                    <div class="mt-2">
+                        <small class="text-warning">
+                            <i class="fas fa-clock"></i> ${surveyor.current_surveys}件進行中
+                        </small>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    list.innerHTML = html;
+}
+
+function getExperienceBadgeColor(level) {
+    const colors = {
+        'シニア': 'success',
+        '中級': 'info',
+        '初級': 'warning',
+        '新人': 'secondary'
+    };
+    return colors[level] || 'secondary';
+}
+
+function selectSurveyor(id, name) {
+    document.getElementById('selectedSurveyorId').value = id;
+    document.getElementById('selectedSurveyorName').value = name;
+    surveyorModal.hide();
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// フォーム送信処理
+document.getElementById('newSurveyForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    // 調査員が選択されているかチェック
+    if (!document.getElementById('selectedSurveyorId').value) {
+        alert('調査員を選択してください。');
+        return;
+    }
+
+    const formData = new FormData(this);
+
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload(); // 成功時はページをリロード
+        } else {
+            alert('エラー: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('予定作成に失敗しました');
+    });
+});
+</script>
+{% endblock %}

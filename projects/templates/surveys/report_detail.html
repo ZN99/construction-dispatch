@@ -1,0 +1,455 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}調査記録詳細 - {{ report.survey.project.title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-clipboard-check me-2"></i>調査記録詳細</h2>
+                    <h4 class="text-muted">{{ report.survey.project.title }}</h4>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'survey_report_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>一覧に戻る
+                    </a>
+                    {% if not report.is_ready_for_assignment %}
+                        <a href="{% url 'survey_record_form' report.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit me-1"></i>編集
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- メイン情報 -->
+                <div class="col-lg-8">
+                    <!-- 案件情報 -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-project-diagram me-2"></i>案件情報
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">案件名</label>
+                                        <div class="fw-bold">{{ report.survey.project.title }}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">顧客</label>
+                                        <div>{{ report.survey.project.customer.name }}</div>
+                                        {% if report.survey.project.customer.phone %}
+                                            <small class="text-muted">{{ report.survey.project.customer.phone }}</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">工種</label>
+                                        <div>{{ report.survey.project.project_type.name }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">作業場所</label>
+                                        <div>{{ report.survey.project.address }}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">案件金額</label>
+                                        <div class="fw-bold text-primary">
+                                            ¥{{ report.survey.project.amount|floatformat:0 }}
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">案件期間</label>
+                                        <div>
+                                            {{ report.survey.project.start_date|date:"Y年m月d日" }} -
+                                            {{ report.survey.project.end_date|date:"Y年m月d日" }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 調査実施情報 -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-search me-2"></i>調査実施情報
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">調査員</label>
+                                        <div>{{ report.survey.surveyor.name }}</div>
+                                        <small class="text-muted">{{ report.survey.surveyor.base_location }}</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">調査日時</label>
+                                        <div>
+                                            {% if report.survey.actual_start_time %}
+                                                <div>{{ report.survey.actual_start_time|date:"Y年m月d日 H:i" }}</div>
+                                                {% if report.survey.actual_end_time %}
+                                                    <small class="text-muted">
+                                                        {{ report.survey.actual_end_time|date:"H:i" }}終了
+                                                    </small>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">未実施</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">調査ステータス</label>
+                                        <div>
+                                            {% if report.survey.status == 'completed' %}
+                                                <span class="badge bg-success">完了</span>
+                                            {% elif report.survey.status == 'in_progress' %}
+                                                <span class="badge bg-warning">進行中</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ report.survey.get_status_display }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">記録作成日時</label>
+                                        <div>{{ report.created_at|date:"Y年m月d日 H:i" }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 測定・記録情報 -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-ruler-combined me-2"></i>測定・記録情報
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">実測面積</label>
+                                        <div class="fw-bold">
+                                            <span class="h4 text-primary">{{ report.actual_area }}</span>㎡
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">作業難易度</label>
+                                        <div>
+                                            {% if report.difficulty_level == 'easy' %}
+                                                <span class="badge bg-success fs-6">易</span>
+                                            {% elif report.difficulty_level == 'normal' %}
+                                                <span class="badge bg-primary fs-6">普通</span>
+                                            {% elif report.difficulty_level == 'hard' %}
+                                                <span class="badge bg-warning fs-6">困難</span>
+                                            {% elif report.difficulty_level == 'very_hard' %}
+                                                <span class="badge bg-danger fs-6">非常に困難</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">想定作業日数</label>
+                                        <div>
+                                            <span class="badge bg-info fs-6">{{ report.estimated_work_days }}日</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">アクセス情報</label>
+                                        <div class="bg-light rounded p-2">
+                                            {{ report.access_notes|linebreaks|default:"記載なし" }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 現場状態 -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-home me-2"></i>現場状態
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <div class="text-muted">壁面状態</div>
+                                        <div class="mt-2">
+                                            {% if report.wall_condition == 'excellent' %}
+                                                <span class="badge bg-success">優良</span>
+                                            {% elif report.wall_condition == 'good' %}
+                                                <span class="badge bg-primary">良好</span>
+                                            {% elif report.wall_condition == 'fair' %}
+                                                <span class="badge bg-warning">普通</span>
+                                            {% elif report.wall_condition == 'poor' %}
+                                                <span class="badge bg-danger">不良</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">未確認</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <div class="text-muted">床面状態</div>
+                                        <div class="mt-2">
+                                            {% if report.floor_condition == 'excellent' %}
+                                                <span class="badge bg-success">優良</span>
+                                            {% elif report.floor_condition == 'good' %}
+                                                <span class="badge bg-primary">良好</span>
+                                            {% elif report.floor_condition == 'fair' %}
+                                                <span class="badge bg-warning">普通</span>
+                                            {% elif report.floor_condition == 'poor' %}
+                                                <span class="badge bg-danger">不良</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">未確認</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <div class="text-muted">天井状態</div>
+                                        <div class="mt-2">
+                                            {% if report.ceiling_condition == 'excellent' %}
+                                                <span class="badge bg-success">優良</span>
+                                            {% elif report.ceiling_condition == 'good' %}
+                                                <span class="badge bg-primary">良好</span>
+                                            {% elif report.ceiling_condition == 'fair' %}
+                                                <span class="badge bg-warning">普通</span>
+                                            {% elif report.ceiling_condition == 'poor' %}
+                                                <span class="badge bg-danger">不良</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">未確認</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <div class="text-muted">電気設備</div>
+                                        <div class="mt-2">
+                                            {% if report.electrical_condition == 'excellent' %}
+                                                <span class="badge bg-success">優良</span>
+                                            {% elif report.electrical_condition == 'good' %}
+                                                <span class="badge bg-primary">良好</span>
+                                            {% elif report.electrical_condition == 'fair' %}
+                                                <span class="badge bg-warning">普通</span>
+                                            {% elif report.electrical_condition == 'poor' %}
+                                                <span class="badge bg-danger">不良</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">未確認</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 環境情報 -->
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <div class="text-muted">室温</div>
+                                        <div class="mt-2">
+                                            {% if report.room_temperature %}
+                                                <span class="badge bg-info">{{ report.room_temperature }}℃</span>
+                                            {% else %}
+                                                <span class="text-muted">未測定</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <div class="text-muted">湿度</div>
+                                        <div class="mt-2">
+                                            {% if report.humidity_level == 'low' %}
+                                                <span class="badge bg-primary">低</span>
+                                            {% elif report.humidity_level == 'normal' %}
+                                                <span class="badge bg-success">普通</span>
+                                            {% elif report.humidity_level == 'high' %}
+                                                <span class="badge bg-warning">高</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <div class="text-muted">換気状況</div>
+                                        <div class="mt-2">
+                                            {% if report.ventilation_quality == 'good' %}
+                                                <span class="badge bg-success">良い</span>
+                                            {% elif report.ventilation_quality == 'fair' %}
+                                                <span class="badge bg-warning">普通</span>
+                                            {% elif report.ventilation_quality == 'poor' %}
+                                                <span class="badge bg-danger">悪い</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 調査員メモ -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-sticky-note me-2"></i>調査員メモ
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="bg-light rounded p-3">
+                                {{ report.surveyor_notes|linebreaks|default:"記載なし" }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 特殊要件 -->
+                    {% if report.special_requirements %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-exclamation-triangle me-2"></i>特殊要件
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                {{ report.special_requirements|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 写真 -->
+                    {% if photos %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-camera me-2"></i>調査写真
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for photo in photos %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        <img src="{{ photo.image.url }}" class="card-img-top"
+                                             alt="{{ photo.description }}" style="height: 200px; object-fit: cover;">
+                                        <div class="card-body">
+                                            <p class="card-text small">{{ photo.description }}</p>
+                                            <small class="text-muted">{{ photo.uploaded_at|date:"Y/m/d H:i" }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- サイドバー -->
+                <div class="col-lg-4">
+                    <!-- ステータス -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">ステータス</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">職人アサイン準備</label>
+                                <div>
+                                    {% if report.is_ready_for_assignment %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>完了
+                                        </span>
+                                        <div class="small text-muted mt-1">
+                                            職人アサイン可能
+                                        </div>
+                                    {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clock me-1"></i>作業中
+                                        </span>
+                                        <div class="small text-muted mt-1">
+                                            記録作成中
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {% if report.assignment_notes %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted">職人選定向けメモ</label>
+                                <div class="bg-light rounded p-2 small">
+                                    {{ report.assignment_notes|linebreaks }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 音声メモ -->
+                    {% if report.voice_memo_url %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-microphone me-2"></i>音声メモ
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <audio controls class="w-100">
+                                <source src="{{ report.voice_memo_url }}" type="audio/mpeg">
+                                お使いのブラウザは音声再生に対応していません。
+                            </audio>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- アクション -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">アクション</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                {% if not report.is_ready_for_assignment %}
+                                    <a href="{% url 'survey_record_form' report.id %}" class="btn btn-primary">
+                                        <i class="fas fa-edit me-1"></i>記録を編集
+                                    </a>
+                                    <a href="{% url 'survey_record_complete' report.id %}" class="btn btn-success">
+                                        <i class="fas fa-check-circle me-1"></i>調査完了
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'craftsman_assignment_create' %}" class="btn btn-primary">
+                                        <i class="fas fa-user-hard-hat me-1"></i>職人アサイン
+                                    </a>
+                                {% endif %}
+                                <a href="{% url 'survey_detail' report.survey.id %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-search me-1"></i>調査詳細
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

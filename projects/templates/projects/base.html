@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}建築派遣SaaS{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .sidebar {
+            min-height: calc(100vh - 56px);
+            background-color: #f8f9fa;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .card-stat {
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'dashboard' %}">
+                <i class="fas fa-hard-hat me-2"></i>建築派遣SaaS
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'dashboard' %}">
+                            <i class="fas fa-chart-line me-1"></i>ダッシュボード
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'project_list' %}">
+                            <i class="fas fa-list me-1"></i>案件一覧
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'project_create_select_type' %}">
+                            <i class="fas fa-plus me-1"></i>案件登録
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="surveyDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-search me-1"></i>調査管理
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'survey_dashboard' %}">調査ダッシュボード</a></li>
+                            <li><a class="dropdown-item" href="{% url 'surveys:surveyor_dashboard' %}">調査員ダッシュボード</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'surveys:survey_list' %}">現地調査管理</a></li>
+                            <li><a class="dropdown-item" href="{% url 'survey_list' %}">調査一覧</a></li>
+                            <li><a class="dropdown-item" href="{% url 'survey_calendar' %}">カレンダー</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'survey_routes' %}">ルート最適化</a></li>
+                            <li><a class="dropdown-item" href="{% url 'auto_assign_surveys' %}">自動アサイン</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'survey_record_dashboard' %}">調査記録</a></li>
+                            <li><a class="dropdown-item" href="{% url 'mobile_survey_list' %}">モバイル版</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="craftsmanDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-users me-1"></i>職人選定
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'craftsman_dashboard' %}">職人ダッシュボード</a></li>
+                            <li><a class="dropdown-item" href="{% url 'craftsman_search' %}">職人検索</a></li>
+                            <li><a class="dropdown-item" href="{% url 'project_matching' %}">プロジェクトマッチング</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'assignment_list' %}">アサイン管理</a></li>
+                            <li><a class="dropdown-item" href="{% url 'craftsman_schedule_calendar' %}">スケジュール管理</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="materialDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-boxes me-1"></i>資材管理
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'material_dashboard' %}">資材ダッシュボード</a></li>
+                            <li><a class="dropdown-item" href="{% url 'material_order_list' %}">発注一覧</a></li>
+                            <li><a class="dropdown-item" href="{% url 'material_order_create' %}">新規発注</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'supplier_list' %}">業者管理</a></li>
+                            <li><a class="dropdown-item" href="{% url 'supplier_create' %}">業者登録</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="pricingDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-percentage me-1"></i>マージン設定
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'pricing_dashboard' %}">マージンダッシュボード</a></li>
+                            <li><a class="dropdown-item" href="{% url 'profitability_analysis' %}">収益性分析</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'project_list' %}">価格設定</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="constructionDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-hard-hat me-1"></i>施工管理
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'construction_dashboard' %}">施工ダッシュボード</a></li>
+                            <li><a class="dropdown-item" href="{% url 'progress_search' %}">進捗検索</a></li>
+                            <li><a class="dropdown-item" href="{% url 'issues_list' %}">問題管理</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'progress_analytics' %}">進捗分析</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/">
+                            <i class="fas fa-cog me-1"></i>管理画面
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <main class="col-md-12 main-content">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                {% block content %}
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    {% block extra_js %}
+    {% endblock %}
+</body>
+</html>

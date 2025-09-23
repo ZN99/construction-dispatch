@@ -1,0 +1,231 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}調査記録ダッシュボード - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-clipboard-list me-2"></i>調査記録ダッシュボード</h2>
+                <div class="btn-group">
+                    <a href="{% url 'mobile_survey_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-mobile-alt me-1"></i>モバイル版
+                    </a>
+                    <a href="{% url 'survey_report_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-list me-1"></i>記録一覧
+                    </a>
+                </div>
+            </div>
+
+            <!-- 統計カード -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-calendar-day fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ today_surveys.count }}</h5>
+                                    <small>今日の調査予定</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-play-circle fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ in_progress.count }}</h5>
+                                    <small>進行中の調査</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ recent_completed.count }}</h5>
+                                    <small>今日完了した調査</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-camera fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ photos_today|default:0 }}</h5>
+                                    <small>今日の写真枚数</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 今日の調査予定 -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-calendar-day me-2"></i>今日の調査予定
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if today_surveys %}
+                                <div class="list-group list-group-flush">
+                                    {% for survey in today_surveys %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ survey.project.title }}</h6>
+                                            <small class="text-muted">
+                                                {{ survey.project.customer.name }} |
+                                                {{ survey.scheduled_date|date:"H:i" }} |
+                                                {{ survey.surveyor.name }}
+                                            </small>
+                                            <br>
+                                            <span class="badge bg-{% if survey.status == 'scheduled' %}secondary{% elif survey.status == 'in_progress' %}warning{% endif %}">
+                                                {{ survey.get_status_display }}
+                                            </span>
+                                        </div>
+                                        <div class="btn-group-vertical btn-group-sm">
+                                            {% if survey.status == 'scheduled' %}
+                                                <a href="{% url 'survey_start' survey.id %}" class="btn btn-success btn-sm">
+                                                    <i class="fas fa-play"></i> 開始
+                                                </a>
+                                            {% elif survey.status == 'in_progress' %}
+                                                {% for report in survey.surveyreport_set.all %}
+                                                    <a href="{% url 'survey_record_form' report.id %}" class="btn btn-primary btn-sm">
+                                                        <i class="fas fa-edit"></i> 記録
+                                                    </a>
+                                                {% endfor %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted">今日の調査予定はありません。</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 進行中の調査 -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-warning text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-play-circle me-2"></i>進行中の調査
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if in_progress %}
+                                <div class="list-group list-group-flush">
+                                    {% for survey in in_progress %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ survey.project.title }}</h6>
+                                            <small class="text-muted">
+                                                {{ survey.project.customer.name }} |
+                                                {{ survey.surveyor.name }}
+                                            </small>
+                                            <br>
+                                            <small class="text-info">
+                                                開始: {{ survey.actual_start_time|date:"H:i" }}
+                                            </small>
+                                        </div>
+                                        <div class="btn-group-vertical btn-group-sm">
+                                            {% for report in survey.surveyreport_set.all %}
+                                                <a href="{% url 'survey_record_form' report.id %}" class="btn btn-primary btn-sm">
+                                                    <i class="fas fa-edit"></i> 記録
+                                                </a>
+                                                <a href="{% url 'survey_complete' report.id %}" class="btn btn-success btn-sm">
+                                                    <i class="fas fa-check"></i> 完了
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted">進行中の調査はありません。</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 最近完了した調査 -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-check-circle me-2"></i>最近完了した調査
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_completed %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>案件名</th>
+                                                <th>顧客</th>
+                                                <th>調査員</th>
+                                                <th>完了時刻</th>
+                                                <th>完了率</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for report in recent_completed %}
+                                            <tr>
+                                                <td>{{ report.survey.project.title }}</td>
+                                                <td>{{ report.survey.project.customer.name }}</td>
+                                                <td>{{ report.surveyor.name }}</td>
+                                                <td>{{ report.recorded_at|date:"H:i" }}</td>
+                                                <td>
+                                                    <div class="progress" style="width: 100px;">
+                                                        <div class="progress-bar" role="progressbar"
+                                                             style="width: {{ report.completion_percentage }}%"
+                                                             aria-valuenow="{{ report.completion_percentage }}"
+                                                             aria-valuemin="0" aria-valuemax="100">
+                                                            {{ report.completion_percentage }}%
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <a href="{% url 'survey_report_detail' report.id %}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye"></i> 詳細
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-muted">最近完了した調査はありません。</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

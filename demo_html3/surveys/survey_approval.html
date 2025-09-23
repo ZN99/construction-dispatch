@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>調査結果確認・承認 - 建築派遣SaaS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        .survey-data-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .data-item {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .photo-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .photo-item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .photo-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            color: white;
+            padding: 10px;
+            font-size: 0.9em;
+        }
+        .estimation-card {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+        }
+        .auto-generated {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .professional-note {
+            background: #f3e5f5;
+            border: 1px solid #9c27b0;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .approval-section {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .edit-field {
+            background: #fff;
+            border: 2px solid #ffc107;
+            border-radius: 4px;
+        }
+        .measurement-display {
+            background: #f0f8ff;
+            border: 1px solid #2196f3;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 5px 0;
+        }
+        .workflow-step {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .workflow-step.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        .workflow-step.current {
+            background: #cce5ff;
+            color: #004085;
+            border: 2px solid #007bff;
+        }
+        .workflow-step.pending {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <h5 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>メインメニュー</span>
+                    </h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="../index.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../projects/project_list.html">
+                                <i class="fas fa-project-diagram me-2"></i>案件管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="survey_list.html">
+                                <i class="fas fa-clipboard-list me-2"></i>調査管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../craftsman/craftsman_list.html">
+                                <i class="fas fa-users me-2"></i>職人管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../material/supplier_list.html">
+                                <i class="fas fa-building me-2"></i>資材業者
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../pricing/pricing_list.html">
+                                <i class="fas fa-yen-sign me-2"></i>見積管理
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">調査結果確認・承認</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-outline-secondary" onclick="exportData()">
+                                <i class="fas fa-download me-1"></i>データエクスポート
+                            </button>
+                            <button type="button" class="btn btn-warning" onclick="requestRevision()">
+                                <i class="fas fa-edit me-1"></i>修正依頼
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="approveEstimation()">
+                                <i class="fas fa-check-double me-1"></i>見積承認
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- フロー表示 -->
+                <div class="alert alert-info">
+                    <strong>STEP 4: 社員の役割（確認・意思決定・承認）</strong><br>
+                    派遣スタッフが入力したデータと自動生成された見積を確認し、専門知見で修正・承認してください。
+                </div>
+
+                <!-- ワークフロー進捗 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-route me-2"></i>ワークフロー進捗</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="workflow-step completed">
+                            <i class="fas fa-check-circle me-3"></i>
+                            <div>
+                                <strong>STEP 1: 調査指示作成</strong>
+                                <small class="d-block text-muted">社員 → 完了 (2025-09-15 14:30)</small>
+                            </div>
+                        </div>
+                        <div class="workflow-step completed">
+                            <i class="fas fa-check-circle me-3"></i>
+                            <div>
+                                <strong>STEP 2: 現地調査実施</strong>
+                                <small class="d-block text-muted">派遣スタッフ → 完了 (2025-09-16 11:45)</small>
+                            </div>
+                        </div>
+                        <div class="workflow-step completed">
+                            <i class="fas fa-check-circle me-3"></i>
+                            <div>
+                                <strong>STEP 3: 自動見積生成</strong>
+                                <small class="d-block text-muted">システム → 完了 (2025-09-16 11:46)</small>
+                            </div>
+                        </div>
+                        <div class="workflow-step current">
+                            <i class="fas fa-clock me-3"></i>
+                            <div>
+                                <strong>STEP 4: 確認・承認</strong>
+                                <small class="d-block text-muted">社員 → 進行中</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- 左カラム: 調査データ -->
+                    <div class="col-md-8">
+                        <!-- 基本情報 -->
+                        <div class="survey-data-card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>調査基本情報</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="data-item">
+                                            <small class="text-muted">案件名</small>
+                                            <div class="fw-bold">港区ワンルーム原状回復</div>
+                                        </div>
+                                        <div class="data-item">
+                                            <small class="text-muted">調査日時</small>
+                                            <div>2025年9月16日 10:00-12:00</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="data-item">
+                                            <small class="text-muted">調査員</small>
+                                            <div>田中太郎（派遣スタッフ）</div>
+                                        </div>
+                                        <div class="data-item">
+                                            <small class="text-muted">天候</small>
+                                            <div>晴れ</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 測定データ -->
+                        <div class="survey-data-card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-ruler me-2"></i>測定データ</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="measurement-display">
+                                    <strong>リビング壁面積</strong>
+                                    <div class="mt-2">
+                                        <span class="me-3">幅: 3.5m</span>
+                                        <span class="me-3">高さ: 2.4m</span>
+                                        <span class="text-primary fw-bold">面積: 8.4m²</span>
+                                    </div>
+                                </div>
+
+                                <div class="measurement-display">
+                                    <strong>クロス面積計算</strong>
+                                    <div class="row mt-2">
+                                        <div class="col-3">北側: 8.4m²</div>
+                                        <div class="col-3">南側: 8.4m²</div>
+                                        <div class="col-3">東側: 5.7m²</div>
+                                        <div class="col-3">西側: 5.7m²</div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <strong class="text-primary">合計壁面積: 28.2m²</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 撮影データ -->
+                        <div class="survey-data-card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-camera me-2"></i>撮影データ</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="photo-gallery">
+                                    <div class="photo-item">
+                                        <img src="https://via.placeholder.com/300x200/4CAF50/white?text=キッチン全体" alt="キッチン全体">
+                                        <div class="photo-overlay">
+                                            <strong>キッチン全体</strong>
+                                            <div><small>撮影時刻: 10:15</small></div>
+                                        </div>
+                                    </div>
+                                    <div class="photo-item">
+                                        <img src="https://via.placeholder.com/300x200/2196F3/white?text=シンク下" alt="シンク下">
+                                        <div class="photo-overlay">
+                                            <strong>シンク下</strong>
+                                            <div><small>撮影時刻: 10:16</small></div>
+                                        </div>
+                                    </div>
+                                    <div class="photo-item">
+                                        <img src="https://via.placeholder.com/300x200/FF9800/white?text=浴室タイル" alt="浴室タイル">
+                                        <div class="photo-overlay">
+                                            <strong>浴室タイル目地</strong>
+                                            <div><small>撮影時刻: 10:30</small></div>
+                                        </div>
+                                    </div>
+                                    <div class="photo-item">
+                                        <img src="https://via.placeholder.com/300x200/9C27B0/white?text=リビング壁" alt="リビング壁">
+                                        <div class="photo-overlay">
+                                            <strong>リビング壁面</strong>
+                                            <div><small>撮影時刻: 10:45</small></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 専門的分析・修正 -->
+                        <div class="survey-data-card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-user-tie me-2"></i>専門的分析・修正</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="professional-note">
+                                    <h6><i class="fas fa-search me-2"></i>写真から読み取れる追加作業項目</h6>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="additional1" checked>
+                                        <label class="form-check-label" for="additional1">
+                                            <strong>下地補修が必要</strong> - キッチン壁に穴あり（写真確認）
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="additional2" checked>
+                                        <label class="form-check-label" for="additional2">
+                                            <strong>浴室コーキング交換</strong> - 目地の劣化が進行（写真確認）
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="additional3">
+                                        <label class="form-check-label" for="additional3">
+                                            <strong>照明器具清掃</strong> - 黄ばみ確認
+                                        </label>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label"><strong>専門的見解・注意事項</strong></label>
+                                        <textarea class="form-control edit-field" rows="4" placeholder="専門知見に基づく分析や注意事項を記入してください">キッチン壁の下地補修は、クロス張り替え前に必ず実施が必要。浴室のコーキング劣化は水漏れリスクがあるため、優先度高で対応。全体的な劣化状況は標準的で、予算内での施工が可能と判断。</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右カラム: 見積情報 -->
+                    <div class="col-md-4">
+                        <!-- 自動生成見積 -->
+                        <div class="estimation-card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-robot me-2"></i>自動生成見積（たたき台）</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="auto-generated">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <small>STEP 3で単価マスタから自動計算</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>クロス工事 (28.2m²)</span>
+                                        <span>¥33,840</span>
+                                    </div>
+                                    <small class="text-muted">単価 ¥1,200/m²</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>クリーニング (28.2m²)</span>
+                                        <span>¥22,560</span>
+                                    </div>
+                                    <small class="text-muted">単価 ¥800/m²</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>測定基本料</span>
+                                        <span>¥5,000</span>
+                                    </div>
+                                </div>
+
+                                <hr>
+                                <div class="d-flex justify-content-between fw-bold">
+                                    <span>自動計算合計</span>
+                                    <span class="text-primary">¥61,400</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 修正済み見積 -->
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-edit me-2"></i>修正済み見積</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">クロス工事</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control edit-field" value="33840" id="wallpaperCost">
+                                        <span class="input-group-text">円</span>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">クリーニング</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control edit-field" value="22560" id="cleaningCost">
+                                        <span class="input-group-text">円</span>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">下地補修 <span class="text-danger">*追加</span></label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control edit-field" value="8000" id="repairCost">
+                                        <span class="input-group-text">円</span>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">コーキング交換 <span class="text-danger">*追加</span></label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control edit-field" value="12000" id="caulkingCost">
+                                        <span class="input-group-text">円</span>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">測定基本料</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" value="5000" id="measurementCost" readonly>
+                                        <span class="input-group-text">円</span>
+                                    </div>
+                                </div>
+
+                                <hr>
+                                <div class="d-flex justify-content-between fw-bold fs-5">
+                                    <span>修正後合計</span>
+                                    <span class="text-success" id="totalCost">¥81,400</span>
+                                </div>
+
+                                <div class="mt-3">
+                                    <label class="form-label">見積備考</label>
+                                    <textarea class="form-control edit-field" rows="3" placeholder="見積に関する備考や条件を記入">下地補修とコーキング交換を追加。写真確認により必須と判断。工期は3-4日程度を想定。</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 承認セクション -->
+                        <div class="approval-section mt-3">
+                            <h6><i class="fas fa-check-double me-2"></i>最終承認</h6>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="dataVerified">
+                                <label class="form-check-label" for="dataVerified">
+                                    調査データを確認済み
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="photosReviewed">
+                                <label class="form-check-label" for="photosReviewed">
+                                    写真を専門的視点で分析済み
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="estimationApproved">
+                                <label class="form-check-label" for="estimationApproved">
+                                    見積内容を承認
+                                </label>
+                            </div>
+
+                            <button class="btn btn-success w-100" onclick="finalApproval()" id="approvalBtn" disabled>
+                                <i class="fas fa-stamp me-2"></i>正式見積として承認
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            calculateTotal();
+        });
+
+        // イベントリスナーの設定
+        function setupEventListeners() {
+            // 見積金額の自動計算
+            ['wallpaperCost', 'cleaningCost', 'repairCost', 'caulkingCost', 'measurementCost'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', calculateTotal);
+                }
+            });
+
+            // チェックボックスの状態監視
+            ['dataVerified', 'photosReviewed', 'estimationApproved'].forEach(id => {
+                document.getElementById(id).addEventListener('change', updateApprovalButton);
+            });
+        }
+
+        // 合計金額計算
+        function calculateTotal() {
+            const wallpaper = parseFloat(document.getElementById('wallpaperCost').value) || 0;
+            const cleaning = parseFloat(document.getElementById('cleaningCost').value) || 0;
+            const repair = parseFloat(document.getElementById('repairCost').value) || 0;
+            const caulking = parseFloat(document.getElementById('caulkingCost').value) || 0;
+            const measurement = parseFloat(document.getElementById('measurementCost').value) || 0;
+
+            const total = wallpaper + cleaning + repair + caulking + measurement;
+            document.getElementById('totalCost').textContent = `¥${total.toLocaleString()}`;
+        }
+
+        // 承認ボタンの状態更新
+        function updateApprovalButton() {
+            const dataVerified = document.getElementById('dataVerified').checked;
+            const photosReviewed = document.getElementById('photosReviewed').checked;
+            const estimationApproved = document.getElementById('estimationApproved').checked;
+
+            const approvalBtn = document.getElementById('approvalBtn');
+            approvalBtn.disabled = !(dataVerified && photosReviewed && estimationApproved);
+        }
+
+        // 最終承認
+        function finalApproval() {
+            const finalEstimation = {
+                projectName: '港区ワンルーム原状回復',
+                surveyDate: '2025-09-16',
+                approvedBy: '社員（専門担当者）',
+                approvedAt: new Date().toISOString(),
+                items: {
+                    wallpaper: parseFloat(document.getElementById('wallpaperCost').value),
+                    cleaning: parseFloat(document.getElementById('cleaningCost').value),
+                    repair: parseFloat(document.getElementById('repairCost').value),
+                    caulking: parseFloat(document.getElementById('caulkingCost').value),
+                    measurement: parseFloat(document.getElementById('measurementCost').value)
+                },
+                total: calculateTotalValue(),
+                professionalNotes: document.querySelector('.professional-note textarea').value,
+                estimationNotes: document.querySelector('.approval-section textarea').value
+            };
+
+            console.log('正式見積データ:', finalEstimation);
+
+            // 顧客への見積書送信
+            sendEstimationToCustomer(finalEstimation);
+
+            alert('見積を正式承認しました！\n顧客に見積書が送信され、案件管理システムに登録されます。');
+
+            // 案件管理画面に遷移
+            window.location.href = '../projects/project_list.html';
+        }
+
+        // 合計値計算（数値のみ）
+        function calculateTotalValue() {
+            const wallpaper = parseFloat(document.getElementById('wallpaperCost').value) || 0;
+            const cleaning = parseFloat(document.getElementById('cleaningCost').value) || 0;
+            const repair = parseFloat(document.getElementById('repairCost').value) || 0;
+            const caulking = parseFloat(document.getElementById('caulkingCost').value) || 0;
+            const measurement = parseFloat(document.getElementById('measurementCost').value) || 0;
+
+            return wallpaper + cleaning + repair + caulking + measurement;
+        }
+
+        // 顧客への見積書送信
+        function sendEstimationToCustomer(estimationData) {
+            console.log('顧客に見積書を送信しました:', estimationData);
+
+            // 実際の実装では、ここでメール送信やPDF生成を行う
+            console.log('見積書PDF生成開始...');
+            console.log('顧客メール送信...');
+            console.log('案件ステータス更新: 見積提出済み');
+        }
+
+        // 修正依頼
+        function requestRevision() {
+            const reason = prompt('修正が必要な理由を入力してください:');
+            if (reason) {
+                alert(`派遣スタッフに修正依頼を送信しました。\n理由: ${reason}`);
+                console.log('修正依頼送信:', reason);
+            }
+        }
+
+        // データエクスポート
+        function exportData() {
+            const exportData = {
+                surveyData: '調査データ一式',
+                photos: '撮影画像一式',
+                measurements: '測定データ',
+                estimation: '見積データ'
+            };
+
+            console.log('データエクスポート:', exportData);
+            alert('調査データをエクスポートしました。');
+        }
+
+        // 見積承認（個別）
+        function approveEstimation() {
+            document.getElementById('estimationApproved').checked = true;
+            updateApprovalButton();
+            alert('見積内容を承認しました。最終承認ボタンが有効になります。');
+        }
+    </script>
+</body>
+</html>

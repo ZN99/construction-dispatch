@@ -1,0 +1,252 @@
+{% extends "surveys/base.html" %}
+
+{% block title %}調査完了 - {{ survey.project.site_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-check-circle me-2"></i>調査完了確認</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-info-circle me-2"></i>調査を完了しますか？</h5>
+                    <p class="mb-0">調査完了時刻が記録され、レポートが生成されます。完了後は調査データの変更ができなくなります。</p>
+                </div>
+
+                <div class="bg-light rounded p-3 mb-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <small class="text-muted">物件名</small>
+                                <div class="fw-bold">{{ survey.project.site_name }}</div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">工事種別</small>
+                                <div>{{ survey.project.work_type }}</div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">調査者名</small>
+                                <div>{{ survey.surveyor.name }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <small class="text-muted">調査日</small>
+                                <div>{{ survey.scheduled_date|date:"Y年m月d日" }}</div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">開始時刻</small>
+                                <div>{{ survey.actual_start_time|date:"H:i"|default:"未記録" }}</div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">現在時刻</small>
+                                <div id="currentTime" class="text-primary fw-bold"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 調査データサマリー -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>調査データサマリー</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="h4 mb-1 text-info">{{ survey.rooms.count }}</div>
+                                    <div class="small text-muted">調査部屋数</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="h4 mb-1 text-warning">{{ survey.get_total_wall_count }}</div>
+                                    <div class="small text-muted">壁面数</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="h4 mb-1 text-danger">{{ survey.damages.count }}</div>
+                                    <div class="small text-muted">損傷箇所</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="h4 mb-1 text-success">{{ survey.photos.count }}</div>
+                                    <div class="small text-muted">写真枚数</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if survey.rooms.count == 0 %}
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>注意:</strong> 部屋データが登録されていません。調査を完了する前に部屋情報を入力してください。
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 最終確認チェックリスト -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-tasks me-2"></i>完了前チェックリスト</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="check1" required>
+                            <label class="form-check-label" for="check1">
+                                すべての部屋の調査が完了している
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="check2" required>
+                            <label class="form-check-label" for="check2">
+                                必要な写真がすべて撮影されている
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="check3" required>
+                            <label class="form-check-label" for="check3">
+                                損傷箇所の記録が完了している
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="check4" required>
+                            <label class="form-check-label" for="check4">
+                                特記事項・備考が記入されている（該当する場合）
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="check5" required>
+                            <label class="form-check-label" for="check5">
+                                調査データに間違いがないことを確認した
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 最終コメント -->
+                <div class="mb-4">
+                    <label for="finalNotes" class="form-label">最終コメント・特記事項</label>
+                    <textarea class="form-control" id="finalNotes" rows="3" placeholder="調査完了時の最終コメントや特記事項があればご記入ください...">{{ survey.notes }}</textarea>
+                </div>
+
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>調査完了後の処理について</h6>
+                    <ul class="mb-0">
+                        <li>調査完了時刻が自動的に記録されます</li>
+                        <li>調査レポートが自動生成されます</li>
+                        <li>クライアントへの報告書が作成可能になります</li>
+                        <li>完了後は調査データの編集ができなくなります</li>
+                    </ul>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'surveys:survey_start' survey.pk %}" class="btn btn-secondary me-md-2">調査に戻る</a>
+                    <button type="button" class="btn btn-success btn-lg" id="completeSurveyBtn" onclick="completeSurvey()" disabled>
+                        <i class="fas fa-check-circle me-2"></i>調査を完了する
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 完了処理中の表示 (初期は非表示) -->
+        <div class="card mt-4" id="completingProcess" style="display: none;">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-cog fa-spin me-2"></i>調査完了処理中...</h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="spinner-border text-success mb-3" role="status">
+                    <span class="visually-hidden">処理中...</span>
+                </div>
+                <p class="mb-0">調査データの最終保存とレポート生成を行っています。しばらくお待ちください。</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('currentTime').textContent = timeString;
+}
+
+function checkAllBoxes() {
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    const completeBtn = document.getElementById('completeSurveyBtn');
+
+    let allChecked = true;
+    checkboxes.forEach(checkbox => {
+        if (!checkbox.checked) {
+            allChecked = false;
+        }
+    });
+
+    completeBtn.disabled = !allChecked;
+}
+
+function completeSurvey() {
+    if (confirm('本当に調査を完了しますか？完了後は調査データの変更ができなくなります。')) {
+        // 完了処理中の表示
+        document.querySelector('.card:first-child').style.display = 'none';
+        document.getElementById('completingProcess').style.display = 'block';
+
+        // 最終コメントを含めて完了処理
+        const finalNotes = document.getElementById('finalNotes').value;
+
+        fetch('{% url "surveys:survey_complete_api" survey.pk %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                notes: finalNotes
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 成功時は詳細画面にリダイレクト
+                setTimeout(() => {
+                    window.location.href = '{% url "surveys:survey_report" survey.pk %}';
+                }, 2000);
+            } else {
+                alert('調査完了処理に失敗しました: ' + data.message);
+                // エラー時は元の画面に戻す
+                document.querySelector('.card:first-child').style.display = 'block';
+                document.getElementById('completingProcess').style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('調査完了中にエラーが発生しました');
+            // エラー時は元の画面に戻す
+            document.querySelector('.card:first-child').style.display = 'block';
+            document.getElementById('completingProcess').style.display = 'none';
+        });
+    }
+}
+
+// イベントリスナーの設定
+document.addEventListener('DOMContentLoaded', function() {
+    // チェックボックスの変更を監視
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', checkAllBoxes);
+    });
+
+    // 初回チェック
+    checkAllBoxes();
+
+    // 現在時刻の更新
+    updateTime();
+    setInterval(updateTime, 1000);
+});
+</script>
+{% endblock %}

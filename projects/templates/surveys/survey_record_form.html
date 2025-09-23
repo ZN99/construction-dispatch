@@ -1,0 +1,386 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}調査記録 - {{ report.survey.project.title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- ヘッダー -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-clipboard-list me-2"></i>調査記録</h2>
+                    <h4 class="text-muted">{{ report.survey.project.title }}</h4>
+                    <small class="text-muted">
+                        顧客: {{ report.survey.project.customer.name }} |
+                        調査員: {{ report.surveyor.name }} |
+                        開始: {{ report.survey.actual_start_time|date:"Y年m月d日 H:i" }}
+                    </small>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'survey_record_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>ダッシュボード
+                    </a>
+                    <a href="{% url 'survey_complete' report.id %}" class="btn btn-success">
+                        <i class="fas fa-check me-1"></i>調査完了
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 左カラム: フォーム -->
+                <div class="col-md-8">
+                    <form method="post" id="surveyRecordForm">
+                        {% csrf_token %}
+
+                        <!-- 基本情報 -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>基本情報</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.actual_area.id_for_label }}" class="form-label">実測面積（㎡）</label>
+                                        {{ form.actual_area }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.room_temperature.id_for_label }}" class="form-label">室温（℃）</label>
+                                        {{ form.room_temperature }}
+                                    </div>
+                                    <div class="col-md-12 mb-3">
+                                        <label for="{{ form.access_notes.id_for_label }}" class="form-label">アクセス情報</label>
+                                        {{ form.access_notes }}
+                                    </div>
+                                    <div class="col-md-12 mb-3">
+                                        <label for="{{ form.special_requirements.id_for_label }}" class="form-label">特殊要件</label>
+                                        {{ form.special_requirements }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 現場状態 -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="fas fa-eye me-2"></i>現場状態評価</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.wall_condition.id_for_label }}" class="form-label">壁面状態</label>
+                                        {{ form.wall_condition }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.floor_condition.id_for_label }}" class="form-label">床面状態</label>
+                                        {{ form.floor_condition }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.ceiling_condition.id_for_label }}" class="form-label">天井状態</label>
+                                        {{ form.ceiling_condition }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.electrical_condition.id_for_label }}" class="form-label">電気設備</label>
+                                        {{ form.electrical_condition }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 環境情報 -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-warning text-white">
+                                <h5 class="mb-0"><i class="fas fa-thermometer-half me-2"></i>環境情報</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.humidity_level.id_for_label }}" class="form-label">湿度レベル</label>
+                                        {{ form.humidity_level }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.ventilation_quality.id_for_label }}" class="form-label">換気状況</label>
+                                        {{ form.ventilation_quality }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 作業見積もり -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-danger text-white">
+                                <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>作業見積もり</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.estimated_work_days.id_for_label }}" class="form-label">想定作業日数</label>
+                                        {{ form.estimated_work_days }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.difficulty_level.id_for_label }}" class="form-label">作業難易度</label>
+                                        {{ form.difficulty_level }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- メモ -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-secondary text-white">
+                                <h5 class="mb-0"><i class="fas fa-sticky-note me-2"></i>メモ</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.surveyor_notes.id_for_label }}" class="form-label">調査員メモ</label>
+                                        {{ form.surveyor_notes }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.assignment_notes.id_for_label }}" class="form-label">職人選定向けメモ</label>
+                                        {{ form.assignment_notes }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save me-1"></i>保存
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 右カラム: 写真・音声メモ -->
+                <div class="col-md-4">
+                    <!-- 写真アップロード -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-camera me-2"></i>写真撮影</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="photoUploadForm" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="photo" class="form-label">写真</label>
+                                    <input type="file" class="form-control" id="photo" name="photo" accept="image/*" capture="environment" multiple>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="location" class="form-label">撮影場所</label>
+                                    <select class="form-select" id="location" name="location">
+                                        <option value="overview">全景</option>
+                                        <option value="living">リビング</option>
+                                        <option value="kitchen">キッチン</option>
+                                        <option value="bedroom">寝室</option>
+                                        <option value="bathroom">バスルーム</option>
+                                        <option value="toilet">トイレ</option>
+                                        <option value="entrance">玄関</option>
+                                        <option value="balcony">ベランダ</option>
+                                        <option value="wall">壁面詳細</option>
+                                        <option value="ceiling">天井詳細</option>
+                                        <option value="floor">床面詳細</option>
+                                        <option value="damage">損傷箇所</option>
+                                        <option value="electrical">電気設備</option>
+                                        <option value="plumbing">配管</option>
+                                        <option value="other">その他</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">説明</label>
+                                    <input type="text" class="form-control" id="description" name="description" placeholder="写真の説明">
+                                </div>
+                                <button type="submit" class="btn btn-success btn-sm w-100">
+                                    <i class="fas fa-upload me-1"></i>アップロード
+                                </button>
+                            </form>
+
+                            <!-- 写真一覧 -->
+                            <div id="photoList" class="mt-3">
+                                {% for photo in photos %}
+                                <div class="card mb-2">
+                                    <img src="{{ photo.photo.url }}" class="card-img-top" style="height: 100px; object-fit: cover;">
+                                    <div class="card-body p-2">
+                                        <small class="text-muted">{{ photo.get_location_display }}</small>
+                                        <p class="mb-0" style="font-size: 0.8em;">{{ photo.description }}</p>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 音声メモ -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-microphone me-2"></i>音声メモ</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="voiceMemoForm">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="memo_description" class="form-label">メモの説明</label>
+                                    <input type="text" class="form-control" id="memo_description" name="memo_description" placeholder="音声メモの内容">
+                                </div>
+                                <div class="mb-3">
+                                    <button type="button" id="recordButton" class="btn btn-danger w-100">
+                                        <i class="fas fa-record-vinyl me-1"></i>録音開始
+                                    </button>
+                                </div>
+                                <div class="mb-3">
+                                    <audio id="audioPlayback" controls class="w-100" style="display: none;"></audio>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 進捗状況 -->
+                    <div class="card">
+                        <div class="card-header bg-dark text-white">
+                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>進捗状況</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="progress mb-2">
+                                <div class="progress-bar" role="progressbar" style="width: {{ report.completion_percentage }}%"
+                                     aria-valuenow="{{ report.completion_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                    {{ report.completion_percentage }}%
+                                </div>
+                            </div>
+                            <small class="text-muted">写真枚数: {{ photos.count }}枚</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* モバイル対応 */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 10px;
+    }
+
+    .card {
+        margin-bottom: 15px;
+    }
+
+    .btn-group {
+        flex-direction: column;
+    }
+
+    .btn-group .btn {
+        margin-bottom: 5px;
+    }
+
+    textarea {
+        min-height: 80px;
+    }
+}
+
+/* カメラ入力のスタイル */
+input[type="file"][capture] {
+    border: 2px dashed #28a745;
+    padding: 20px;
+    text-align: center;
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 写真アップロード
+    $('#photoUploadForm').on('submit', function(e) {
+        e.preventDefault();
+
+        var formData = new FormData(this);
+
+        $.ajax({
+            url: '{% url "photo_upload_ajax" report.id %}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    // 写真リストに追加
+                    var photoHtml = `
+                        <div class="card mb-2">
+                            <img src="${response.photo_url}" class="card-img-top" style="height: 100px; object-fit: cover;">
+                            <div class="card-body p-2">
+                                <small class="text-muted">${response.location}</small>
+                                <p class="mb-0" style="font-size: 0.8em;">${response.description}</p>
+                            </div>
+                        </div>
+                    `;
+                    $('#photoList').prepend(photoHtml);
+
+                    // フォームリセット
+                    $('#photoUploadForm')[0].reset();
+
+                    alert('写真がアップロードされました');
+                }
+            },
+            error: function(xhr) {
+                alert('写真のアップロードに失敗しました');
+            }
+        });
+    });
+
+    // 音声録音機能（簡易版）
+    let mediaRecorder;
+    let audioChunks = [];
+
+    $('#recordButton').on('click', function() {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+                // 録音開始
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(stream => {
+                        mediaRecorder = new MediaRecorder(stream);
+                        audioChunks = [];
+
+                        mediaRecorder.ondataavailable = event => {
+                            audioChunks.push(event.data);
+                        };
+
+                        mediaRecorder.onstop = () => {
+                            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                            const audioUrl = URL.createObjectURL(audioBlob);
+
+                            $('#audioPlayback').attr('src', audioUrl).show();
+
+                            // 音声ファイルをサーバーに送信（実装必要）
+                            // uploadVoiceMemo(audioBlob);
+                        };
+
+                        mediaRecorder.start();
+                        $(this).html('<i class="fas fa-stop me-1"></i>録音停止').removeClass('btn-danger').addClass('btn-warning');
+                    })
+                    .catch(err => {
+                        alert('マイクへのアクセスができませんでした');
+                    });
+            } else {
+                // 録音停止
+                mediaRecorder.stop();
+                $(this).html('<i class="fas fa-record-vinyl me-1"></i>録音開始').removeClass('btn-warning').addClass('btn-danger');
+            }
+        } else {
+            alert('このブラウザは音声録音に対応していません');
+        }
+    });
+
+    // オートセーブ機能
+    let saveTimeout;
+    $('#surveyRecordForm input, #surveyRecordForm textarea').on('input', function() {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(function() {
+            $('#surveyRecordForm').submit();
+        }, 5000); // 5秒後に自動保存
+    });
+});
+</script>
+{% endblock %}

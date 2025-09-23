@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>法令遵守レポート - 社員専用</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/role-separation.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body data-user-role="employee">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="../index_manager.html">
+                <i class="fas fa-gavel me-2"></i>法令遵守レポート
+            </a>
+            <div class="ms-auto">
+                <span class="navbar-text me-3">社員専用</span>
+                <a href="../index_manager.html" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-home me-1"></i>ダッシュボード
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- 概要統計 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0">100%</h4>
+                                <p class="mb-0">法令遵守率</p>
+                            </div>
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0">0</h4>
+                                <p class="mb-0">違反事例</p>
+                            </div>
+                            <i class="fas fa-shield-alt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0">3</h4>
+                                <p class="mb-0">ブロック事例</p>
+                            </div>
+                            <i class="fas fa-ban fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0">1,247</h4>
+                                <p class="mb-0">総監査事例</p>
+                            </div>
+                            <i class="fas fa-clipboard-list fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- メインレポート -->
+            <div class="col-md-8">
+                <!-- 労働者派遣法第23条 遵守状況 -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-gavel me-2"></i>労働者派遣法第23条 遵守状況</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>完全遵守</strong> - システムは労働者派遣法第23条の要件を100%満たしています
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>第23条第1項（決定権限の分離）</h6>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        案件承認権限
+                                        <span class="badge bg-success">分離済み</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        価格決定権限
+                                        <span class="badge bg-success">分離済み</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        スタッフ管理権限
+                                        <span class="badge bg-success">分離済み</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        契約締結権限
+                                        <span class="badge bg-success">分離済み</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>財務情報の管理</h6>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        価格情報非表示
+                                        <span class="badge bg-success">実装済み</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        利益情報非表示
+                                        <span class="badge bg-success">実装済み</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        コスト情報非表示
+                                        <span class="badge bg-success">実装済み</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        予算情報非表示
+                                        <span class="badge bg-success">実装済み</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- アクセス制御レポート -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>アクセス制御レポート</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <canvas id="accessControlChart" width="400" height="200"></canvas>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>今月のブロック事例</h6>
+                                <div class="list-group">
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">財務情報アクセス試行</h6>
+                                                <p class="mb-1">田中太郎 - project_list_manager.html</p>
+                                                <small>2024-12-07 14:23</small>
+                                            </div>
+                                            <span class="badge bg-warning">ブロック済み</span>
+                                        </div>
+                                    </div>
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">承認画面アクセス試行</h6>
+                                                <p class="mb-1">佐藤次郎 - approval_process.html</p>
+                                                <small>2024-12-06 16:45</small>
+                                            </div>
+                                            <span class="badge bg-warning">ブロック済み</span>
+                                        </div>
+                                    </div>
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">管理画面アクセス試行</h6>
+                                                <p class="mb-1">鈴木花子 - staff_management.html</p>
+                                                <small>2024-12-05 11:20</small>
+                                            </div>
+                                            <span class="badge bg-warning">ブロック済み</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- タスク実行状況 -->
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>派遣スタッフタスク実行状況</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>スタッフ名</th>
+                                        <th>実行タスク数</th>
+                                        <th>完了率</th>
+                                        <th>決定権限関与</th>
+                                        <th>法令遵守スコア</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>田中太郎</td>
+                                        <td>15</td>
+                                        <td><span class="badge bg-success">95%</span></td>
+                                        <td><span class="text-success">なし</span></td>
+                                        <td><span class="badge bg-success">100%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>佐藤次郎</td>
+                                        <td>12</td>
+                                        <td><span class="badge bg-success">88%</span></td>
+                                        <td><span class="text-success">なし</span></td>
+                                        <td><span class="badge bg-success">100%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>鈴木花子</td>
+                                        <td>8</td>
+                                        <td><span class="badge bg-success">92%</span></td>
+                                        <td><span class="text-success">なし</span></td>
+                                        <td><span class="badge bg-success">100%</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- サイドパネル -->
+            <div class="col-md-4">
+                <!-- 法令情報 -->
+                <div class="card mb-3">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0"><i class="fas fa-book me-2"></i>関連法令</h6>
+                    </div>
+                    <div class="card-body">
+                        <h6>労働者派遣法第23条</h6>
+                        <p class="small">派遣元事業主は、その雇用する派遣労働者に係る派遣先での就業に関し、当該派遣労働者に対する指揮命令の適正な実施を確保するため、派遣先に対し必要な助言その他の援助を行うよう努めなければならない。</p>
+
+                        <h6 class="mt-3">第23条の2</h6>
+                        <p class="small">派遣元事業主は、派遣労働者に対して、その従事する業務に関し決定権限を与えてはならない。</p>
+                    </div>
+                </div>
+
+                <!-- レポート出力 -->
+                <div class="card mb-3">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0"><i class="fas fa-download me-2"></i>レポート出力</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" onclick="exportPDFReport()">
+                                <i class="fas fa-file-pdf me-1"></i>PDF出力
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportExcelReport()">
+                                <i class="fas fa-file-excel me-1"></i>Excel出力
+                            </button>
+                            <button class="btn btn-outline-info" onclick="emailReport()">
+                                <i class="fas fa-envelope me-1"></i>メール送信
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 次回チェック予定 -->
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-calendar me-2"></i>次回チェック予定</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fas fa-clock me-2 text-primary"></i>
+                                <strong>週次チェック:</strong> 2024-12-14
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-calendar-alt me-2 text-success"></i>
+                                <strong>月次レポート:</strong> 2024-12-31
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-clipboard-check me-2 text-warning"></i>
+                                <strong>四半期監査:</strong> 2025-03-31
+                            </li>
+                            <li class="mb-0">
+                                <i class="fas fa-shield-alt me-2 text-danger"></i>
+                                <strong>年次コンプライアンス:</strong> 2025-03-31
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        // ページロード時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 役割制御の強制実行
+            if (typeof window.roleManager !== 'undefined') {
+                window.roleManager.enforceRoleSeparation();
+                window.roleManager.hideFinancialInfo();
+            }
+
+            // 法令遵守のための監査ログ記録
+            logAuditEvent('COMPLIANCE_REPORT_ACCESS', 'compliance_report.html', 'LEGAL_COMPLIANCE');
+
+            // チャート初期化
+            initializeAccessControlChart();
+        });
+
+        function initializeAccessControlChart() {
+            const ctx = document.getElementById('accessControlChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['正常アクセス', 'ブロック済み', '警告'],
+                    datasets: [{
+                        data: [1244, 3, 0],
+                        backgroundColor: [
+                            '#28a745',
+                            '#ffc107',
+                            '#dc3545'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'アクセス制御状況'
+                        }
+                    }
+                }
+            });
+        }
+
+        function exportPDFReport() {
+            logAuditEvent('COMPLIANCE_REPORT_PDF_EXPORT', 'PDF report export requested', 'REPORT_GENERATION');
+
+            // 実際の実装では、サーバーサイドでPDF生成
+            alert('法令遵守レポート（PDF）を生成中...\n\n以下の内容が含まれます:\n・労働者派遣法第23条遵守状況\n・アクセス制御統計\n・ブロック事例詳細\n・改善提案\n・法的リスク評価');
+        }
+
+        function exportExcelReport() {
+            logAuditEvent('COMPLIANCE_REPORT_EXCEL_EXPORT', 'Excel report export requested', 'REPORT_GENERATION');
+
+            alert('法令遵守レポート（Excel）を生成中...\n\n以下のシートが含まれます:\n・概要統計\n・詳細ログ\n・スタッフ別分析\n・時系列トレンド\n・法的チェックリスト');
+        }
+
+        function emailReport() {
+            logAuditEvent('COMPLIANCE_REPORT_EMAIL_SEND', 'Email report sending requested', 'REPORT_DISTRIBUTION');
+
+            alert('法令遵守レポートをメール送信中...\n\n送信先:\n・代表取締役\n・法務担当者\n・人事担当者\n・監査担当者\n\n機密情報として適切に暗号化して送信されます。');
+        }
+
+        function logAuditEvent(action, details, category) {
+            const auditLog = {
+                timestamp: new Date().toISOString(),
+                action: action,
+                details: details,
+                category: category,
+                userId: 'current_user',
+                userRole: 'employee',
+                complianceRelevant: true,
+                legalRequirement: '労働者派遣法第23条'
+            };
+
+            console.log('法令遵守監査ログ:', auditLog);
+        }
+
+        // 定期的な遵守状況チェック（5分毎）
+        setInterval(function() {
+            performComplianceCheck();
+        }, 300000); // 5分 = 300000ms
+
+        function performComplianceCheck() {
+            logAuditEvent('AUTOMATED_COMPLIANCE_CHECK', 'Periodic compliance verification executed', 'AUTOMATED_MONITORING');
+
+            // 実際の実装では、各種システム状態をチェック
+            console.log('定期コンプライアンスチェック実行中...');
+
+            // アクセス制御状況確認
+            // 財務情報非表示確認
+            // 決定権限分離確認
+            // 監査ログ整合性確認
+        }
+
+        // リアルタイム違反検知アラート
+        function triggerComplianceAlert(alertType, details) {
+            logAuditEvent('COMPLIANCE_VIOLATION_DETECTED', `${alertType}: ${details}`, 'VIOLATION_ALERT');
+
+            // 即座に管理者に通知
+            alert(`【法令違反アラート】\n\n種類: ${alertType}\n詳細: ${details}\n\n即座に対応が必要です。`);
+        }
+    </script>
+</body>
+</html>

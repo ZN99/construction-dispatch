@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工程表作成・タスク発行 - 建築派遣SaaS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        .schedule-timeline {
+            position: relative;
+            margin: 20px 0;
+        }
+        .timeline-item {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background: white;
+            transition: all 0.3s;
+        }
+        .timeline-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .timeline-item.critical {
+            border-color: #dc3545;
+            background: #fff5f5;
+        }
+        .work-type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .carpenter { background-color: #e3f2fd; color: #1976d2; }
+        .interior { background-color: #e8f5e8; color: #388e3c; }
+        .plumbing { background-color: #fff3e0; color: #f57c00; }
+        .cleaning { background-color: #f3e5f5; color: #7b1fa2; }
+
+        .contractor-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+        }
+        .task-assignment {
+            background: #e8f4fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .responsibility-note {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+            padding: 12px;
+            margin: 10px 0;
+        }
+        .gantt-chart {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .gantt-header {
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 10px;
+            font-weight: bold;
+        }
+        .gantt-row {
+            display: flex;
+            border-bottom: 1px solid #eee;
+            min-height: 50px;
+            align-items: center;
+        }
+        .gantt-task {
+            background: #007bff;
+            color: white;
+            border-radius: 4px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            margin: 2px;
+        }
+        .task-creation-panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <h5 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>メインメニュー</span>
+                    </h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="../index.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../projects/project_list.html">
+                                <i class="fas fa-project-diagram me-2"></i>案件管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../surveys/survey_list.html">
+                                <i class="fas fa-clipboard-list me-2"></i>調査管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../craftsman/craftsman_list.html">
+                                <i class="fas fa-users me-2"></i>職人管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="contractor_list.html">
+                                <i class="fas fa-building me-2"></i>協力会社
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../pricing/pricing_list.html">
+                                <i class="fas fa-yen-sign me-2"></i>見積管理
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">工程表作成・タスク発行</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-outline-secondary" onclick="saveAsDraft()">
+                                <i class="fas fa-save me-1"></i>下書き保存
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="publishTasks()">
+                                <i class="fas fa-paper-plane me-1"></i>タスク発行
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- フロー表示 -->
+                <div class="alert alert-primary">
+                    <strong>STEP 1: 社員の役割（事前準備・指示）</strong><br>
+                    確定した施工内容と工程表を作成し、派遣スタッフに協力会社への連絡タスクを発行します。
+                </div>
+
+                <div class="row">
+                    <!-- 左カラム: 工程表作成 -->
+                    <div class="col-md-8">
+                        <!-- プロジェクト基本情報 -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>プロジェクト基本情報</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">案件名</label>
+                                            <select class="form-select" id="projectSelect">
+                                                <option>港区ワンルーム原状回復</option>
+                                                <option>新宿1K原状回復（クロス・水道）</option>
+                                                <option>渋谷1DK原状回復（フルパック）</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">施工開始予定日</label>
+                                            <input type="date" class="form-control" id="startDate" value="2025-09-25">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">施工完了予定日</label>
+                                            <input type="date" class="form-control" id="endDate" value="2025-09-29">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">総工期</label>
+                                            <input type="text" class="form-control" id="totalDuration" value="5日間" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 工程表作成パネル -->
+                        <div class="task-creation-panel">
+                            <h6><i class="fas fa-plus me-2"></i>工程追加</h6>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label class="form-label">工事種別</label>
+                                    <select class="form-select" id="workType">
+                                        <option value="carpenter">大工工事</option>
+                                        <option value="interior">内装工事</option>
+                                        <option value="plumbing">水道工事</option>
+                                        <option value="cleaning">クリーニング</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">開始日</label>
+                                    <input type="date" class="form-control" id="taskStartDate" value="2025-09-25">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">終了日</label>
+                                    <input type="date" class="form-control" id="taskEndDate" value="2025-09-26">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <button class="btn btn-primary w-100" onclick="addScheduleItem()">
+                                        <i class="fas fa-plus me-1"></i>追加
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 工程表 -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>施工工程表</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="schedule-timeline" id="scheduleTimeline">
+                                    <!-- 工程項目がここに動的に追加されます -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ガントチャート -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-chart-gantt me-2"></i>ガントチャート</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="gantt-chart" id="ganttChart">
+                                    <!-- ガントチャートがここに表示されます -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右カラム: 協力会社・タスク発行 -->
+                    <div class="col-md-4">
+                        <!-- 責任者連絡の重要性 -->
+                        <div class="responsibility-note">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>重要</h6>
+                            <p class="mb-0">連絡先は必ず<strong>会社の責任者</strong>に指定してください。職人個人への直接連絡は避けてください。</p>
+                        </div>
+
+                        <!-- 協力会社リスト -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-building me-2"></i>協力会社リスト</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="contractor-card">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong>A建設株式会社</strong>
+                                            <div class="work-type-badge carpenter">大工工事</div>
+                                            <div class="work-type-badge interior">内装工事</div>
+                                        </div>
+                                        <button class="btn btn-sm btn-primary" onclick="selectContractor('A建設株式会社', '山田部長')">
+                                            選択
+                                        </button>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">責任者: 山田部長</small><br>
+                                        <small class="text-muted">TEL: 03-1234-5678</small>
+                                    </div>
+                                </div>
+
+                                <div class="contractor-card">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong>B水道工業</strong>
+                                            <div class="work-type-badge plumbing">水道工事</div>
+                                        </div>
+                                        <button class="btn btn-sm btn-primary" onclick="selectContractor('B水道工業', '佐藤工場長')">
+                                            選択
+                                        </button>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">責任者: 佐藤工場長</small><br>
+                                        <small class="text-muted">TEL: 03-2345-6789</small>
+                                    </div>
+                                </div>
+
+                                <div class="contractor-card">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong>Cクリーン</strong>
+                                            <div class="work-type-badge cleaning">クリーニング</div>
+                                        </div>
+                                        <button class="btn btn-sm btn-primary" onclick="selectContractor('Cクリーン', '田中代表')">
+                                            選択
+                                        </button>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">責任者: 田中代表</small><br>
+                                        <small class="text-muted">TEL: 03-3456-7890</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 発行予定タスク -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-tasks me-2"></i>発行予定タスク</h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="pendingTasks">
+                                    <p class="text-muted">工程を追加すると、ここにタスクが表示されます</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- タスク詳細モーダル -->
+    <div class="modal fade" id="taskDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-clipboard-list me-2"></i>派遣スタッフタスク詳細
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="task-assignment">
+                        <h6><strong>タスク内容</strong></h6>
+                        <div id="taskContent">
+                            <!-- タスク詳細がここに表示されます -->
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">担当派遣スタッフ</label>
+                        <select class="form-select" id="assignedStaff">
+                            <option value="">選択してください</option>
+                            <option value="田中太郎">田中太郎</option>
+                            <option value="佐藤花子">佐藤花子</option>
+                            <option value="鈴木一郎">鈴木一郎</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">期限</label>
+                        <input type="datetime-local" class="form-control" id="taskDeadline">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">優先度</label>
+                        <select class="form-select" id="taskPriority">
+                            <option value="high">高（緊急）</option>
+                            <option value="normal" selected>通常</option>
+                            <option value="low">低</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">追加メモ</label>
+                        <textarea class="form-control" rows="3" id="taskMemo" placeholder="特別な注意事項があれば記入してください"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmTaskCreation()">
+                        <i class="fas fa-paper-plane me-1"></i>タスク発行
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let scheduleItems = [];
+        let pendingTasks = [];
+        let selectedContractor = null;
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            setupDateCalculation();
+            loadDefaultSchedule();
+        });
+
+        // 日付計算の設定
+        function setupDateCalculation() {
+            ['startDate', 'endDate'].forEach(id => {
+                document.getElementById(id).addEventListener('change', calculateDuration);
+            });
+        }
+
+        // 工期計算
+        function calculateDuration() {
+            const startDate = new Date(document.getElementById('startDate').value);
+            const endDate = new Date(document.getElementById('endDate').value);
+
+            if (startDate && endDate && endDate > startDate) {
+                const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+                document.getElementById('totalDuration').value = duration + '日間';
+            }
+        }
+
+        // デフォルト工程読み込み
+        function loadDefaultSchedule() {
+            addScheduleItem('carpenter', '2025-09-25', '2025-09-26', '大工工事');
+            addScheduleItem('interior', '2025-09-27', '2025-09-28', '内装工事');
+            addScheduleItem('cleaning', '2025-09-29', '2025-09-29', 'クリーニング');
+        }
+
+        // 工程項目追加
+        function addScheduleItem(type = null, startDate = null, endDate = null, description = null) {
+            const workType = type || document.getElementById('workType').value;
+            const taskStartDate = startDate || document.getElementById('taskStartDate').value;
+            const taskEndDate = endDate || document.getElementById('taskEndDate').value;
+
+            if (!taskStartDate || !taskEndDate) {
+                alert('開始日と終了日を入力してください');
+                return;
+            }
+
+            const item = {
+                id: 'item-' + Date.now(),
+                type: workType,
+                startDate: taskStartDate,
+                endDate: taskEndDate,
+                description: description || getWorkTypeLabel(workType),
+                requiresContractor: true
+            };
+
+            scheduleItems.push(item);
+            renderScheduleTimeline();
+            renderGanttChart();
+            generatePendingTasks();
+        }
+
+        // 工程表の描画
+        function renderScheduleTimeline() {
+            const container = document.getElementById('scheduleTimeline');
+            let html = '';
+
+            scheduleItems.forEach((item, index) => {
+                const typeClass = item.type;
+                const typeLabel = getWorkTypeLabel(item.type);
+                const duration = calculateItemDuration(item.startDate, item.endDate);
+
+                html += `
+                    <div class="timeline-item" id="${item.id}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="work-type-badge ${typeClass}">${typeLabel}</div>
+                                    <h6 class="mt-2">${item.description}</h6>
+                                    <div class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        ${formatDate(item.startDate)} 〜 ${formatDate(item.endDate)} (${duration}日間)
+                                    </div>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="removeScheduleItem('${item.id}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>必要人数: ${getRequiredWorkers(item.type)}名</span>
+                                    <button class="btn btn-sm btn-success" onclick="openTaskModal('${item.id}')">
+                                        <i class="fas fa-user-plus me-1"></i>協力会社手配タスク作成
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html || '<p class="text-muted">工程が登録されていません</p>';
+        }
+
+        // ガントチャート描画
+        function renderGanttChart() {
+            const container = document.getElementById('ganttChart');
+
+            if (scheduleItems.length === 0) {
+                container.innerHTML = '<p class="text-muted p-3">工程を追加すると、ガントチャートが表示されます</p>';
+                return;
+            }
+
+            let html = '<div class="gantt-header">工程ガントチャート</div>';
+
+            scheduleItems.forEach(item => {
+                const typeLabel = getWorkTypeLabel(item.type);
+                const duration = calculateItemDuration(item.startDate, item.endDate);
+
+                html += `
+                    <div class="gantt-row">
+                        <div style="width: 150px; padding: 10px; font-weight: bold;">${typeLabel}</div>
+                        <div style="flex: 1; padding: 10px;">
+                            <div class="gantt-task" style="width: ${duration * 20}%;">
+                                ${formatDate(item.startDate)} - ${formatDate(item.endDate)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // 協力会社選択
+        function selectContractor(companyName, responsiblePerson) {
+            selectedContractor = { companyName, responsiblePerson };
+
+            // 選択状態の表示更新
+            document.querySelectorAll('.contractor-card').forEach(card => {
+                card.style.border = '1px solid #dee2e6';
+            });
+
+            event.target.closest('.contractor-card').style.border = '2px solid #007bff';
+
+            alert(`${companyName}（${responsiblePerson}）を選択しました`);
+        }
+
+        // タスクモーダルを開く
+        function openTaskModal(itemId) {
+            const item = scheduleItems.find(s => s.id === itemId);
+            if (!item) return;
+
+            const typeLabel = getWorkTypeLabel(item.type);
+            const requiredWorkers = getRequiredWorkers(item.type);
+
+            // タスク内容の生成
+            const taskContent = `
+                <div class="alert alert-info">
+                    <strong>【協力会社への連絡指示】</strong><br>
+                    以下の内容で協力会社の責任者に連絡し、手配可能かを確認してください。
+                </div>
+
+                <div class="mb-3">
+                    <strong>工事内容:</strong> ${typeLabel}<br>
+                    <strong>作業期間:</strong> ${formatDate(item.startDate)} 〜 ${formatDate(item.endDate)}<br>
+                    <strong>必要人数:</strong> ${requiredWorkers}名<br>
+                    <strong>現場住所:</strong> 東京都港区鹔浜2-3-15
+                </div>
+
+                <div class="responsibility-note">
+                    <strong>連絡指示:</strong><br>
+                    「【A建設（協力会社）】の【山田部長（責任者）】宛に連絡し、上記日程で${typeLabel}担当者${requiredWorkers}名の手配が可能か確認し、SaaS上で回答を登録してください」
+                </div>
+
+                <div class="mt-3">
+                    <strong>確認事項:</strong>
+                    <ul>
+                        <li>指定日程での人員確保の可否</li>
+                        <li>作業に必要な資格・経験の有無</li>
+                        <li>使用する工具・材料の準備状況</li>
+                        <li>緊急時の連絡先</li>
+                    </ul>
+                </div>
+            `;
+
+            document.getElementById('taskContent').innerHTML = taskContent;
+
+            // 期限の初期値設定（工事開始日の3日前）
+            const deadline = new Date(item.startDate);
+            deadline.setDate(deadline.getDate() - 3);
+            document.getElementById('taskDeadline').value = deadline.toISOString().slice(0, 16);
+
+            const modal = new bootstrap.Modal(document.getElementById('taskDetailModal'));
+            modal.show();
+
+            // 現在のアイテムIDを保存
+            modal._currentItemId = itemId;
+        }
+
+        // タスク作成確認
+        function confirmTaskCreation() {
+            const assignedStaff = document.getElementById('assignedStaff').value;
+            const deadline = document.getElementById('taskDeadline').value;
+            const priority = document.getElementById('taskPriority').value;
+            const memo = document.getElementById('taskMemo').value;
+
+            if (!assignedStaff) {
+                alert('担当派遣スタッフを選択してください');
+                return;
+            }
+
+            if (!deadline) {
+                alert('期限を設定してください');
+                return;
+            }
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('taskDetailModal'));
+            const itemId = modal._currentItemId;
+            const item = scheduleItems.find(s => s.id === itemId);
+
+            const task = {
+                id: 'task-' + Date.now(),
+                itemId: itemId,
+                workType: item.type,
+                assignedStaff: assignedStaff,
+                deadline: deadline,
+                priority: priority,
+                memo: memo,
+                status: 'pending',
+                createdAt: new Date().toISOString()
+            };
+
+            pendingTasks.push(task);
+            generatePendingTasks();
+
+            modal.hide();
+            alert(`${assignedStaff}にタスクを発行しました`);
+        }
+
+        // 待機中タスクの生成
+        function generatePendingTasks() {
+            const container = document.getElementById('pendingTasks');
+
+            if (pendingTasks.length === 0) {
+                container.innerHTML = '<p class="text-muted">発行予定のタスクはありません</p>';
+                return;
+            }
+
+            let html = '';
+            pendingTasks.forEach(task => {
+                const item = scheduleItems.find(s => s.id === task.itemId);
+                const typeLabel = getWorkTypeLabel(task.workType);
+                const priorityClass = task.priority === 'high' ? 'danger' :
+                                    task.priority === 'low' ? 'secondary' : 'warning';
+
+                html += `
+                    <div class="task-assignment mb-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>${typeLabel}手配</strong>
+                                <span class="badge bg-${priorityClass} ms-2">${getPriorityLabel(task.priority)}</span>
+                                <div class="mt-1">
+                                    <small class="text-muted">担当: ${task.assignedStaff}</small><br>
+                                    <small class="text-muted">期限: ${formatDateTime(task.deadline)}</small>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removePendingTask('${task.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // タスク発行
+        function publishTasks() {
+            if (pendingTasks.length === 0) {
+                alert('発行するタスクがありません');
+                return;
+            }
+
+            // 実際の実装では、ここでサーバーにタスクデータを送信
+            console.log('発行タスク:', pendingTasks);
+
+            alert(`${pendingTasks.length}件のタスクを派遣スタッフに発行しました。\n派遣スタッフのアプリに通知が送信されます。`);
+
+            // タスク一覧画面に遷移
+            window.location.href = 'contractor_tasks.html';
+        }
+
+        // 工程項目削除
+        function removeScheduleItem(itemId) {
+            scheduleItems = scheduleItems.filter(item => item.id !== itemId);
+            pendingTasks = pendingTasks.filter(task => task.itemId !== itemId);
+
+            renderScheduleTimeline();
+            renderGanttChart();
+            generatePendingTasks();
+        }
+
+        // 待機タスク削除
+        function removePendingTask(taskId) {
+            pendingTasks = pendingTasks.filter(task => task.id !== taskId);
+            generatePendingTasks();
+        }
+
+        // 下書き保存
+        function saveAsDraft() {
+            const draftData = {
+                project: document.getElementById('projectSelect').value,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                scheduleItems: scheduleItems,
+                pendingTasks: pendingTasks
+            };
+
+            localStorage.setItem('scheduleDraft', JSON.stringify(draftData));
+            alert('下書きを保存しました');
+        }
+
+        // ユーティリティ関数
+        function getWorkTypeLabel(type) {
+            const labels = {
+                carpenter: '大工工事',
+                interior: '内装工事',
+                plumbing: '水道工事',
+                cleaning: 'クリーニング'
+            };
+            return labels[type] || type;
+        }
+
+        function getRequiredWorkers(type) {
+            const workers = {
+                carpenter: 2,
+                interior: 1,
+                plumbing: 1,
+                cleaning: 2
+            };
+            return workers[type] || 1;
+        }
+
+        function getPriorityLabel(priority) {
+            const labels = {
+                high: '緊急',
+                normal: '通常',
+                low: '低'
+            };
+            return labels[priority] || priority;
+        }
+
+        function calculateItemDuration(startDate, endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            return Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return `${date.getMonth() + 1}/${date.getDate()}`;
+        }
+
+        function formatDateTime(dateTimeString) {
+            const date = new Date(dateTimeString);
+            return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+        }
+    </script>
+</body>
+</html>

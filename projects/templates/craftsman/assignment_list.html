@@ -1,0 +1,347 @@
+{% extends "projects/base.html" %}
+
+{% block title %}アサイン管理 - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-tasks me-2"></i>アサイン管理</h2>
+    <a href="{% url 'assignment_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i>新規アサイン
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-filter me-1"></i>フィルター</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">ステータス</label>
+                        <select name="status" class="form-select">
+                            <option value="">全て</option>
+                            {% for value, label in status_choices %}
+                                <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">職人</label>
+                        <select name="craftsman" class="form-select">
+                            <option value="">全て</option>
+                            {% for craftsman in craftsmen %}
+                                <option value="{{ craftsman.id }}" {% if current_craftsman == craftsman.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ craftsman.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">期間（開始日）</label>
+                        <input type="date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">
+                                <i class="fas fa-search me-1"></i>検索
+                            </button>
+                            <a href="{% url 'assignment_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-list me-1"></i>アサイン一覧 ({{ assignments|length }}件)
+        </h5>
+        <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-outline-primary" id="bulkActionBtn" disabled>
+                <i class="fas fa-edit me-1"></i>一括操作
+            </button>
+            <button type="button" class="btn btn-outline-success" onclick="exportData()">
+                <i class="fas fa-download me-1"></i>エクスポート
+            </button>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if assignments %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" class="form-check-input" id="selectAll">
+                            </th>
+                            <th>案件・職人</th>
+                            <th>期間</th>
+                            <th>ステータス</th>
+                            <th>単価</th>
+                            <th>優先度</th>
+                            <th>進捗</th>
+                            <th style="width: 120px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assignment in assignments %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="form-check-input assignment-checkbox" value="{{ assignment.id }}">
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="fw-bold">
+                                                <a href="{% url 'assignment_detail' assignment.id %}" class="text-decoration-none">
+                                                    {{ assignment.project.title }}
+                                                </a>
+                                            </div>
+                                            <div class="text-muted small">
+                                                <i class="fas fa-building me-1"></i>{{ assignment.project.customer.company_name }}
+                                            </div>
+                                            <div class="text-primary small">
+                                                <i class="fas fa-user me-1"></i>{{ assignment.craftsman.name }}
+                                                <span class="text-muted">({{ assignment.craftsman.skill_category }})</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        <div><strong>開始:</strong> {{ assignment.scheduled_start_date|date:"m/d" }}</div>
+                                        <div><strong>終了:</strong> {{ assignment.scheduled_end_date|date:"m/d" }}</div>
+                                        <div class="text-muted">{{ assignment.duration_days }}日間</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-
+                                        {% if assignment.status == 'inquiry' %}warning
+                                        {% elif assignment.status == 'confirmed' %}success
+                                        {% elif assignment.status == 'declined' %}danger
+                                        {% elif assignment.status == 'in_progress' %}info
+                                        {% elif assignment.status == 'completed' %}dark
+                                        {% else %}secondary{% endif %}">
+                                        {{ assignment.get_status_display }}
+                                    </span>
+                                    {% if assignment.status == 'inquiry' %}
+                                        <div class="small text-muted">
+                                            {{ assignment.created_at|timesince }}前
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="text-end">
+                                        <div class="fw-bold">¥{{ assignment.offered_rate|floatformat:0 }}</div>
+                                        <div class="small text-muted">{{ assignment.estimated_hours }}h/日</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-
+                                        {% if assignment.priority == 'high' %}danger
+                                        {% elif assignment.priority == 'medium' %}warning
+                                        {% else %}secondary{% endif %}">
+                                        {{ assignment.get_priority_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="text-center">
+                                        {% if assignment.status == 'completed' %}
+                                            <i class="fas fa-check-circle text-success fa-lg"></i>
+                                        {% elif assignment.status == 'in_progress' %}
+                                            <i class="fas fa-play-circle text-info fa-lg"></i>
+                                        {% elif assignment.status == 'confirmed' %}
+                                            <i class="fas fa-clock text-warning fa-lg"></i>
+                                        {% else %}
+                                            <i class="fas fa-question-circle text-muted fa-lg"></i>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'assignment_detail' assignment.id %}"
+                                           class="btn btn-outline-primary"
+                                           title="詳細">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if assignment.status == 'inquiry' %}
+                                            <a href="{% url 'assignment_response' assignment.id %}"
+                                               class="btn btn-outline-warning"
+                                               title="返答処理">
+                                                <i class="fas fa-reply"></i>
+                                            </a>
+                                        {% endif %}
+                                        {% if assignment.craftsman.phone %}
+                                            <a href="{% url 'contact_craftsman' assignment.id 'phone' %}"
+                                               class="btn btn-outline-success"
+                                               title="電話">
+                                                <i class="fas fa-phone"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if is_paginated %}
+                <div class="card-footer">
+                    <nav aria-label="アサイン一覧ページネーション">
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.craftsman %}&craftsman={{ request.GET.craftsman }}{% endif %}">最初</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.craftsman %}&craftsman={{ request.GET.craftsman }}{% endif %}">前へ</a>
+                                </li>
+                            {% endif %}
+
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.craftsman %}&craftsman={{ request.GET.craftsman }}{% endif %}">次へ</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.craftsman %}&craftsman={{ request.GET.craftsman }}{% endif %}">最後</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">アサインが見つかりませんでした</h5>
+                <p class="text-muted">新しいアサインを作成するか、検索条件を変更してください。</p>
+                <a href="{% url 'assignment_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>新規アサイン作成
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 一括操作モーダル -->
+<div class="modal fade" id="bulkActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-edit me-1"></i>一括操作</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bulkActionForm">
+                    <div class="mb-3">
+                        <label class="form-label">操作を選択</label>
+                        <select class="form-select" name="action">
+                            <option value="">選択してください</option>
+                            <option value="cancel">一括キャンセル</option>
+                            <option value="export">選択項目をエクスポート</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">選択件数</label>
+                        <div class="form-control-plaintext" id="selectedCount">0件</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" onclick="executeBulkAction()">実行</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const assignmentCheckboxes = document.querySelectorAll('.assignment-checkbox');
+    const bulkActionBtn = document.getElementById('bulkActionBtn');
+    const bulkActionModal = new bootstrap.Modal(document.getElementById('bulkActionModal'));
+
+    // 全選択チェックボックス
+    selectAllCheckbox.addEventListener('change', function() {
+        assignmentCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateBulkActionButton();
+    });
+
+    // 個別チェックボックス
+    assignmentCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateBulkActionButton();
+
+            // 全選択チェックボックスの状態更新
+            const checkedCount = document.querySelectorAll('.assignment-checkbox:checked').length;
+            selectAllCheckbox.checked = checkedCount === assignmentCheckboxes.length;
+            selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < assignmentCheckboxes.length;
+        });
+    });
+
+    // 一括操作ボタンの状態更新
+    function updateBulkActionButton() {
+        const checkedCount = document.querySelectorAll('.assignment-checkbox:checked').length;
+        bulkActionBtn.disabled = checkedCount === 0;
+        document.getElementById('selectedCount').textContent = checkedCount + '件';
+    }
+
+    // 一括操作ボタンクリック
+    bulkActionBtn.addEventListener('click', function() {
+        if (!this.disabled) {
+            bulkActionModal.show();
+        }
+    });
+});
+
+function exportData() {
+    // エクスポート機能の実装
+    alert('エクスポート機能は実装予定です');
+}
+
+function executeBulkAction() {
+    const selectedIds = Array.from(document.querySelectorAll('.assignment-checkbox:checked'))
+        .map(checkbox => checkbox.value);
+    const action = document.querySelector('select[name="action"]').value;
+
+    if (!action) {
+        alert('操作を選択してください');
+        return;
+    }
+
+    if (selectedIds.length === 0) {
+        alert('対象を選択してください');
+        return;
+    }
+
+    // 実際の一括操作処理
+    console.log('一括操作:', action, selectedIds);
+    alert(`${action}を${selectedIds.length}件に対して実行します（実装予定）`);
+
+    // モーダルを閉じる
+    bootstrap.Modal.getInstance(document.getElementById('bulkActionModal')).hide();
+}
+</script>
+{% endblock %}

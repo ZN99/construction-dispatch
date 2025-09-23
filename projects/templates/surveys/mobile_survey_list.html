@@ -1,0 +1,332 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}モバイル調査一覧 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mobile-container">
+    <div class="row">
+        <div class="col-12">
+            <!-- モバイルヘッダー -->
+            <div class="mobile-header mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3><i class="fas fa-mobile-alt me-2"></i>調査一覧</h3>
+                    <a href="{% url 'survey_record_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-desktop me-1"></i>デスクトップ版
+                    </a>
+                </div>
+            </div>
+
+            <!-- 調査カード一覧 -->
+            <div class="survey-cards">
+                {% for survey in surveys %}
+                <div class="card mobile-survey-card mb-3">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-8">
+                                <h5 class="card-title">{{ survey.project.title }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">{{ survey.project.customer.name }}</h6>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>{{ survey.scheduled_date|date:"m月d日 H:i" }}<br>
+                                        <i class="fas fa-user me-1"></i>{{ survey.surveyor.name }}<br>
+                                        <i class="fas fa-map-marker-alt me-1"></i>{{ survey.project.address|truncatechars:30 }}
+                                    </small>
+                                </p>
+                                <span class="badge badge-status badge-{{ survey.status }}">
+                                    {{ survey.get_status_display }}
+                                </span>
+                                {% if survey.priority != 'normal' %}
+                                <span class="badge badge-priority badge-{{ survey.priority }}">
+                                    {{ survey.get_priority_display }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="col-4 text-end">
+                                <div class="action-buttons">
+                                    {% if survey.status == 'scheduled' %}
+                                        <a href="{% url 'survey_start' survey.id %}" class="btn btn-success btn-sm w-100 mb-2">
+                                            <i class="fas fa-play"></i><br>開始
+                                        </a>
+                                    {% elif survey.status == 'in_progress' %}
+                                        {% for report in survey.surveyreport_set.all %}
+                                            <a href="{% url 'survey_record_form' report.id %}" class="btn btn-primary btn-sm w-100 mb-2">
+                                                <i class="fas fa-edit"></i><br>記録
+                                            </a>
+                                            <a href="{% url 'survey_complete' report.id %}" class="btn btn-warning btn-sm w-100">
+                                                <i class="fas fa-check"></i><br>完了
+                                            </a>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 追加情報（展開可能） -->
+                        <div class="collapse mt-3" id="details{{ survey.id }}">
+                            <div class="card card-body bg-light">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <strong>想定時間:</strong><br>
+                                        {{ survey.estimated_duration }}分
+                                    </div>
+                                    <div class="col-6">
+                                        <strong>進捗:</strong><br>
+                                        {% if survey.status == 'in_progress' %}
+                                            {% for report in survey.surveyreport_set.all %}
+                                                {{ report.completion_percentage }}%
+                                            {% endfor %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% if survey.access_info %}
+                                <div class="mt-2">
+                                    <strong>アクセス情報:</strong><br>
+                                    <small>{{ survey.access_info }}</small>
+                                </div>
+                                {% endif %}
+                                {% if survey.notes %}
+                                <div class="mt-2">
+                                    <strong>メモ:</strong><br>
+                                    <small>{{ survey.notes }}</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- 詳細表示ボタン -->
+                        <div class="text-center mt-2">
+                            <button class="btn btn-link btn-sm" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#details{{ survey.id }}" aria-expanded="false">
+                                <i class="fas fa-chevron-down"></i> 詳細
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center mt-5">
+                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">調査予定がありません</h5>
+                    <p class="text-muted">新しい調査が割り当てられるまでお待ちください。</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- フローティングアクションボタン -->
+            <div class="floating-action">
+                <a href="{% url 'survey_record_dashboard' %}" class="btn btn-primary btn-floating">
+                    <i class="fas fa-home"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* モバイル専用スタイル */
+.mobile-container {
+    padding: 10px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+.mobile-header {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.mobile-survey-card {
+    border-radius: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: none;
+    transition: transform 0.2s;
+}
+
+.mobile-survey-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.badge-status {
+    font-size: 0.7em;
+    padding: 4px 8px;
+}
+
+.badge-scheduled { background-color: #6c757d; }
+.badge-in_progress { background-color: #ffc107; color: #000; }
+.badge-completed { background-color: #28a745; }
+.badge-cancelled { background-color: #dc3545; }
+
+.badge-priority {
+    font-size: 0.6em;
+    padding: 3px 6px;
+    margin-left: 5px;
+}
+
+.badge-urgent { background-color: #dc3545; }
+.badge-high { background-color: #fd7e14; }
+.badge-low { background-color: #6f42c1; }
+
+.action-buttons .btn {
+    font-size: 0.8em;
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.floating-action {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.btn-floating {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+}
+
+/* レスポンシブ調整 */
+@media (max-width: 576px) {
+    .mobile-container {
+        padding: 5px;
+    }
+
+    .mobile-survey-card .card-body {
+        padding: 15px;
+    }
+
+    .action-buttons .btn {
+        font-size: 0.7em;
+        padding: 6px;
+    }
+}
+
+/* タッチ操作の改善 */
+.mobile-survey-card .btn {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* アクセシビリティ */
+.badge {
+    color: white;
+}
+
+.card-title {
+    font-size: 1.1em;
+    margin-bottom: 5px;
+}
+
+.card-subtitle {
+    font-size: 0.9em;
+}
+
+/* 読み込み中のアニメーション */
+.loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* 成功メッセージ用 */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // プルトゥリフレッシュの実装
+    let startY = 0;
+    let pullDistance = 0;
+    const pullThreshold = 100;
+
+    $(document).on('touchstart', function(e) {
+        startY = e.originalEvent.touches[0].pageY;
+    });
+
+    $(document).on('touchmove', function(e) {
+        if (window.scrollY === 0) {
+            pullDistance = e.originalEvent.touches[0].pageY - startY;
+            if (pullDistance > 0 && pullDistance < pullThreshold) {
+                // プルインジケーターの表示（実装可能）
+            }
+        }
+    });
+
+    $(document).on('touchend', function(e) {
+        if (pullDistance > pullThreshold) {
+            // リフレッシュ実行
+            location.reload();
+        }
+        pullDistance = 0;
+    });
+
+    // ボタンのタップフィードバック
+    $('.btn').on('touchstart', function() {
+        $(this).addClass('btn-pressed');
+    });
+
+    $('.btn').on('touchend touchcancel', function() {
+        $(this).removeClass('btn-pressed');
+    });
+
+    // オフライン状態の検知
+    window.addEventListener('online', function() {
+        showToast('オンラインになりました', 'success');
+    });
+
+    window.addEventListener('offline', function() {
+        showToast('オフラインモードです', 'warning');
+    });
+
+    function showToast(message, type) {
+        const toast = $(`
+            <div class="toast" role="alert">
+                <div class="toast-header">
+                    <strong class="me-auto">通知</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">${message}</div>
+            </div>
+        `);
+
+        if (!$('.toast-container').length) {
+            $('body').append('<div class="toast-container"></div>');
+        }
+
+        $('.toast-container').append(toast);
+        toast.toast('show');
+
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+});
+</script>
+
+<style>
+.btn-pressed {
+    transform: scale(0.95);
+    opacity: 0.8;
+}
+
+.toast {
+    background-color: white;
+    border: 1px solid #dee2e6;
+}
+</style>
+{% endblock %}

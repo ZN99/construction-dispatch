@@ -1,0 +1,237 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}{{ order.order_number }} - 発注詳細 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-file-alt me-2"></i>発注詳細</h2>
+                    <h4 class="text-muted">{{ order.order_number }}</h4>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'material_order_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>発注一覧
+                    </a>
+                    {% if order.status != 'delivered' and order.status != 'cancelled' %}
+                    <a href="{% url 'material_order_edit' order.id %}" class="btn btn-warning">
+                        <i class="fas fa-edit me-1"></i>編集
+                    </a>
+                    <a href="{% url 'material_order_status_update' order.id %}" class="btn btn-primary">
+                        <i class="fas fa-check me-1"></i>ステータス更新
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 発注情報 -->
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>発注情報</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>発注番号:</strong> {{ order.order_number }}</p>
+                                    <p class="mb-2"><strong>案件:</strong>
+                                        <a href="{% url 'project_detail' order.project.id %}" class="text-decoration-none">
+                                            {{ order.project.title }}
+                                        </a>
+                                    </p>
+                                    <p class="mb-2"><strong>業者:</strong>
+                                        <a href="{% url 'supplier_detail' order.supplier.id %}" class="text-decoration-none">
+                                            {{ order.supplier.name }}
+                                        </a>
+                                    </p>
+                                    <p class="mb-2"><strong>発注者:</strong> {{ order.ordered_by.first_name }} {{ order.ordered_by.last_name }}</p>
+                                    <p class="mb-2"><strong>発注日:</strong> {{ order.order_date|date:"Y年m月d日 H:i" }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>ステータス:</strong>
+                                        <span class="badge bg-{{ order.status }} text-white fs-6">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </p>
+                                    <p class="mb-2"><strong>見積金額:</strong> {{ order.formatted_estimated_cost }}</p>
+                                    {% if order.actual_cost %}
+                                    <p class="mb-2"><strong>実際金額:</strong> {{ order.formatted_actual_cost }}</p>
+                                    {% endif %}
+                                    <p class="mb-2"><strong>希望納期:</strong>
+                                        {% if order.delivery_date %}
+                                            {{ order.delivery_date }}
+                                            {% if order.is_overdue %}
+                                                <span class="text-danger">
+                                                    <i class="fas fa-exclamation-triangle"></i> 遅延
+                                                </span>
+                                            {% elif order.days_until_delivery is not None %}
+                                                <small class="text-muted">
+                                                    （{% if order.days_until_delivery == 0 %}今日{% else %}{{ order.days_until_delivery }}日後{% endif %}）
+                                                </small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">未設定</span>
+                                        {% endif %}
+                                    </p>
+                                    {% if order.actual_delivery_date %}
+                                    <p class="mb-2"><strong>実際納期:</strong> {{ order.actual_delivery_date }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 発注内容 -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-list me-2"></i>発注内容</h5>
+                        </div>
+                        <div class="card-body">
+                            <pre class="bg-light p-3 rounded">{{ order.order_details }}</pre>
+                        </div>
+                    </div>
+
+                    <!-- 納品先・連絡先 -->
+                    <div class="card">
+                        <div class="card-header bg-warning text-white">
+                            <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>納品先・連絡先</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>納品先住所:</strong></p>
+                                    <p class="text-muted">{{ order.delivery_address|default:"未設定" }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>現場担当者:</strong> {{ order.contact_person|default:"未設定" }}</p>
+                                    <p class="mb-2"><strong>現場連絡先:</strong> {{ order.contact_phone|default:"未設定" }}</p>
+                                </div>
+                            </div>
+                            {% if order.notes %}
+                            <div class="mt-3">
+                                <p class="mb-2"><strong>備考:</strong></p>
+                                <p class="text-muted">{{ order.notes }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- サイドバー -->
+                <div class="col-md-4">
+                    <!-- 案件詳細 -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="fas fa-project-diagram me-2"></i>案件詳細</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>顧客:</strong> {{ order.project.customer.name }}</p>
+                            <p class="mb-1"><strong>工種:</strong> {{ order.project.project_type.name }}</p>
+                            <p class="mb-1"><strong>場所:</strong> {{ order.project.address }}</p>
+                            <p class="mb-1"><strong>期間:</strong> {{ order.project.start_date }} 〜 {{ order.project.end_date }}</p>
+                            <p class="mb-1"><strong>予算:</strong> {{ order.project.formatted_amount }}</p>
+                            <div class="text-end mt-2">
+                                <a href="{% url 'project_materials_view' order.project.id %}" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-boxes me-1"></i>案件資材管理
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 業者情報 -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0"><i class="fas fa-building me-2"></i>業者情報</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>業者名:</strong> {{ order.supplier.name }}</p>
+                            <p class="mb-1"><strong>担当者:</strong> {{ order.supplier.contact_person }}</p>
+                            <p class="mb-1"><strong>電話:</strong> {{ order.supplier.phone }}</p>
+                            {% if order.supplier.email %}
+                            <p class="mb-1"><strong>メール:</strong> {{ order.supplier.email }}</p>
+                            {% endif %}
+                            <p class="mb-1"><strong>取扱工種:</strong></p>
+                            <div class="mb-2">
+                                {% for specialty in order.supplier.specialties_list %}
+                                    <span class="badge bg-light text-dark me-1">{{ specialty }}</span>
+                                {% endfor %}
+                            </div>
+                            <div class="text-end">
+                                <a href="{% url 'supplier_detail' order.supplier.id %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>業者詳細
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 関連情報 -->
+                    {% if project_info.survey_report %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="fas fa-search me-2"></i>調査データ</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>実測面積:</strong> {{ project_info.survey_report.actual_area }}m²</p>
+                            <p class="mb-1"><strong>作業日数:</strong> {{ project_info.survey_report.estimated_work_days }}日</p>
+                            <p class="mb-1"><strong>難易度:</strong> {{ project_info.survey_report.get_difficulty_level_display }}</p>
+                            <div class="text-end mt-2">
+                                <a href="{% url 'survey_record_detail' project_info.survey.id %}" class="btn btn-outline-success btn-sm">
+                                    <i class="fas fa-eye me-1"></i>調査詳細
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- アサイン職人 -->
+                    {% if project_info.assignments %}
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="fas fa-users me-2"></i>アサイン職人</h6>
+                        </div>
+                        <div class="card-body">
+                            {% for assignment in project_info.assignments %}
+                            <div class="mb-2">
+                                <strong>{{ assignment.craftsman.name }}</strong><br>
+                                <small class="text-muted">
+                                    {{ assignment.craftsman.get_skill_level_display }} |
+                                    {{ assignment.get_status_display }}
+                                </small>
+                            </div>
+                            {% if not forloop.last %}<hr class="my-2">{% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.badge.fs-6 {
+    font-size: 0.9rem !important;
+}
+
+.text-decoration-none:hover {
+    text-decoration: underline !important;
+}
+
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: inherit;
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+</style>
+{% endblock %}

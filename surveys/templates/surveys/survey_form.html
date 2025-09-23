@@ -1,0 +1,640 @@
+{% extends 'surveys/field/base.html' %}
+{% load static %}
+
+{% block title %}現地調査実施 - {{ survey.project.site_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- ヘッダー -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-clipboard-list me-2"></i>現地調査実施</h2>
+                    <h4 class="text-muted">{{ survey.project.site_name }}</h4>
+                    <small class="text-muted">
+                        住所: {{ survey.project.site_address }} |
+                        調査員: {{ survey.surveyor.name }} |
+                        開始: {{ survey.scheduled_date|date:"Y年m月d日" }} {% if survey.scheduled_start_time %}{{ survey.scheduled_start_time|time:"H:i" }}{% endif %}
+                    </small>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'surveys:field_survey_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>調査一覧
+                    </a>
+                    <button type="button" class="btn btn-success" onclick="completeSurvey()">
+                        <i class="fas fa-check me-1"></i>調査完了
+                    </button>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 左カラム: メインフォーム -->
+                <div class="col-md-8">
+                    <form method="post" id="surveyForm" onsubmit="saveSurveyData()">
+                        {% csrf_token %}
+
+                        <!-- 基本情報 -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>基本情報</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">実測面積（㎡）</label>
+                                        <input type="number" class="form-control" name="actual_area" step="0.1" placeholder="例: 45.5">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">室温（℃）</label>
+                                        <input type="number" class="form-control" name="room_temperature" placeholder="例: 23">
+                                    </div>
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label">アクセス情報</label>
+                                        <textarea class="form-control" name="access_notes" rows="3" placeholder="駐車場、エレベーター、鍵の取得方法など"></textarea>
+                                    </div>
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label">特殊要件</label>
+                                        <textarea class="form-control" name="special_requirements" rows="2" placeholder="特別な注意事項や要望"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 部屋別調査 -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="fas fa-home me-2"></i>部屋別調査</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="roomsList">
+                                    <!-- 動的に部屋が追加される -->
+                                </div>
+                                <button type="button" class="btn btn-outline-primary" onclick="addRoom()">
+                                    <i class="fas fa-plus me-1"></i>部屋を追加
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 現場状態評価 -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-warning text-white">
+                                <h5 class="mb-0"><i class="fas fa-eye me-2"></i>現場状態評価</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">壁面状態</label>
+                                        <select class="form-select" name="wall_condition">
+                                            <option value="">選択してください</option>
+                                            <option value="excellent">優良</option>
+                                            <option value="good">良好</option>
+                                            <option value="fair">普通</option>
+                                            <option value="poor">要補修</option>
+                                            <option value="damaged">損傷あり</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">床面状態</label>
+                                        <select class="form-select" name="floor_condition">
+                                            <option value="">選択してください</option>
+                                            <option value="excellent">優良</option>
+                                            <option value="good">良好</option>
+                                            <option value="fair">普通</option>
+                                            <option value="poor">要補修</option>
+                                            <option value="damaged">損傷あり</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">天井状態</label>
+                                        <select class="form-select" name="ceiling_condition">
+                                            <option value="">選択してください</option>
+                                            <option value="excellent">優良</option>
+                                            <option value="good">良好</option>
+                                            <option value="fair">普通</option>
+                                            <option value="poor">要補修</option>
+                                            <option value="damaged">損傷あり</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">電気設備</label>
+                                        <select class="form-select" name="electrical_condition">
+                                            <option value="">選択してください</option>
+                                            <option value="excellent">優良</option>
+                                            <option value="good">良好</option>
+                                            <option value="fair">普通</option>
+                                            <option value="poor">要点検</option>
+                                            <option value="dangerous">危険</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 損傷記録 -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-danger text-white">
+                                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>損傷記録</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="damagesList">
+                                    <!-- 動的に損傷が追加される -->
+                                </div>
+                                <button type="button" class="btn btn-outline-danger" onclick="addDamage()">
+                                    <i class="fas fa-plus me-1"></i>損傷を追加
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 作業見積もり -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>作業見積もり</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">想定作業日数</label>
+                                        <input type="number" class="form-control" name="estimated_work_days" min="1" placeholder="例: 3">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">作業難易度</label>
+                                        <select class="form-select" name="difficulty_level">
+                                            <option value="">選択してください</option>
+                                            <option value="easy">簡単</option>
+                                            <option value="normal">普通</option>
+                                            <option value="hard">困難</option>
+                                            <option value="very_hard">非常に困難</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 調査員メモ -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-secondary text-white">
+                                <h5 class="mb-0"><i class="fas fa-sticky-note me-2"></i>調査員メモ</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label">調査メモ</label>
+                                        <textarea class="form-control" name="surveyor_notes" rows="4" placeholder="調査中に気づいた点、特記事項など"></textarea>
+                                    </div>
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label">職人選定向けメモ</label>
+                                        <textarea class="form-control" name="assignment_notes" rows="3" placeholder="職人選定時に考慮すべき点"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save me-1"></i>調査データ保存
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 右カラム: 写真・音声メモ -->
+                <div class="col-md-4">
+                    <!-- 写真撮影 -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-camera me-2"></i>写真撮影</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="photoUploadForm" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label class="form-label">写真</label>
+                                    <input type="file" class="form-control" id="photo" name="photo" accept="image/*" capture="environment" multiple>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">撮影場所</label>
+                                    <select class="form-select" id="location" name="location">
+                                        <option value="overview">全景</option>
+                                        <option value="living">リビング</option>
+                                        <option value="kitchen">キッチン</option>
+                                        <option value="bedroom">寝室</option>
+                                        <option value="bathroom">バスルーム</option>
+                                        <option value="toilet">トイレ</option>
+                                        <option value="entrance">玄関</option>
+                                        <option value="balcony">ベランダ</option>
+                                        <option value="wall">壁面詳細</option>
+                                        <option value="ceiling">天井詳細</option>
+                                        <option value="floor">床面詳細</option>
+                                        <option value="damage">損傷箇所</option>
+                                        <option value="electrical">電気設備</option>
+                                        <option value="plumbing">配管</option>
+                                        <option value="other">その他</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">説明</label>
+                                    <input type="text" class="form-control" id="description" name="description" placeholder="写真の説明">
+                                </div>
+                                <button type="submit" class="btn btn-success btn-sm w-100">
+                                    <i class="fas fa-upload me-1"></i>写真アップロード
+                                </button>
+                            </form>
+
+                            <!-- 写真一覧 -->
+                            <div id="photoList" class="mt-3">
+                                <h6>撮影済み写真</h6>
+                                <div class="row" id="photoGrid">
+                                    <!-- 動的に写真が追加される -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 音声メモ -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-microphone me-2"></i>音声メモ</h5>
+                        </div>
+                        <div class="card-body text-center">
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="startRecording()">
+                                <i class="fas fa-microphone me-1"></i>録音開始
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="stopRecording()" disabled>
+                                <i class="fas fa-stop me-1"></i>録音停止
+                            </button>
+                            <div id="recordingsList" class="mt-3">
+                                <!-- 録音一覧 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 調査進捗 -->
+                    <div class="card">
+                        <div class="card-header bg-dark text-white">
+                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>調査進捗</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <small>完了率</small>
+                                    <small id="progressPercent">0%</small>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" id="progressBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="border rounded p-2">
+                                        <div class="h5 mb-0" id="photosCount">0</div>
+                                        <small class="text-muted">写真</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded p-2">
+                                        <div class="h5 mb-0" id="roomsCount">0</div>
+                                        <small class="text-muted">部屋</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let roomCount = 0;
+let damageCount = 0;
+let photoCount = 0;
+let isRecording = false;
+let mediaRecorder = null;
+
+// 部屋追加
+function addRoom() {
+    roomCount++;
+    const roomHtml = `
+        <div class="border rounded p-3 mb-3 bg-light" id="room-${roomCount}">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0"><i class="fas fa-door-open me-2"></i>部屋 ${roomCount}</h6>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRoom(${roomCount})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">部屋名</label>
+                    <input type="text" class="form-control" name="room_${roomCount}_name" placeholder="例: リビング">
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">面積（㎡）</label>
+                    <input type="number" class="form-control" name="room_${roomCount}_area" placeholder="例: 12.5" step="0.1">
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">部屋の特記事項</label>
+                    <textarea class="form-control" name="room_${roomCount}_notes" rows="2" placeholder="部屋の状態、注意点など"></textarea>
+                </div>
+
+                <!-- 部屋別写真撮影セクション -->
+                <div class="col-12 mb-3">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white py-2">
+                            <h6 class="mb-0"><i class="fas fa-camera me-2"></i>この部屋の写真</h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="mb-2">
+                                <input type="file" class="form-control form-control-sm" id="room_${roomCount}_photos"
+                                       name="room_${roomCount}_photos" accept="image/*" capture="environment" multiple
+                                       onchange="handleRoomPhotos(${roomCount}, this)">
+                            </div>
+                            <div class="mb-2">
+                                <select class="form-select form-select-sm" id="room_${roomCount}_photo_type" name="room_${roomCount}_photo_type">
+                                    <option value="overview">全景</option>
+                                    <option value="wall_north">北側の壁</option>
+                                    <option value="wall_south">南側の壁</option>
+                                    <option value="wall_east">東側の壁</option>
+                                    <option value="wall_west">西側の壁</option>
+                                    <option value="ceiling">天井</option>
+                                    <option value="floor">床</option>
+                                    <option value="window">窓</option>
+                                    <option value="door">ドア</option>
+                                    <option value="outlet">コンセント</option>
+                                    <option value="damage">損傷箇所</option>
+                                    <option value="detail">詳細</option>
+                                </select>
+                            </div>
+                            <!-- 撮影済み写真のプレビューエリア -->
+                            <div class="row" id="room_${roomCount}_photo_grid">
+                                <!-- 写真がここに表示される -->
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                複数選択可能。各写真にタイプを設定してからアップロードしてください。
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('roomsList').insertAdjacentHTML('beforeend', roomHtml);
+    updateProgress();
+}
+
+// 部屋削除
+function removeRoom(roomId) {
+    document.getElementById(`room-${roomId}`).remove();
+    updateProgress();
+}
+
+// 損傷追加
+function addDamage() {
+    damageCount++;
+    const damageHtml = `
+        <div class="border rounded p-3 mb-3 bg-light" id="damage-${damageCount}">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">損傷 ${damageCount}</h6>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDamage(${damageCount})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <select class="form-select" name="damage_${damageCount}_type">
+                        <option value="">損傷タイプ</option>
+                        <option value="crack">ひび割れ</option>
+                        <option value="hole">穴</option>
+                        <option value="stain">汚れ</option>
+                        <option value="scratch">傷</option>
+                        <option value="water_damage">水濡れ</option>
+                        <option value="mold">カビ</option>
+                        <option value="other">その他</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <select class="form-select" name="damage_${damageCount}_severity">
+                        <option value="">重要度</option>
+                        <option value="low">軽微</option>
+                        <option value="medium">中程度</option>
+                        <option value="high">重大</option>
+                        <option value="critical">緊急</option>
+                    </select>
+                </div>
+                <div class="col-md-12 mb-2">
+                    <textarea class="form-control" name="damage_${damageCount}_description" rows="2" placeholder="損傷の詳細説明"></textarea>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('damagesList').insertAdjacentHTML('beforeend', damageHtml);
+}
+
+// 損傷削除
+function removeDamage(damageId) {
+    document.getElementById(`damage-${damageId}`).remove();
+}
+
+// 写真アップロード
+document.getElementById('photoUploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const fileInput = document.getElementById('photo');
+    const files = fileInput.files;
+
+    if (files.length > 0) {
+        for (let file of files) {
+            addPhotoPreview(file);
+        }
+        fileInput.value = '';
+        document.getElementById('description').value = '';
+    }
+});
+
+// 写真プレビュー追加
+function addPhotoPreview(file) {
+    photoCount++;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const photoHtml = `
+            <div class="col-6 mb-2" id="photo-${photoCount}">
+                <div class="position-relative">
+                    <img src="${e.target.result}" class="img-thumbnail" style="width: 100%; height: 80px; object-fit: cover;">
+                    <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="removePhoto(${photoCount})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        document.getElementById('photoGrid').insertAdjacentHTML('beforeend', photoHtml);
+        updateProgress();
+    };
+    reader.readAsDataURL(file);
+}
+
+// 写真削除
+function removePhoto(photoId) {
+    document.getElementById(`photo-${photoId}`).remove();
+    photoCount--;
+    updateProgress();
+}
+
+// 部屋別写真アップロード処理
+function handleRoomPhotos(roomId, input) {
+    const files = input.files;
+    const photoType = document.getElementById(`room_${roomId}_photo_type`).value;
+
+    if (files.length > 0 && photoType) {
+        for (let file of files) {
+            addRoomPhotoPreview(roomId, file, photoType);
+        }
+        // ファイル入力をクリア
+        input.value = '';
+    } else if (!photoType) {
+        alert('写真タイプを選択してください');
+        input.value = '';
+    }
+}
+
+// 部屋別写真プレビュー追加
+function addRoomPhotoPreview(roomId, file, photoType) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const photoId = `room_${roomId}_photo_${Date.now()}`;
+        const photoTypeLabel = document.querySelector(`#room_${roomId}_photo_type option[value="${photoType}"]`).textContent;
+
+        const photoHtml = `
+            <div class="col-6 mb-2" id="${photoId}">
+                <div class="position-relative">
+                    <img src="${e.target.result}" class="img-thumbnail" style="width: 100%; height: 80px; object-fit: cover;">
+                    <div class="position-absolute bottom-0 start-0 w-100 bg-dark bg-opacity-75 text-white p-1">
+                        <small>${photoTypeLabel}</small>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0"
+                            onclick="removeRoomPhoto('${photoId}', ${roomId})" style="padding: 2px 6px;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        document.getElementById(`room_${roomId}_photo_grid`).insertAdjacentHTML('beforeend', photoHtml);
+
+        // 全体の写真カウントも更新
+        photoCount++;
+        updateProgress();
+    };
+    reader.readAsDataURL(file);
+}
+
+// 部屋別写真削除
+function removeRoomPhoto(photoId, roomId) {
+    document.getElementById(photoId).remove();
+    photoCount--;
+    updateProgress();
+}
+
+// 進捗更新
+function updateProgress() {
+    const totalFields = 10; // 基本的なフィールド数
+    const completedFields = document.querySelectorAll('input:valid, select:valid, textarea:valid').length;
+    const progress = Math.min((completedFields / totalFields) * 100, 100);
+
+    // 部屋別写真も含めた総写真数を計算
+    const totalPhotos = photoCount + document.querySelectorAll('[id^="room_"][id*="_photo_"]').length;
+
+    document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
+    document.getElementById('progressBar').style.width = progress + '%';
+    document.getElementById('photosCount').textContent = totalPhotos;
+    document.getElementById('roomsCount').textContent = roomCount;
+}
+
+// 調査完了
+function completeSurvey() {
+    if (confirm('調査を完了しますか？')) {
+        const form = new FormData();
+        form.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+        fetch('{% url "surveys:survey_complete_api" survey.pk %}', {
+            method: 'POST',
+            body: form
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('調査が完了しました！');
+                window.location.href = '{% url "surveys:field_survey_list" %}';
+            } else {
+                alert('エラー: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('通信エラーが発生しました');
+        });
+    }
+}
+
+// 調査データ保存
+function saveSurveyData() {
+    const formData = new FormData(document.getElementById('surveyForm'));
+
+    fetch('{% url "surveys:survey_save_api" survey.pk %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('データを保存しました');
+        } else {
+            alert('保存エラー: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('通信エラーが発生しました');
+    });
+
+    return false; // フォーム送信を防ぐ
+}
+
+// 音声録音機能（簡易版）
+function startRecording() {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.start();
+            isRecording = true;
+
+            document.querySelector('[onclick="startRecording()"]').disabled = true;
+            document.querySelector('[onclick="stopRecording()"]').disabled = false;
+        })
+        .catch(error => {
+            console.error('録音エラー:', error);
+            alert('マイクへのアクセスが拒否されました');
+        });
+}
+
+function stopRecording() {
+    if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+
+        document.querySelector('[onclick="startRecording()"]').disabled = false;
+        document.querySelector('[onclick="stopRecording()"]').disabled = true;
+    }
+}
+
+// ページロード時の初期化
+document.addEventListener('DOMContentLoaded', function() {
+    updateProgress();
+
+    // 定期的な自動保存（5分間隔）
+    setInterval(() => {
+        saveSurveyData();
+    }, 300000);
+});
+</script>
+{% endblock %}

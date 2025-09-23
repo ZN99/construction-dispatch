@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>職人一覧 - 建築派遣SaaS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item"><a class="nav-link" href="../index.html"><i class="fas fa-tachometer-alt me-2"></i>ダッシュボード</a></li>
+                        <li class="nav-item"><a class="nav-link" href="../projects/project_list.html"><i class="fas fa-project-diagram me-2"></i>案件管理</a></li>
+                        <li class="nav-item"><a class="nav-link" href="../surveys/survey_list.html"><i class="fas fa-clipboard-list me-2"></i>調査管理</a></li>
+                        <li class="nav-item"><a class="nav-link active" href="craftsman_list.html"><i class="fas fa-users me-2"></i>職人管理</a></li>
+                    </ul>
+                </div>
+            </nav>
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">職人管理</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <!-- 社員専用：職人登録権限 -->
+                        <div class="btn-group me-2" id="employee-actions">
+                            <a href="craftsman_create.html" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>職人登録
+                            </a>
+                            <a href="craftsman_evaluation.html" class="btn btn-outline-info">
+                                <i class="fas fa-star me-1"></i>評価管理
+                            </a>
+                        </div>
+                        <!-- 派遣スタッフ専用：スケジュール確認のみ -->
+                        <div class="btn-group me-2" id="temp-staff-actions" style="display: none;">
+                            <a href="schedule_check.html" class="btn btn-success">
+                                <i class="fas fa-calendar-check me-1"></i>スケジュール確認
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Cards：社員専用 -->
+                <div class="row mb-4" id="employee-stats">
+                    <div class="col-md-3">
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-primary">5</h5>
+                                <p class="card-text">総職人数</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-warning">2</h5>
+                                <p class="card-text">稼働中</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-success">3</h5>
+                                <p class="card-text">空き</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-info">4.7</h5>
+                                <p class="card-text">平均評価</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 派遣スタッフ用：スケジュール状況のみ -->
+                <div class="row mb-4" id="temp-staff-stats" style="display: none;">
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-success">3</h5>
+                                <p class="card-text">対応可能な職人</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-warning">2</h5>
+                                <p class="card-text">作業中の職人</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search and Filter -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form class="row g-3">
+                            <div class="col-md-4">
+                                <label for="search" class="form-label">検索</label>
+                                <input type="text" class="form-control" id="search" placeholder="職人名、スキルで検索">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="skillFilter" class="form-label">スキル</label>
+                                <select class="form-select" id="skillFilter">
+                                    <option value="">すべて</option>
+                                    <option value="クロス張り">クロス張り</option>
+                                    <option value="水道設備">水道設備</option>
+                                    <option value="原状回復">原状回復</option>
+                                    <option value="クリーニング">クリーニング</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="statusFilter" class="form-label">状態</label>
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">すべて</option>
+                                    <option value="稼働中">稼働中</option>
+                                    <option value="空き">空き</option>
+                                    <option value="休暇中">休暇中</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="submit" class="btn btn-primary w-100">検索</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Craftsmen Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-users me-2"></i>職人一覧
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>名前</th>
+                                        <th>スキル・経験</th>
+                                        <th id="evaluation-header">レベル・評価</th>
+                                        <th>状態</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- JavaScriptで動的に生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <nav aria-label="職人ページネーション">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" tabindex="-1">前へ</a>
+                                </li>
+                                <li class="page-item active">
+                                    <a class="page-link" href="#">1</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">2</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">次へ</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        // 職人データ（サンプル）
+        const craftsmen = [
+            {
+                id: 1,
+                name: "田中太郎",
+                skills: ["クロス張り", "原状回復"],
+                experience: "15年",
+                level: "上級",
+                rating: 4.8,
+                status: "稼働中",
+                hourlyRate: 3500,
+                projectName: "港区ワンルーム改修"
+            },
+            {
+                id: 2,
+                name: "山田花子",
+                skills: ["水道設備", "クリーニング"],
+                experience: "8年",
+                level: "中級",
+                rating: 4.6,
+                status: "空き",
+                hourlyRate: 2800,
+                projectName: ""
+            },
+            {
+                id: 3,
+                name: "佐藤次郎",
+                skills: ["原状回復", "クロス張り"],
+                experience: "12年",
+                level: "上級",
+                rating: 4.9,
+                status: "空き",
+                hourlyRate: 3200,
+                projectName: ""
+            },
+            {
+                id: 4,
+                name: "鈴木一郎",
+                skills: ["クリーニング"],
+                experience: "5年",
+                level: "初級",
+                rating: 4.2,
+                status: "稼働中",
+                hourlyRate: 2200,
+                projectName: "渋谷店舗清掃"
+            },
+            {
+                id: 5,
+                name: "伊藤美咲",
+                skills: ["水道設備", "原状回復"],
+                experience: "10年",
+                level: "中級",
+                rating: 4.7,
+                status: "空き",
+                hourlyRate: 3000,
+                projectName: ""
+            }
+        ];
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            applyRoleBasedUI();
+            renderCraftsmenTable();
+        });
+
+        // 役割に基づくUI制御
+        function applyRoleBasedUI() {
+            const userRole = localStorage.getItem('userRole') || 'employee';
+
+            if (userRole === 'temporary_staff') {
+                // 派遣スタッフ用UI
+                document.getElementById('employee-actions').style.display = 'none';
+                document.getElementById('temp-staff-actions').style.display = 'block';
+                document.getElementById('employee-stats').style.display = 'none';
+                document.getElementById('temp-staff-stats').style.display = 'block';
+
+                // 評価列を非表示
+                const evaluationHeader = document.getElementById('evaluation-header');
+                evaluationHeader.style.display = 'none';
+
+                // タイトル変更
+                document.querySelector('h1').textContent = '職人スケジュール確認';
+            } else {
+                // 社員用UI（デフォルト）
+                document.getElementById('employee-actions').style.display = 'block';
+                document.getElementById('temp-staff-actions').style.display = 'none';
+                document.getElementById('employee-stats').style.display = 'block';
+                document.getElementById('temp-staff-stats').style.display = 'none';
+            }
+        }
+
+        // 職人テーブル描画
+        function renderCraftsmenTable() {
+            const userRole = localStorage.getItem('userRole') || 'employee';
+            const tbody = document.querySelector('tbody');
+            tbody.innerHTML = '';
+
+            craftsmen.forEach(craftsman => {
+                const row = createCraftsmanRow(craftsman, userRole);
+                tbody.appendChild(row);
+            });
+        }
+
+        // 職人行作成
+        function createCraftsmanRow(craftsman, userRole) {
+            const row = document.createElement('tr');
+
+            // 名前
+            const nameCell = document.createElement('td');
+            nameCell.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="avatar-sm bg-primary text-white rounded-circle me-3 d-flex align-items-center justify-content-center">
+                        ${craftsman.name.charAt(0)}
+                    </div>
+                    <div>
+                        <div class="fw-bold">${craftsman.name}</div>
+                        <small class="text-muted">経験${craftsman.experience}</small>
+                    </div>
+                </div>
+            `;
+            row.appendChild(nameCell);
+
+            // スキル
+            const skillsCell = document.createElement('td');
+            const skillBadges = craftsman.skills.map(skill =>
+                `<span class="badge bg-secondary me-1">${skill}</span>`
+            ).join('');
+            skillsCell.innerHTML = skillBadges;
+            row.appendChild(skillsCell);
+
+            // レベル・評価（役割により表示制御）
+            const evaluationCell = document.createElement('td');
+            if (userRole === 'employee') {
+                evaluationCell.innerHTML = `
+                    <div>${craftsman.level}</div>
+                    <div class="text-warning">
+                        ${generateStars(craftsman.rating)} ${craftsman.rating}
+                    </div>
+                    <small class="text-muted">¥${craftsman.hourlyRate.toLocaleString()}/時</small>
+                `;
+            } else {
+                evaluationCell.style.display = 'none';
+            }
+            row.appendChild(evaluationCell);
+
+            // 状態
+            const statusCell = document.createElement('td');
+            const statusClass = craftsman.status === '稼働中' ? 'warning' : 'success';
+            statusCell.innerHTML = `
+                <span class="badge bg-${statusClass}">${craftsman.status}</span>
+                ${craftsman.projectName ? `<br><small class="text-muted">${craftsman.projectName}</small>` : ''}
+            `;
+            row.appendChild(statusCell);
+
+            // 操作
+            const actionCell = document.createElement('td');
+            if (userRole === 'employee') {
+                actionCell.innerHTML = `
+                    <div class="btn-group btn-group-sm">
+                        <a href="craftsman_detail.html?id=${craftsman.id}" class="btn btn-outline-primary">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="assignment_create.html?craftsman=${craftsman.id}" class="btn btn-outline-success">
+                            <i class="fas fa-calendar-plus"></i>
+                        </a>
+                        <button class="btn btn-outline-info" onclick="showEvaluation(${craftsman.id})">
+                            <i class="fas fa-star"></i>
+                        </button>
+                    </div>
+                `;
+            } else {
+                actionCell.innerHTML = `
+                    <a href="schedule_check.html?craftsman=${craftsman.id}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-calendar-check me-1"></i>スケジュール
+                    </a>
+                `;
+            }
+            row.appendChild(actionCell);
+
+            return row;
+        }
+
+        // 星評価生成
+        function generateStars(rating) {
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating % 1 !== 0;
+            let stars = '';
+
+            for (let i = 0; i < fullStars; i++) {
+                stars += '<i class="fas fa-star"></i>';
+            }
+
+            if (hasHalfStar) {
+                stars += '<i class="fas fa-star-half-alt"></i>';
+            }
+
+            return stars;
+        }
+
+        // 評価表示（社員専用）
+        function showEvaluation(craftsmanId) {
+            const craftsman = craftsmen.find(c => c.id === craftsmanId);
+            if (!craftsman) return;
+
+            alert(`${craftsman.name}の評価詳細:\n\n評価: ${craftsman.rating}/5.0\nレベル: ${craftsman.level}\n時給: ¥${craftsman.hourlyRate.toLocaleString()}\n\n※実際の評価管理画面に遷移します`);
+        }
+
+        // 検索フィルタ処理
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('search');
+            const skillFilter = document.getElementById('skillFilter');
+            const statusFilter = document.getElementById('statusFilter');
+
+            [searchInput, skillFilter, statusFilter].forEach(element => {
+                element.addEventListener('input', filterCraftsmen);
+            });
+        });
+
+        function filterCraftsmen() {
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            const skillFilter = document.getElementById('skillFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            const filteredCraftsmen = craftsmen.filter(craftsman => {
+                const matchesSearch = craftsman.name.toLowerCase().includes(searchTerm) ||
+                                    craftsman.skills.some(skill => skill.toLowerCase().includes(searchTerm));
+                const matchesSkill = !skillFilter || craftsman.skills.includes(skillFilter);
+                const matchesStatus = !statusFilter || craftsman.status === statusFilter;
+
+                return matchesSearch && matchesSkill && matchesStatus;
+            });
+
+            renderFilteredCraftsmen(filteredCraftsmen);
+        }
+
+        function renderFilteredCraftsmen(filteredCraftsmen) {
+            const userRole = localStorage.getItem('userRole') || 'employee';
+            const tbody = document.querySelector('tbody');
+            tbody.innerHTML = '';
+
+            filteredCraftsmen.forEach(craftsman => {
+                const row = createCraftsmanRow(craftsman, userRole);
+                tbody.appendChild(row);
+            });
+        }
+    </script>
+    <style>
+        .avatar-sm {
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .text-warning i {
+            color: #ffc107;
+        }
+    </style>
+</body>
+</html>

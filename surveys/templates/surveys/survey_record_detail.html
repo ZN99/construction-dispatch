@@ -1,0 +1,511 @@
+{% extends "surveys/base.html" %}
+
+{% block title %}調査記録詳細 #{{ survey.id }} - {{ survey.project.site_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-clipboard-check me-2"></i>調査記録詳細
+        <span class="badge bg-secondary ms-2">#{{ survey.id }}</span>
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            {% if survey.status == 'scheduled' %}
+                <a href="{% url 'surveys:survey_start' survey.pk %}" class="btn btn-warning">
+                    <i class="fas fa-play me-1"></i>調査開始
+                </a>
+                <a href="{% url 'surveys:survey_edit' survey.pk %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-edit me-1"></i>編集
+                </a>
+            {% elif survey.status == 'in_progress' %}
+                <a href="{% url 'surveys:survey_start' survey.pk %}" class="btn btn-warning">
+                    <i class="fas fa-play-circle me-1"></i>調査続行
+                </a>
+                <a href="{% url 'surveys:survey_complete' survey.pk %}" class="btn btn-success">
+                    <i class="fas fa-check me-1"></i>完了
+                </a>
+            {% elif survey.status == 'completed' %}
+                <a href="{% url 'surveys:survey_report' survey.pk %}" class="btn btn-info">
+                    <i class="fas fa-file-alt me-1"></i>レポート生成
+                </a>
+                <button onclick="window.print()" class="btn btn-outline-secondary">
+                    <i class="fas fa-print me-1"></i>印刷
+                </button>
+                <button onclick="exportData()" class="btn btn-outline-primary">
+                    <i class="fas fa-download me-1"></i>エクスポート
+                </button>
+            {% endif %}
+            <!-- 削除ボタン（全ステータス共通） -->
+            <button onclick="deleteSurveyFromDetail({{ survey.pk }}, '{{ survey.project.site_name|escapejs }}')" class="btn btn-outline-danger">
+                <i class="fas fa-trash me-1"></i>削除
+            </button>
+        </div>
+        <a href="{% url 'surveys:survey_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>一覧へ戻る
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 左カラム：メイン情報 -->
+    <div class="col-lg-8">
+        <!-- 基本情報カード -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>基本情報</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td class="text-muted" width="40%">調査ID:</td>
+                                <td class="fw-bold">#{{ survey.id }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">管理番号:</td>
+                                <td>{{ survey.project.management_no }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">案件名:</td>
+                                <td>
+                                    <a href="{% url 'order_management:project_detail' survey.project.pk %}" class="text-decoration-none">
+                                        {{ survey.project.site_name }}
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">現場住所:</td>
+                                <td>{{ survey.project.site_address }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">工事種別:</td>
+                                <td>{{ survey.project.work_type }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td class="text-muted" width="40%">調査員:</td>
+                                <td>{{ survey.surveyor.name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">調査予定日時:</td>
+                                <td>{{ survey.scheduled_date|date:"Y/m/d" }} {{ survey.scheduled_start_time|time:"H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">実施日時:</td>
+                                <td>
+                                    {% if survey.actual_start_time %}
+                                        {{ survey.actual_start_time|date:"Y/m/d H:i" }} 〜
+                                        {% if survey.actual_end_time %}
+                                            {{ survey.actual_end_time|time:"H:i" }}
+                                        {% else %}
+                                            進行中
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">未実施</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">調査ステータス:</td>
+                                <td>
+                                    <span class="badge {% if survey.status == 'in_progress' %}bg-warning{% elif survey.status == 'completed' %}bg-success{% elif survey.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %} fs-6">
+                                        {{ survey.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">進捗率:</td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar {% if survey.status == 'in_progress' %}bg-warning{% elif survey.status == 'completed' %}bg-success{% else %}bg-secondary{% endif %}"
+                                             style="width: {{ survey.get_progress_percentage }}%">
+                                            {{ survey.get_progress_percentage }}%
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 調査データタブ -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#rooms-tab">
+                            <i class="fas fa-home me-1"></i>部屋別調査
+                            {% if room_count %}<span class="badge bg-primary ms-1">{{ room_count }}</span>{% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#damages-tab">
+                            <i class="fas fa-exclamation-triangle me-1"></i>損傷状況
+                            {% if damage_count %}<span class="badge bg-warning ms-1">{{ damage_count }}</span>{% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#photos-tab">
+                            <i class="fas fa-camera me-1"></i>撮影写真
+                            {% if photo_count %}<span class="badge bg-success ms-1">{{ photo_count }}</span>{% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#notes-tab">
+                            <i class="fas fa-sticky-note me-1"></i>備考
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    <!-- 部屋別調査タブ -->
+                    <div class="tab-pane fade show active" id="rooms-tab">
+                        {% if rooms %}
+                            {% for room in rooms %}
+                            <div class="room-section border rounded p-3 mb-3">
+                                <h6 class="fw-bold text-primary mb-3">
+                                    <i class="fas fa-door-open me-1"></i>{{ room.room_name }}
+                                </h6>
+                                {% if room.walls.all %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>壁面方向</th>
+                                                <th>長さ(m)</th>
+                                                <th>高さ(m)</th>
+                                                <th>面積(㎡)</th>
+                                                <th>開口部(㎡)</th>
+                                                <th>実面積(㎡)</th>
+                                                <th>下地種別</th>
+                                                <th>下地状態</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for wall in room.walls.all %}
+                                            <tr>
+                                                <td>{{ wall.get_direction_display }}</td>
+                                                <td>{{ wall.length }}</td>
+                                                <td>{{ wall.height }}</td>
+                                                <td>{% widthratio wall.length 1 wall.height %}</td>
+                                                <td>{{ wall.opening_area }}</td>
+                                                <td>{{ wall.calculate_area|floatformat:1 }}</td>
+                                                <td>{{ wall.get_foundation_type_display }}</td>
+                                                <td>
+                                                    <span class="badge {% if wall.foundation_condition == 'good' %}bg-success{% else %}bg-warning{% endif %}">
+                                                        {{ wall.get_foundation_condition_display }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <p class="text-muted">壁面データがありません</p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center py-3">
+                                <i class="fas fa-inbox fa-2x d-block mb-2"></i>
+                                部屋データがまだ登録されていません
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- 損傷状況タブ -->
+                    <div class="tab-pane fade" id="damages-tab">
+                        {% if damages %}
+                            <div class="row">
+                                {% for damage in damages %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card border-warning">
+                                        <div class="card-body">
+                                            <h6 class="card-title">
+                                                <span class="badge bg-warning">{{ damage.get_damage_type_display }}</span>
+                                            </h6>
+                                            <div class="small">
+                                                <div class="mb-2">
+                                                    <strong>凹み:</strong>
+                                                    {% if damage.has_dents %}
+                                                        <span class="text-danger">あり ({{ damage.dent_count }}個)</span>
+                                                    {% else %}
+                                                        <span class="text-success">なし</span>
+                                                    {% endif %}
+                                                </div>
+                                                {% if damage.description %}
+                                                <div>
+                                                    <strong>詳細:</strong>
+                                                    <p class="mb-0">{{ damage.description }}</p>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center py-3">
+                                <i class="fas fa-check-circle fa-2x d-block mb-2 text-success"></i>
+                                損傷は確認されていません
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- 撮影写真タブ -->
+                    <div class="tab-pane fade" id="photos-tab">
+                        {% if photos_by_type %}
+                            {% for photo_type, photos in photos_by_type.items %}
+                            <h6 class="text-primary mb-3">{{ photo_type }} ({{ photos|length }}枚)</h6>
+                            <div class="row mb-4">
+                                {% for photo in photos %}
+                                <div class="col-md-3 col-sm-6 mb-3">
+                                    <div class="card">
+                                        <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ photo.caption }}"
+                                             style="height: 150px; object-fit: cover; cursor: pointer;"
+                                             onclick="showPhotoModal('{{ photo.image.url }}', '{{ photo.caption }}')">
+                                        <div class="card-body p-2">
+                                            <small class="text-muted d-block">{{ photo.caption|default:"" }}</small>
+                                            <small class="text-muted">{{ photo.uploaded_at|date:"m/d H:i" }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center py-3">
+                                <i class="fas fa-camera fa-2x d-block mb-2"></i>
+                                写真がまだアップロードされていません
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- 備考タブ -->
+                    <div class="tab-pane fade" id="notes-tab">
+                        {% if survey.notes %}
+                            <div class="border rounded p-3 bg-light">
+                                {{ survey.notes|linebreaks }}
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center py-3">
+                                <i class="fas fa-comment-slash fa-2x d-block mb-2"></i>
+                                備考はありません
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 履歴情報 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>調査履歴</h5>
+            </div>
+            <div class="card-body">
+                {% if history %}
+                    <div class="timeline">
+                        {% for entry in history %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">{{ entry.action }}</h6>
+                                <small class="text-muted">{{ entry.timestamp }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">履歴情報は今後実装予定です</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 右カラム：サマリー情報 -->
+    <div class="col-lg-4">
+        <!-- 統計カード -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>調査統計</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="border rounded p-2">
+                            <h4 class="mb-1 text-info">{{ room_count }}</h4>
+                            <small class="text-muted">調査部屋数</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="border rounded p-2">
+                            <h4 class="mb-1 text-primary">{{ wall_count }}</h4>
+                            <small class="text-muted">壁面数</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2">
+                            <h4 class="mb-1 text-warning">{{ damage_count }}</h4>
+                            <small class="text-muted">損傷箇所</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2">
+                            <h4 class="mb-1 text-success">{{ photo_count }}</h4>
+                            <small class="text-muted">撮影写真</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- タイムライン -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-clock me-2"></i>時間情報</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-block">予定時間</small>
+                    <div>{{ survey.scheduled_date|date:"Y/m/d" }} {{ survey.scheduled_start_time|time:"H:i" }}</div>
+                    <div class="text-muted">所要時間: {{ survey.estimated_duration }}分</div>
+                </div>
+                {% if survey.actual_start_time %}
+                <div class="mb-3">
+                    <small class="text-muted d-block">実施時間</small>
+                    <div>開始: {{ survey.actual_start_time|date:"m/d H:i" }}</div>
+                    {% if survey.actual_end_time %}
+                    <div>終了: {{ survey.actual_end_time|date:"m/d H:i" }}</div>
+                    <div class="text-muted">実所要時間: {{ survey.get_actual_duration_minutes }}分</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                <div>
+                    <small class="text-muted d-block">システム記録</small>
+                    <div>作成: {{ survey.created_at|date:"Y/m/d H:i" }}</div>
+                    <div>更新: {{ survey.updated_at|date:"Y/m/d H:i" }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 関連ファイル -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-paperclip me-2"></i>関連ファイル</h6>
+            </div>
+            <div class="card-body">
+                {% if related_files %}
+                    <div class="list-group list-group-flush">
+                        {% for file in related_files %}
+                        <a href="{{ file.url }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file me-2"></i>{{ file.name }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center small mb-0">関連ファイルはありません</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 写真表示モーダル -->
+<div class="modal fade" id="photoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="photoModalTitle">写真詳細</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="photoModalImage" src="" class="img-fluid" alt="">
+                <p id="photoModalCaption" class="mt-3"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showPhotoModal(imageUrl, caption) {
+    document.getElementById('photoModalImage').src = imageUrl;
+    document.getElementById('photoModalCaption').textContent = caption || '';
+    new bootstrap.Modal(document.getElementById('photoModal')).show();
+}
+
+function exportData() {
+    if (confirm('調査データをエクスポートしますか？')) {
+        alert('エクスポート機能は開発中です。');
+    }
+}
+
+function deleteSurveyFromDetail(surveyId, surveyName) {
+    if (confirm(`調査記録「${surveyName}」を削除しますか？\n\nこの操作は取り消せません。\n関連する写真やメモもすべて削除されます。`)) {
+        const form = new FormData();
+        form.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch(`{% url "surveys:survey_delete" 0 %}`.replace('0', surveyId), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: form
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.href = '{% url "surveys:survey_list" %}'; // 一覧に戻る
+            } else {
+                alert('削除エラー: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('通信エラーが発生しました');
+        });
+    }
+}
+</script>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -25px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #007bff;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: -21px;
+    top: 15px;
+    height: calc(100% - 15px);
+    width: 2px;
+    background: #dee2e6;
+}
+</style>
+{% endblock %}

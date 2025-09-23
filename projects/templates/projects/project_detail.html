@@ -1,0 +1,252 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}{{ project.title }} - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ project.title }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'project_update' project.pk %}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-edit me-1"></i>編集
+        </a>
+        <a href="{% url 'project_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i>一覧に戻る
+        </a>
+    </div>
+</div>
+
+<!-- ワークフロープログレス表示 -->
+{% include 'components/workflow_progress.html' %}
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">基本情報</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="fw-bold" style="width: 120px;">顧客名:</td>
+                                <td>{{ project.customer.name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">電話番号:</td>
+                                <td>{{ project.customer.phone }}</td>
+                            </tr>
+                            {% if project.customer.email %}
+                            <tr>
+                                <td class="fw-bold">メール:</td>
+                                <td>{{ project.customer.email }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td class="fw-bold">工種:</td>
+                                <td>
+                                    <span class="badge bg-info fs-6">{{ project.project_type.name }}</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="fw-bold" style="width: 120px;">ステータス:</td>
+                                <td>
+                                    {% if project.status == 'draft' %}
+                                        <span class="badge bg-secondary fs-6">下書き</span>
+                                    {% elif project.status == 'confirmed' %}
+                                        <span class="badge bg-primary fs-6">確定</span>
+                                    {% elif project.status == 'in_progress' %}
+                                        <span class="badge bg-warning fs-6">作業中</span>
+                                    {% elif project.status == 'completed' %}
+                                        <span class="badge bg-success fs-6">完了</span>
+                                    {% elif project.status == 'cancelled' %}
+                                        <span class="badge bg-danger fs-6">キャンセル</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">開始予定:</td>
+                                <td>{{ project.start_date }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">終了予定:</td>
+                                <td>{{ project.end_date }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">作業日数:</td>
+                                <td>{{ project.duration_days }}日間</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">作業場所</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ project.address|linebreaks }}</p>
+            </div>
+        </div>
+
+        {% if project.details %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">詳細情報</h5>
+            </div>
+            <div class="card-body">
+                {% if project.project_type.name == "クロス" %}
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>施工面積:</strong><br>
+                            {{ project.details.area_sqm }}㎡
+                        </div>
+                        <div class="col-md-4">
+                            <strong>壁の種類:</strong><br>
+                            {% if project.details.wall_type == "drywall" %}石膏ボード
+                            {% elif project.details.wall_type == "concrete" %}コンクリート
+                            {% elif project.details.wall_type == "wood" %}木材
+                            {% elif project.details.wall_type == "other" %}その他
+                            {% else %}{{ project.details.wall_type }}{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>クロスの種類:</strong><br>
+                            {% if project.details.paper_type == "vinyl" %}ビニルクロス
+                            {% elif project.details.paper_type == "paper" %}紙クロス
+                            {% elif project.details.paper_type == "fabric" %}織物クロス
+                            {% elif project.details.paper_type == "other" %}その他
+                            {% else %}{{ project.details.paper_type }}{% endif %}
+                        </div>
+                    </div>
+                {% elif project.project_type.name == "クリーニング" %}
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>清掃面積:</strong><br>
+                            {{ project.details.area_sqm }}㎡
+                        </div>
+                        <div class="col-md-4">
+                            <strong>清掃種類:</strong><br>
+                            {% for cleaning_type in project.details.cleaning_type %}
+                                <span class="badge bg-light text-dark me-1">
+                                    {% if cleaning_type == "floor" %}床清掃
+                                    {% elif cleaning_type == "window" %}窓清掃
+                                    {% elif cleaning_type == "toilet" %}トイレ清掃
+                                    {% elif cleaning_type == "kitchen" %}キッチン清掃
+                                    {% elif cleaning_type == "general" %}一般清掃
+                                    {% else %}{{ cleaning_type }}{% endif %}
+                                </span>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>特殊機材:</strong><br>
+                            {% if project.details.equipment_needed %}必要{% else %}不要{% endif %}
+                        </div>
+                    </div>
+                {% else %}
+                    {% if project.details.work_description %}
+                        <div class="mb-3">
+                            <strong>作業内容:</strong><br>
+                            {{ project.details.work_description|linebreaks }}
+                        </div>
+                    {% endif %}
+                    {% if project.details.required_skills %}
+                        <div class="mb-3">
+                            <strong>必要スキル:</strong><br>
+                            {{ project.details.required_skills }}
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if project.notes %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">備考</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ project.notes|linebreaks }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">金額情報</h5>
+            </div>
+            <div class="card-body text-center">
+                <h3 class="text-primary mb-0">{{ project.formatted_amount }}</h3>
+                <small class="text-muted">税込価格</small>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">システム情報</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td class="fw-bold">案件ID:</td>
+                        <td>#{{ project.id }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">登録日時:</td>
+                        <td>{{ project.created_at|date:"Y/m/d H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">更新日時:</td>
+                        <td>{{ project.updated_at|date:"Y/m/d H:i" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">アクション</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'project_update' project.pk %}" class="btn btn-primary">
+                        <i class="fas fa-edit me-1"></i>案件を編集
+                    </a>
+                    {% if project.status == 'draft' %}
+                        <button class="btn btn-success" onclick="updateStatus('confirmed')">
+                            <i class="fas fa-check me-1"></i>案件を確定
+                        </button>
+                    {% elif project.status == 'confirmed' %}
+                        <button class="btn btn-warning" onclick="updateStatus('in_progress')">
+                            <i class="fas fa-play me-1"></i>作業開始
+                        </button>
+                    {% elif project.status == 'in_progress' %}
+                        <button class="btn btn-success" onclick="updateStatus('completed')">
+                            <i class="fas fa-flag-checkered me-1"></i>作業完了
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateStatus(newStatus) {
+    if (confirm('ステータスを変更しますか？')) {
+        // ここで Ajax を使ってステータス更新処理を実装可能
+        alert('ステータス更新機能は今後実装予定です');
+    }
+}
+</script>
+{% endblock %}

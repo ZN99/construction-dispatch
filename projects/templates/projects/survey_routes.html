@@ -1,0 +1,268 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}ルート最適化 - 建築派遣SaaS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">ルート最適化</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'survey_dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i>ダッシュボード
+        </a>
+    </div>
+</div>
+
+<!-- 日付選択 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="date" class="form-label">対象日</label>
+                <input type="date" name="date" class="form-control" value="{{ date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4">
+                <label for="surveyor" class="form-label">調査員</label>
+                <select name="surveyor" class="form-select">
+                    <option value="">全体概要</option>
+                    {% for surveyor in surveyors %}
+                        <option value="{{ surveyor.id }}" {% if request.GET.surveyor == surveyor.id|stringformat:"s" %}selected{% endif %}>
+                            {{ surveyor.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-1"></i>表示
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 全体概要表示 -->
+{% if not request.GET.surveyor %}
+<div class="row">
+    {% for item in route_data %}
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">{{ item.surveyor.name }}</h5>
+                    <span class="badge bg-{% if item.daily_surveys >= item.surveyor.daily_capacity %}danger{% elif item.is_warning %}warning{% else %}success{% endif %}">
+                        {{ item.capacity_usage }}
+                    </span>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted">拠点: {{ item.surveyor.base_location|default:"未設定" }}</small>
+                </div>
+
+                <div class="progress mb-3" style="height: 20px;">
+                    <div class="progress-bar bg-{% if item.daily_surveys >= item.surveyor.daily_capacity %}danger{% elif item.is_warning %}warning{% else %}success{% endif %}"
+                         style="width: {% widthratio item.daily_surveys item.surveyor.daily_capacity 100 %}%">
+                        {{ item.daily_surveys }}件
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <a href="?date={{ date|date:'Y-m-d' }}&surveyor={{ item.surveyor.id }}" class="btn btn-outline-primary">
+                        <i class="fas fa-route me-1"></i>ルート詳細
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 最適化のヒント -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">最適化のヒント</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="text-center">
+                    <i class="fas fa-map-marked-alt fa-2x text-primary mb-2"></i>
+                    <h6>地域別グルーピング</h6>
+                    <small class="text-muted">同じ地域の案件をまとめてアサイン</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center">
+                    <i class="fas fa-clock fa-2x text-success mb-2"></i>
+                    <h6>時間最適化</h6>
+                    <small class="text-muted">移動時間を考慮したスケジューリング</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center">
+                    <i class="fas fa-balance-scale fa-2x text-warning mb-2"></i>
+                    <h6>負荷分散</h6>
+                    <small class="text-muted">調査員間の作業量を均等化</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- 個別調査員のルート詳細 -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{{ surveyor.name }}のルート ({{ date|date:"Y年m月d日" }})</h5>
+            <span class="badge bg-info">{{ total_surveys }}件の調査</span>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if surveys %}
+            <div class="timeline">
+                {% for survey in surveys %}
+                <div class="timeline-item mb-4">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="timeline-time">
+                                <strong>{{ survey.scheduled_date|date:"H:i" }}</strong>
+                                <small class="text-muted d-block">{{ survey.estimated_duration }}分</small>
+                            </div>
+                        </div>
+                        <div class="col-md-10">
+                            <div class="card border-left-primary">
+                                <div class="card-body py-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">{{ survey.project.title }}</h6>
+                                            <p class="mb-1 text-muted">{{ survey.project.customer.name }}</p>
+                                            <small class="text-muted">
+                                                <i class="fas fa-map-marker-alt me-1"></i>
+                                                {{ survey.project.address|truncatechars:80 }}
+                                            </small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-{% if survey.priority == 'urgent' %}danger{% elif survey.priority == 'high' %}warning{% else %}primary{% endif %}">
+                                                {% if survey.priority == 'urgent' %}緊急{% elif survey.priority == 'high' %}高{% else %}通常{% endif %}
+                                            </span>
+                                            <div class="mt-1">
+                                                <a href="{% url 'survey_detail' survey.pk %}" class="btn btn-sm btn-outline-primary">
+                                                    詳細
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- ルート統計 -->
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h5 class="text-primary">{{ total_surveys }}</h5>
+                        <small class="text-muted">調査件数</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h5 class="text-success">{% for survey in surveys %}{{ survey.estimated_duration|add:0 }}{% endfor %}</h5>
+                        <small class="text-muted">総調査時間（分）</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h5 class="text-warning">推定90</h5>
+                        <small class="text-muted">移動時間（分）</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h5 class="text-info">効率良好</h5>
+                        <small class="text-muted">ルート評価</small>
+                    </div>
+                </div>
+            </div>
+
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">この日は調査予定がありません</h5>
+                <p class="text-muted">他の日付を選択するか、新しい調査をアサインしてください。</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ルート最適化アクション -->
+{% if surveys %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h6 class="mb-0">最適化アクション</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <button class="btn btn-outline-primary w-100" onclick="optimizeRoute()">
+                    <i class="fas fa-route me-1"></i>ルート最適化
+                </button>
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-outline-success w-100" onclick="exportRoute()">
+                    <i class="fas fa-download me-1"></i>ルート出力
+                </button>
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-outline-info w-100" onclick="shareRoute()">
+                    <i class="fas fa-share me-1"></i>調査員に送信
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function optimizeRoute() {
+    alert('ルート最適化機能は開発中です。地域別にグルーピングして移動時間を最小化します。');
+}
+
+function exportRoute() {
+    alert('ルート出力機能は開発中です。PDF形式でルート表を出力できます。');
+}
+
+function shareRoute() {
+    alert('送信機能は開発中です。調査員のスマートフォンにルート情報を送信できます。');
+}
+</script>
+
+<style>
+.timeline-item {
+    position: relative;
+}
+
+.timeline-time {
+    text-align: center;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    border: 2px solid #007bff;
+}
+
+.border-left-primary {
+    border-left: 4px solid #007bff !important;
+}
+
+.card-body {
+    position: relative;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}調査員専用システム{% endblock %}</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <style>
+        body {
+            font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+            background: #f8fffe;
+            color: #2d3748;
+        }
+
+        /* 調査員用グリーンナビゲーション */
+        .surveyor-navbar {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.1);
+            padding: 1rem 0;
+        }
+
+        .surveyor-navbar .navbar-brand {
+            color: white !important;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .surveyor-navbar .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            margin: 0 0.5rem;
+            padding: 0.5rem 1rem !important;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .surveyor-navbar .nav-link:hover {
+            color: white !important;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .surveyor-navbar .nav-link.active {
+            color: white !important;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* コンテンツエリア */
+        .main-content {
+            min-height: calc(100vh - 200px);
+            padding: 2rem 0;
+        }
+
+        /* フッター */
+        .surveyor-footer {
+            background: #1a202c;
+            color: white;
+            padding: 2rem 0;
+            margin-top: auto;
+        }
+
+        /* 調査員専用スタイル */
+        .surveyor-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .surveyor-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(16, 185, 129, 0.15);
+        }
+
+        .btn-surveyor {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-surveyor:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* アラート */
+        .alert-surveyor {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #065f46;
+            border-radius: 8px;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- 調査員専用ナビゲーション -->
+    <nav class="navbar navbar-expand-lg surveyor-navbar">
+        <div class="container">
+            <a class="navbar-brand" href="/surveys/demo/">
+                <i class="fas fa-clipboard-check me-2"></i>
+                調査員システム
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#surveyorNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="surveyorNavbar">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/surveys/demo/">
+                            <i class="fas fa-home me-1"></i>調査一覧
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/surveys/field/dashboard/">
+                            <i class="fas fa-tachometer-alt me-1"></i>ダッシュボード
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/surveys/field/surveys/">
+                            <i class="fas fa-list me-1"></i>担当調査
+                        </a>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/surveys/field/profile/">
+                            <i class="fas fa-user me-1"></i>プロフィール
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/surveys/field/logout/">
+                            <i class="fas fa-sign-out-alt me-1"></i>ログアウト
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- フッター -->
+    <footer class="surveyor-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-clipboard-check me-2"></i>調査員専用システム</h6>
+                    <p class="mb-0">効率的で正確な現地調査をサポート</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">© 2024 建築派遣管理システム</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

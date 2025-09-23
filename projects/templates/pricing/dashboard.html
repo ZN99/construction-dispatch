@@ -1,0 +1,270 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}マージン設定ダッシュボード - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-chart-line me-2"></i>マージン設定ダッシュボード</h2>
+                <div class="btn-group">
+                    <a href="{% url 'profitability_analysis' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-analytics me-1"></i>収益性分析
+                    </a>
+                    <a href="{% url 'project_list' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>価格設定
+                    </a>
+                </div>
+            </div>
+
+            <!-- 統計カード -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-project-diagram fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ stats.total_projects_with_pricing }}</h5>
+                                    <small>価格設定済み案件</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-percentage fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">{{ stats.avg_margin_rate|floatformat:1 }}%</h5>
+                                    <small>平均マージン率</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-yen-sign fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">¥{{ stats.total_revenue|floatformat:0 }}</h5>
+                                    <small>総売上</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-coins fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="card-title mb-0">¥{{ stats.total_profit|floatformat:0 }}</h5>
+                                    <small>総利益</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 収益性上位案件 -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-trophy me-2"></i>収益性上位案件
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if top_profitable_projects %}
+                                <div class="list-group list-group-flush">
+                                    {% for pricing in top_profitable_projects %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ pricing.project.title }}</h6>
+                                            <small class="text-muted">
+                                                {{ pricing.project.project_type.name }} |
+                                                {{ pricing.formatted_final_price }}
+                                            </small>
+                                            <br>
+                                            <span class="badge bg-success text-white">
+                                                利益率: {{ pricing.profit_rate }}%
+                                            </span>
+                                        </div>
+                                        <div class="btn-group-vertical btn-group-sm">
+                                            <a href="{% url 'pricing_detail' pricing.project.id %}" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye"></i> 詳細
+                                            </a>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center">データがありません。</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 工種別収益性 -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>工種別収益性
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if profitability_by_type %}
+                                <div class="list-group list-group-flush">
+                                    {% for item in profitability_by_type %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="mb-0">{{ item.project__project_type__name }}</h6>
+                                            <span class="badge bg-primary">{{ item.project_count }}件</span>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <small class="text-muted">平均マージン率</small>
+                                                <div class="progress" style="height: 8px;">
+                                                    <div class="progress-bar bg-warning" style="width: {{ item.avg_margin_rate }}%"></div>
+                                                </div>
+                                                <small>{{ item.avg_margin_rate|floatformat:1 }}%</small>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted">平均利益率</small>
+                                                <div class="progress" style="height: 8px;">
+                                                    <div class="progress-bar bg-success" style="width: {{ item.avg_profit_rate }}%"></div>
+                                                </div>
+                                                <small>{{ item.avg_profit_rate|floatformat:1 }}%</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center">データがありません。</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 最近の価格設定 -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-clock me-2"></i>最近の価格設定
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_pricing %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>案件</th>
+                                                <th>工種</th>
+                                                <th>段階</th>
+                                                <th>基準コスト</th>
+                                                <th>マージン率</th>
+                                                <th>最終価格</th>
+                                                <th>設定者</th>
+                                                <th>設定日</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for pricing in recent_pricing %}
+                                            <tr>
+                                                <td>
+                                                    <a href="{% url 'project_detail' pricing.project.id %}" class="text-decoration-none">
+                                                        {{ pricing.project.title }}
+                                                    </a>
+                                                </td>
+                                                <td>{{ pricing.project.project_type.name }}</td>
+                                                <td>
+                                                    <span class="badge bg-{{ pricing.pricing_stage }}">
+                                                        {{ pricing.get_pricing_stage_display }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ pricing.formatted_base_cost }}</td>
+                                                <td>
+                                                    <strong>{{ pricing.margin_rate }}%</strong>
+                                                </td>
+                                                <td>
+                                                    <strong class="text-success">{{ pricing.formatted_final_price }}</strong>
+                                                </td>
+                                                <td>{{ pricing.set_by.first_name }} {{ pricing.set_by.last_name }}</td>
+                                                <td>{{ pricing.created_at|date:"m/d H:i" }}</td>
+                                                <td>
+                                                    <a href="{% url 'pricing_detail' pricing.project.id %}" class="btn btn-outline-primary btn-sm">
+                                                        <i class="fas fa-eye"></i> 詳細
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center">データがありません。</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.progress {
+    height: 8px;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.table th {
+    border-top: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS自動見積生成 - 建築派遣SaaS</title>
+    <link rel="stylesheet" href="../css/simple_theme.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Bootstrap互換性のため一部保持 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+            padding-bottom: 120px;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        .auto-generation-badge {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            font-size: 1.2em;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            animation: pulse-success 2s infinite;
+        }
+        @keyframes pulse-success {
+            0% { box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3); }
+            50% { box-shadow: 0 8px 25px rgba(40, 167, 69, 0.5); }
+            100% { box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3); }
+        }
+        .cost-breakdown-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border: 2px solid #e9ecef;
+        }
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .cost-item:last-child {
+            border-bottom: none;
+            border-top: 2px solid #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            margin: 15px -30px -30px -30px;
+            padding: 20px 30px;
+            border-radius: 0 0 20px 20px;
+        }
+        .cost-label {
+            font-weight: 600;
+            color: #495057;
+            display: flex;
+            align-items: center;
+        }
+        .cost-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .cost-value.total {
+            font-size: 1.5em;
+            color: #28a745;
+        }
+        .margin-application {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 2px solid #ffc107;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .margin-rate-display {
+            font-size: 3em;
+            font-weight: bold;
+            color: #f39c12;
+            margin: 15px 0;
+        }
+        .quotation-preview {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);
+        }
+        .quotation-amount {
+            font-size: 3.5em;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .profit-indicator {
+            background: white;
+            color: #28a745;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .profit-meter {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .profit-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            border-radius: 10px;
+            transition: width 1s ease;
+        }
+        .comparison-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .comparison-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .comparison-item:last-child {
+            border-bottom: none;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            border-radius: 25px;
+            padding: 15px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 25px;
+            padding: 15px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+        .submit-section {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .process-flow {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .flow-step {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            position: relative;
+        }
+        .flow-step::after {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 40px;
+            width: 2px;
+            height: 20px;
+            background: #e9ecef;
+        }
+        .flow-step:last-child::after {
+            display: none;
+        }
+        .flow-step.completed::after {
+            background: #28a745;
+        }
+        .flow-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 14px;
+        }
+        .flow-icon.completed {
+            background: #28a745;
+            color: white;
+        }
+        .flow-icon.current {
+            background: #667eea;
+            color: white;
+        }
+        .flow-icon.pending {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+        .auto-calculation-animation {
+            animation: calculatePulse 3s ease-in-out infinite;
+        }
+        @keyframes calculatePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-section">
+        <div class="container">
+            <div class="auto-generation-badge">
+                <i class="bi bi-gear-fill"></i> SaaS自動見積生成完了
+            </div>
+            <h2>システム自動見積書</h2>
+            <p class="mb-0">事前設定マージン率を適用した仮見積が生成されました</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Process Flow -->
+        <div class="process-flow">
+            <h6><i class="bi bi-list-check"></i> 見積作成フロー進捗</h6>
+
+            <div class="flow-step completed">
+                <div class="flow-icon completed">
+                    <i class="bi bi-check"></i>
+                </div>
+                <div>
+                    <strong>現地調査完了</strong>
+                    <div class="text-muted small">物件情報・測定値・写真取得済み</div>
+                </div>
+            </div>
+
+            <div class="flow-step completed">
+                <div class="flow-icon completed">
+                    <i class="bi bi-check"></i>
+                </div>
+                <div>
+                    <strong>材料費・人件費確定</strong>
+                    <div class="text-muted small">原価計算完了済み</div>
+                </div>
+            </div>
+
+            <div class="flow-step current">
+                <div class="flow-icon current">
+                    <i class="bi bi-gear"></i>
+                </div>
+                <div>
+                    <strong>SaaS自動見積生成</strong>
+                    <div class="text-success small">マージン率適用・仮見積算出中</div>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-icon pending">
+                    <i class="bi bi-person"></i>
+                </div>
+                <div>
+                    <strong>社員による見積調整</strong>
+                    <div class="text-muted small">価格最適化・最終確認</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cost Breakdown -->
+        <div class="cost-breakdown-section auto-calculation-animation">
+            <h5><i class="bi bi-calculator"></i> 原価内訳</h5>
+
+            <div class="cost-item">
+                <div class="cost-label">
+                    <i class="bi bi-hammer me-2 text-primary"></i>
+                    人件費合計
+                </div>
+                <div class="cost-value" id="laborCostTotal">¥105,000</div>
+            </div>
+
+            <div class="cost-item">
+                <div class="cost-label">
+                    <i class="bi bi-box-seam me-2 text-warning"></i>
+                    材料費合計
+                </div>
+                <div class="cost-value" id="materialCostTotal">¥365,000</div>
+            </div>
+
+            <div class="cost-item">
+                <div class="cost-label">
+                    <i class="bi bi-truck me-2 text-info"></i>
+                    諸経費・配送費
+                </div>
+                <div class="cost-value" id="expenseCostTotal">¥8,000</div>
+            </div>
+
+            <div class="cost-item">
+                <div class="cost-label">
+                    <i class="bi bi-calculator me-2 text-success"></i>
+                    <strong>総原価</strong>
+                </div>
+                <div class="cost-value total" id="totalBaseCost">¥478,000</div>
+            </div>
+        </div>
+
+        <!-- Margin Application -->
+        <div class="margin-application">
+            <h5><i class="bi bi-percent"></i> マージン率自動適用</h5>
+
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h6>工事種別: <span id="constructionTypeName">キッチンリフォーム</span></h6>
+                    <p class="mb-0">事前設定マージン率が自動適用されました</p>
+                </div>
+                <div class="col-md-6">
+                    <div class="margin-rate-display" id="appliedMarginRate">25%</div>
+                    <small class="text-muted">システム設定値</small>
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-3 mb-0">
+                <i class="bi bi-info-circle"></i>
+                <strong>マージン率について:</strong> 工事種別毎に最適化された利益率を自動適用しています。
+                社員による調整段階で変更可能です。
+            </div>
+        </div>
+
+        <!-- Auto Generated Quotation -->
+        <div class="quotation-preview">
+            <h4><i class="bi bi-file-earmark-text"></i> 自動生成見積金額</h4>
+
+            <div class="quotation-amount" id="autoQuotationAmount">¥597,500</div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>予想利益額</h6>
+                    <div class="fs-3" id="estimatedProfit">¥119,500</div>
+                </div>
+                <div class="col-md-6">
+                    <h6>実質利益率</h6>
+                    <div class="fs-3" id="actualProfitRate">20.0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profit Indicator -->
+        <div class="profit-indicator">
+            <h6><i class="bi bi-graph-up"></i> 利益率評価</h6>
+
+            <div class="profit-meter">
+                <div class="profit-bar" id="profitBar" style="width: 75%"></div>
+            </div>
+
+            <div class="row text-center">
+                <div class="col-4">
+                    <small class="text-muted">最低基準</small><br>
+                    <strong>15%</strong>
+                </div>
+                <div class="col-4">
+                    <small class="text-success">現在値</small><br>
+                    <strong id="currentProfitRate">20.0%</strong>
+                </div>
+                <div class="col-4">
+                    <small class="text-muted">目標</small><br>
+                    <strong>25%</strong>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <span class="badge bg-success" id="profitStatus">良好</span>
+                <span class="ms-2" id="profitComment">適正な利益率が確保されています</span>
+            </div>
+        </div>
+
+        <!-- Market Comparison -->
+        <div class="comparison-section">
+            <h6><i class="bi bi-bar-chart"></i> 市場価格比較</h6>
+
+            <div class="comparison-item">
+                <span>同業他社平均価格</span>
+                <span class="fw-bold">¥580,000 - ¥650,000</span>
+            </div>
+
+            <div class="comparison-item">
+                <span>自社過去実績</span>
+                <span class="fw-bold">¥590,000 (平均)</span>
+            </div>
+
+            <div class="comparison-item">
+                <span>今回自動見積</span>
+                <span class="fw-bold text-success" id="currentQuotation">¥597,500</span>
+            </div>
+
+            <div class="comparison-item">
+                <span>競争力評価</span>
+                <span class="badge bg-success" id="competitiveRating">競争力あり</span>
+            </div>
+        </div>
+
+        <!-- Calculation Details -->
+        <div class="cost-breakdown-section">
+            <h6><i class="bi bi-list-ol"></i> 自動計算詳細</h6>
+
+            <table class="table table-sm">
+                <tbody>
+                    <tr>
+                        <td>総原価</td>
+                        <td class="text-end" id="detailBaseCost">¥478,000</td>
+                    </tr>
+                    <tr>
+                        <td>マージン率</td>
+                        <td class="text-end" id="detailMarginRate">25%</td>
+                    </tr>
+                    <tr>
+                        <td>マージン額</td>
+                        <td class="text-end" id="detailMarginAmount">¥119,500</td>
+                    </tr>
+                    <tr class="table-success">
+                        <td><strong>見積価格 (税抜)</strong></td>
+                        <td class="text-end"><strong id="detailQuotationPrice">¥597,500</strong></td>
+                    </tr>
+                    <tr>
+                        <td>消費税 (10%)</td>
+                        <td class="text-end" id="detailTax">¥59,750</td>
+                    </tr>
+                    <tr class="table-primary">
+                        <td><strong>総合計 (税込)</strong></td>
+                        <td class="text-end"><strong id="detailTotalWithTax">¥657,250</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="alert alert-info">
+            <h6><i class="bi bi-lightbulb"></i> システム推奨事項</h6>
+            <ul class="mb-0">
+                <li>現在の見積金額は市場価格帯の適正範囲内です</li>
+                <li>利益率20%は最低基準を上回っており、健全な収益が見込めます</li>
+                <li>社員調整段階で±5%程度の調整余地があります</li>
+                <li>顧客予算に応じた微調整をご検討ください</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Submit Section -->
+    <div class="submit-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-outline-secondary w-100" onclick="exportData()">
+                        <i class="bi bi-download"></i> データ出力
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-primary w-100" onclick="requestAdjustment()">
+                        <i class="bi bi-person-check"></i> 社員確認依頼
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-success w-100" onclick="proceedToAdjustment()">
+                        <i class="bi bi-sliders"></i> 調整画面へ
+                    </button>
+                </div>
+            </div>
+            <div class="text-center mt-2">
+                <small class="text-muted">社員による価格調整・最終確認を経て正式見積書が作成されます</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Modal -->
+    <div class="modal fade" id="notificationModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-bell"></i> 社員確認依頼送信</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>社員への確認依頼が送信されました。</p>
+                    <div class="alert alert-info">
+                        <strong>送信内容:</strong><br>
+                        ・自動生成見積: <span id="notifyQuotationAmount">¥597,500</span><br>
+                        ・利益率: <span id="notifyProfitRate">20.0%</span><br>
+                        ・緊急度: 通常
+                    </div>
+                    <p>社員による確認・調整後、最終見積書が作成されます。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">確認</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/simple_ui.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/quotation_workflow.js"></script>
+    <script>
+        class AutoQuotation {
+            constructor() {
+                this.projectData = {};
+                this.procurementData = {};
+                this.marginSettings = {};
+                this.quotationResult = {};
+                this.workflow = new QuotationWorkflow();
+                this.initializeApp();
+            }
+
+            initializeApp() {
+                this.loadProjectData();
+                this.loadMarginSettings();
+                this.calculateAutoQuotation();
+                this.displayResults();
+                this.animateCalculation();
+            }
+
+            loadProjectData() {
+                // Get project ID from URL or load sample data
+                const urlParams = new URLSearchParams(window.location.search);
+                const projectId = urlParams.get('id');
+
+                if (projectId) {
+                    // Load procurement data for this project
+                    const procurementData = JSON.parse(localStorage.getItem('procurementData') || '[]');
+                    this.procurementData = procurementData.find(p => p.projectId === projectId) || this.getSampleProcurementData();
+
+                    // Load project survey data
+                    const projects = JSON.parse(localStorage.getItem('completedConstructionSurveys') || '[]');
+                    this.projectData = projects.find(p => p.surveyId === projectId) || this.getSampleProjectData();
+                } else {
+                    // Load sample data
+                    this.procurementData = this.getSampleProcurementData();
+                    this.projectData = this.getSampleProjectData();
+                }
+            }
+
+            getSampleProcurementData() {
+                return {
+                    procurementId: 'proc_001',
+                    projectId: 'PRJ0001',
+                    procurementType: 'company',
+                    totalMaterialCost: 365000,
+                    totalLaborCost: 105000,
+                    totalCost: 478000,
+                    materials: [
+                        { name: 'システムキッチン', totalPrice: 280000 },
+                        { name: '食器洗い乾燥機', totalPrice: 85000 }
+                    ],
+                    laborCosts: [
+                        { type: '大工', totalCost: 105000 }
+                    ]
+                };
+            }
+
+            getSampleProjectData() {
+                return {
+                    surveyId: 'PRJ0001',
+                    constructionType: 'kitchen',
+                    constructionTypeName: 'キッチンリフォーム'
+                };
+            }
+
+            loadMarginSettings() {
+                // Load margin settings from localStorage or use defaults
+                const storedSettings = JSON.parse(localStorage.getItem('marginSettings') || '{}');
+
+                // Default margin rates by construction type as per specification
+                const defaultMargins = {
+                    kitchen: 25,        // キッチンリフォーム: 25%
+                    bathroom: 22,       // バスルーム改修: 22% (標準)
+                    flooring: 20,       // フローリング工事: 20%
+                    wallpaper: 22,      // 壁紙貼替え: 22% (標準)
+                    electrical: 30,     // 電気工事: 30%
+                    plumbing: 22,       // 配管工事: 22% (標準)
+                    custom: 22          // その他: 22% (標準)
+                };
+
+                this.marginSettings = { ...defaultMargins, ...storedSettings };
+            }
+
+            calculateAutoQuotation() {
+                const constructionType = this.projectData.constructionType || 'kitchen';
+                const marginRate = this.marginSettings[constructionType] || 22;
+
+                const baseCost = this.procurementData.totalCost || 478000;
+                const marginAmount = Math.round(baseCost * (marginRate / 100));
+                const quotationPrice = baseCost + marginAmount;
+                const actualProfitRate = (marginAmount / quotationPrice) * 100;
+                const taxAmount = Math.round(quotationPrice * 0.1);
+                const totalWithTax = quotationPrice + taxAmount;
+
+                this.quotationResult = {
+                    baseCost,
+                    marginRate,
+                    marginAmount,
+                    quotationPrice,
+                    actualProfitRate,
+                    taxAmount,
+                    totalWithTax,
+                    laborCost: this.procurementData.totalLaborCost || 105000,
+                    materialCost: this.procurementData.totalMaterialCost || 365000,
+                    expenseCost: 8000, // Sample expense cost
+                    constructionType: constructionType,
+                    constructionTypeName: this.projectData.constructionTypeName || 'キッチンリフォーム'
+                };
+
+                // Save auto quotation result
+                this.saveAutoQuotationResult();
+            }
+
+            displayResults() {
+                const result = this.quotationResult;
+
+                // Cost breakdown
+                document.getElementById('laborCostTotal').textContent = `¥${result.laborCost.toLocaleString()}`;
+                document.getElementById('materialCostTotal').textContent = `¥${result.materialCost.toLocaleString()}`;
+                document.getElementById('expenseCostTotal').textContent = `¥${result.expenseCost.toLocaleString()}`;
+                document.getElementById('totalBaseCost').textContent = `¥${result.baseCost.toLocaleString()}`;
+
+                // Margin application
+                document.getElementById('constructionTypeName').textContent = result.constructionTypeName;
+                document.getElementById('appliedMarginRate').textContent = `${result.marginRate}%`;
+
+                // Auto generated quotation
+                document.getElementById('autoQuotationAmount').textContent = `¥${result.quotationPrice.toLocaleString()}`;
+                document.getElementById('estimatedProfit').textContent = `¥${result.marginAmount.toLocaleString()}`;
+                document.getElementById('actualProfitRate').textContent = `${result.actualProfitRate.toFixed(1)}%`;
+
+                // Profit indicator
+                document.getElementById('currentProfitRate').textContent = `${result.actualProfitRate.toFixed(1)}%`;
+                this.updateProfitIndicator(result.actualProfitRate);
+
+                // Market comparison
+                document.getElementById('currentQuotation').textContent = `¥${result.quotationPrice.toLocaleString()}`;
+                this.updateCompetitiveRating(result.quotationPrice);
+
+                // Calculation details
+                document.getElementById('detailBaseCost').textContent = `¥${result.baseCost.toLocaleString()}`;
+                document.getElementById('detailMarginRate').textContent = `${result.marginRate}%`;
+                document.getElementById('detailMarginAmount').textContent = `¥${result.marginAmount.toLocaleString()}`;
+                document.getElementById('detailQuotationPrice').textContent = `¥${result.quotationPrice.toLocaleString()}`;
+                document.getElementById('detailTax').textContent = `¥${result.taxAmount.toLocaleString()}`;
+                document.getElementById('detailTotalWithTax').textContent = `¥${result.totalWithTax.toLocaleString()}`;
+
+                // Notification modal
+                document.getElementById('notifyQuotationAmount').textContent = `¥${result.quotationPrice.toLocaleString()}`;
+                document.getElementById('notifyProfitRate').textContent = `${result.actualProfitRate.toFixed(1)}%`;
+            }
+
+            updateProfitIndicator(profitRate) {
+                const profitBar = document.getElementById('profitBar');
+                const profitStatus = document.getElementById('profitStatus');
+                const profitComment = document.getElementById('profitComment');
+
+                // Calculate bar width (15% = 0%, 25% = 100%)
+                const barWidth = Math.min(Math.max((profitRate - 15) / 10 * 100, 0), 100);
+                profitBar.style.width = `${barWidth}%`;
+
+                if (profitRate < 15) {
+                    profitStatus.textContent = '要改善';
+                    profitStatus.className = 'badge bg-danger';
+                    profitComment.textContent = '利益率が最低基準を下回っています';
+                } else if (profitRate < 20) {
+                    profitStatus.textContent = '注意';
+                    profitStatus.className = 'badge bg-warning';
+                    profitComment.textContent = '利益率向上の余地があります';
+                } else if (profitRate < 25) {
+                    profitStatus.textContent = '良好';
+                    profitStatus.className = 'badge bg-success';
+                    profitComment.textContent = '適正な利益率が確保されています';
+                } else {
+                    profitStatus.textContent = '優秀';
+                    profitStatus.className = 'badge bg-primary';
+                    profitComment.textContent = '目標利益率を達成しています';
+                }
+            }
+
+            updateCompetitiveRating(price) {
+                const rating = document.getElementById('competitiveRating');
+
+                if (price < 580000) {
+                    rating.textContent = '価格優位';
+                    rating.className = 'badge bg-primary';
+                } else if (price <= 620000) {
+                    rating.textContent = '競争力あり';
+                    rating.className = 'badge bg-success';
+                } else if (price <= 650000) {
+                    rating.textContent = '標準的';
+                    rating.className = 'badge bg-warning';
+                } else {
+                    rating.textContent = '高価格';
+                    rating.className = 'badge bg-danger';
+                }
+            }
+
+            animateCalculation() {
+                // Simulate calculation animation
+                setTimeout(() => {
+                    document.querySelector('.auto-calculation-animation').classList.remove('auto-calculation-animation');
+                }, 3000);
+
+                // Animate profit bar
+                setTimeout(() => {
+                    const profitBar = document.getElementById('profitBar');
+                    const currentWidth = profitBar.style.width;
+                    profitBar.style.width = '0%';
+                    setTimeout(() => {
+                        profitBar.style.width = currentWidth;
+                    }, 500);
+                }, 1000);
+            }
+
+            saveAutoQuotationResult() {
+                // Save the auto quotation result to localStorage
+                const autoQuotations = JSON.parse(localStorage.getItem('autoQuotations') || '[]');
+                autoQuotations.push({
+                    ...this.quotationResult,
+                    projectId: this.projectData.surveyId,
+                    generatedAt: new Date().toISOString(),
+                    status: 'generated'
+                });
+                localStorage.setItem('autoQuotations', JSON.stringify(autoQuotations));
+
+                // Log activity
+                this.workflow.logActivity('auto_quotation_generated', {
+                    projectId: this.projectData.surveyId,
+                    quotationPrice: this.quotationResult.quotationPrice,
+                    marginRate: this.quotationResult.marginRate,
+                    profitRate: this.quotationResult.actualProfitRate
+                });
+            }
+
+            requestEmployeeConfirmation() {
+                // Send notification to employee for confirmation
+                const notification = {
+                    id: `notify_${Date.now()}`,
+                    type: 'quotation_review_request',
+                    projectId: this.projectData.surveyId,
+                    quotationAmount: this.quotationResult.quotationPrice,
+                    profitRate: this.quotationResult.actualProfitRate,
+                    urgency: 'normal',
+                    sentAt: new Date().toISOString(),
+                    sentBy: this.workflow.getCurrentUser().name || '担当者'
+                };
+
+                // Save notification
+                const notifications = JSON.parse(localStorage.getItem('employeeNotifications') || '[]');
+                notifications.push(notification);
+                localStorage.setItem('employeeNotifications', JSON.stringify(notifications));
+
+                // Log activity
+                this.workflow.logActivity('employee_confirmation_requested', {
+                    projectId: this.projectData.surveyId,
+                    quotationAmount: this.quotationResult.quotationPrice
+                });
+
+                // Show confirmation modal
+                const modal = new bootstrap.Modal(document.getElementById('notificationModal'));
+                modal.show();
+            }
+
+            exportQuotationData() {
+                const exportData = {
+                    project: this.projectData,
+                    procurement: this.procurementData,
+                    autoQuotation: this.quotationResult,
+                    generatedAt: new Date().toISOString()
+                };
+
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `auto_quotation_${this.projectData.surveyId || 'export'}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        // Global functions
+        function exportData() {
+            app.exportQuotationData();
+        }
+
+        function requestAdjustment() {
+            app.requestEmployeeConfirmation();
+        }
+
+        function proceedToAdjustment() {
+            const userRole = app.workflow.getUserRole();
+            if (userRole === 'employee') {
+                window.location.href = `quotation_adjustment.html?id=${app.projectData.surveyId}`;
+            } else {
+                alert('見積調整は社員のみ実行可能です。社員確認依頼を送信してください。');
+            }
+        }
+
+        // Initialize app
+        let app;
+        document.addEventListener('DOMContentLoaded', () => {
+            app = new AutoQuotation();
+        });
+    </script>
+</body>
+</html>

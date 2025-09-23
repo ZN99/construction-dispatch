@@ -1,0 +1,2673 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>案件編集 - 建築派遣管理システム</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            padding-top: 70px;
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        }
+        .table-responsive {
+            font-size: 0.9rem;
+        }
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .status-badge {
+            padding: 0.35em 0.65em;
+            font-size: 0.75em;
+            font-weight: 700;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 0.25rem;
+        }
+        .status-ordered {
+            background-color: #28a745;
+            color: white;
+        }
+        .status-ng {
+            background-color: #6c757d;
+            color: white;
+        }
+        .status-a {
+            background-color: #dc3545;
+            color: white;
+        }
+        .status-pending {
+            background-color: #ffc107;
+            color: black;
+        }
+    </style>
+
+    
+<style>
+    .form-section {
+        border-radius: 12px;
+        border: 1px solid #e3e6f0;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .form-section:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-1px);
+    }
+    .section-header {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        padding: 1rem 1.5rem;
+        margin: 0;
+        border-bottom: 1px solid #e3e6f0;
+    }
+    .section-header h5 {
+        margin: 0;
+        font-weight: 600;
+    }
+    .form-label {
+        font-weight: 600;
+        color: #5a5c69;
+        margin-bottom: 0.5rem;
+    }
+    .form-control, .form-select {
+        border-radius: 8px;
+        border: 1px solid #d1d3e2;
+        transition: all 0.2s ease;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 12px 30px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(78, 115, 223, 0.4);
+    }
+    .btn-secondary {
+        border-radius: 8px;
+        padding: 12px 30px;
+        font-weight: 600;
+    }
+    .revenue-preview {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+        border: 1px solid #dee2e6;
+    }
+    .revenue-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .revenue-item:last-child {
+        border-bottom: none;
+        font-weight: 600;
+    }
+
+    /* モーダルのz-index調整 */
+    #staffManagementModal {
+        z-index: 9999 !important;
+    }
+    #staffManagementModal .modal-backdrop {
+        z-index: 9998 !important;
+    }
+    #salesStaffManagementModal {
+        z-index: 9999 !important;
+    }
+    #craftsmanManagementModal {
+        z-index: 9999 !important;
+    }
+    #contractorManagementModal {
+        z-index: 2050 !important;
+    }
+    #contractorManagementModal .modal-backdrop {
+        z-index: 2049 !important;
+    }
+    #contractorModal {
+        z-index: 2060 !important;
+    }
+    #contractorModal .modal-backdrop {
+        z-index: 2059 !important;
+    }
+    #addImplementationModal {
+        z-index: 1055 !important;
+    }
+    .modal-backdrop.show {
+        z-index: 1054 !important;
+    }
+
+    /* 背景の重複を防ぐ */
+    .modal.show {
+        background-color: rgba(0,0,0,0.5) !important;
+    }
+
+    /* 業者管理テーブルの固定列レイアウト */
+    .contractor-table-wrapper {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .contractor-table-scroll {
+        overflow-x: auto;
+        margin-right: 120px; /* 固定列の幅分マージンを確保 */
+    }
+
+    .contractor-table-fixed {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 120px;
+        background: white;
+        border-left: 2px solid #dee2e6;
+        z-index: 10;
+    }
+
+    .contractor-table-scroll table,
+    .contractor-table-fixed table {
+        margin-bottom: 0;
+    }
+
+    .contractor-table-fixed th,
+    .contractor-table-fixed td {
+        text-align: center;
+        white-space: nowrap;
+        padding: 8px 4px;
+    }
+
+    /* テーブル行の高さを統一 */
+    .contractor-table tbody tr {
+        height: 60px;
+    }
+
+    .contractor-table tbody td {
+        vertical-align: middle;
+        white-space: nowrap;
+        padding: 8px 12px;
+    }
+
+    /* バッジのスタイル調整 */
+    .contractor-table .badge {
+        font-size: 0.7em;
+        margin-right: 2px;
+        margin-bottom: 2px;
+        display: inline-block;
+    }
+
+    /* クリック可能な行のスタイル */
+    .contractor-table tbody tr.clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .contractor-table tbody tr.clickable-row:hover {
+        background-color: #e3f2fd !important;
+    }
+
+    .contractor-table tbody tr.clickable-row.active {
+        background-color: #f0f8ff !important;
+        border-left: 3px solid #007bff;
+    }
+
+    .contractor-table tbody tr.inactive-row {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .contractor-table tbody tr.inactive-row:hover {
+        background-color: #f8f9fa !important;
+    }
+</style>
+
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/orders/">
+                <i class="fas fa-building"></i> 建築派遣管理
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/orders/">
+                            <i class="fas fa-tachometer-alt"></i> ダッシュボード
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/orders/list/">
+                            <i class="fas fa-list"></i> 案件一覧
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/orders/create/">
+                            <i class="fas fa-plus-circle"></i> 新規登録
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-handshake"></i> 発注管理
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="/subcontracts/">
+                                <i class="fas fa-chart-line"></i> ダッシュボード
+                            </a></li>
+                            <li><a class="dropdown-item" href="/subcontracts/contractors/">
+                                <i class="fas fa-users"></i> 外注先マスター
+                            </a></li>
+                            <li><a class="dropdown-item" href="/subcontracts/profit-analysis/">
+                                <i class="fas fa-chart-bar"></i> 利益分析
+                            </a></li>
+                            <li><a class="dropdown-item" href="/subcontracts/payment-tracking/">
+                                <i class="fas fa-credit-card"></i> 支払い追跡
+                            </a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/">
+                            <i class="fas fa-cog"></i> 管理画面
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    
+
+    <!-- Main Content -->
+    <main class="container-fluid">
+        
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-edit"></i> 案件編集</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="75g41wA675zx1OBUunOLhNkMo9aLOkamfQl1XuWHTKTVk8aaYaTLFgSzs6hdRqoi">
+
+                    <!-- 基本情報 -->
+                    <div class="form-section mb-4">
+                        <div class="section-header">
+                            <h5><i class="fas fa-info-circle me-2"></i>基本情報</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_site_name" class="form-label">
+                                        現場名 <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" name="site_name" value="浦和レッズスタジアム 芝生張替え工事 TEST" maxlength="200" class="form-control" required id="id_site_name">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_work_type" class="form-label">
+                                        種別 <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" name="work_type" value="土木" maxlength="50" class="form-control" required id="id_work_type">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_site_address" class="form-label">
+                                    現場住所 <span class="text-danger">*</span>
+                                </label>
+                                <textarea name="site_address" cols="40" rows="2" class="form-control" required id="id_site_address">
+埼玉県さいたま市緑区美園2-1</textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">業者名 <span class="text-danger">*</span></label>
+                                    <div class="d-flex gap-2">
+                                        <select name="contractor_company" class="form-select" id="contractorCompanySelect">
+                                            <option value="">-- 業者を選択してください --</option>
+                                            
+                                            <option value="2"
+                                                    data-name="山田工業"
+                                                    data-address="神奈川県横浜市">
+                                                山田工業 - 神奈川県横浜市
+                                            </option>
+                                            
+                                            <option value="4"
+                                                    data-name="発注業者テスト株式会社"
+                                                    data-address="東京都渋谷区">
+                                                発注業者テスト株式会社 - 東京都渋谷区
+                                            </option>
+                                            
+                                            <option value="3"
+                                                    data-name="ABC資材"
+                                                    data-address="埼玉県さいたま市">
+                                                ABC資材 - 埼玉県さいたま市
+                                            </option>
+                                            
+                                            <option value="1"
+                                                    data-name="田中建設株式会社"
+                                                    data-address="東京都新宿区">
+                                                田中建設株式会社 - 東京都新宿区
+                                            </option>
+                                            
+                                        </select>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="console.log('ボタンがクリックされました'); try { openBasicInfoContractorManagementPanel(); } catch(e) { console.error('関数実行エラー:', e); alert('エラー: ' + e.message); }">
+                                            <i class="fas fa-building"></i> 業者管理
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">案件担当者（営業） <span class="text-danger">*</span></label>
+                                    <div class="d-flex gap-2">
+                                        <select name="sales_manager" class="form-select" id="salesManagerSelect">
+                                            <option value="">-- 営業担当者を選択してください --</option>
+                                            
+                                        </select>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="openSalesStaffManagementPanel()">
+                                            <i class="fas fa-chart-line"></i> 営業管理
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ステップ情報 -->
+                    <div class="form-section mb-4" style="opacity: 0.5; pointer-events: none;">
+                        <div class="section-header">
+                            <h5><i class="fas fa-list-ol me-2"></i>プロジェクトステップ管理 <span class="badge bg-secondary">無効</span></h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">使用するプロジェクトテンプレート</label>
+                                    <select class="form-select" id="project_template">
+                                        <option value="standard">標準テンプレート（5ステップ）</option>
+                                        <option value="with_survey">現場調査付き（7ステップ）</option>
+                                        <option value="custom">カスタムテンプレート</option>
+                                    </select>
+                                    <small class="text-muted">後で詳細画面でステップを調整できます</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_project_manager" class="form-label">
+                                        案件担当 <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" name="project_manager" value="担当者" maxlength="50" class="form-control" required id="id_project_manager">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>ステップについて：</strong>
+                                        選択したテンプレートに基づいて、プロジェクトの進行管理ステップが自動的に設定されます。
+                                        詳細画面でステップの追加・削除・順序変更が可能です。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 受注・見積・スケジュール・請求管理 -->
+                    <div class="form-section mb-4">
+                        <div class="section-header">
+                            <h5><i class="fas fa-file-invoice-dollar me-2"></i>受注・見積・スケジュール・請求管理</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- 受注状況 -->
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <h6 class="text-primary border-bottom pb-2 mb-3">
+                                        <i class="fas fa-handshake me-2"></i>受注状況
+                                    </h6>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="id_order_status" class="form-label">
+                                        受注ヨミ <span class="text-danger">*</span>
+                                    </label>
+                                    <select name="order_status" class="form-control" id="id_order_status">
+  <option value="受注" selected>受注</option>
+
+  <option value="NG">NG</option>
+
+  <option value="A">A</option>
+
+  <option value="検討中">検討中</option>
+
+</select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="id_contract_date" class="form-label">
+                                        契約日
+                                    </label>
+                                    <input type="date" name="contract_date" value="2025-09-22" class="form-control" id="id_contract_date">
+                                    <small class="text-muted">受注確定時に入力</small>
+                                </div>
+                            </div>
+
+                            <!-- 見積情報 -->
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <h6 class="text-success border-bottom pb-2 mb-3">
+                                        <i class="fas fa-calculator me-2"></i>見積情報
+                                    </h6>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="id_estimate_issued_date" class="form-label">
+                                        見積書発行日
+                                    </label>
+                                    <input type="date" name="estimate_issued_date" value="2025-09-19" class="form-control" id="id_estimate_issued_date">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">見積書について</label>
+                                    <div class="form-check mt-2">
+                                        <input type="checkbox" class="form-check-input" id="id_estimate_not_required" name="estimate_not_required" >
+                                        <label class="form-check-label" for="id_estimate_not_required">
+                                            見積書不要
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="id_estimate_amount" class="form-label">
+                                        見積金額(税込) <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">¥</span>
+                                        <input type="number" name="estimate_amount" value="32000000" step="1" class="form-control" required id="id_estimate_amount">
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="id_parking_fee" class="form-label">
+                                        駐車場代(税込)
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">¥</span>
+                                        <input type="number" name="parking_fee" value="0" step="1" class="form-control" required id="id_parking_fee">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 経費・請求項目 -->
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <h6 class="text-warning border-bottom pb-2 mb-3">
+                                        <i class="fas fa-receipt me-2"></i>経費・請求項目
+                                    </h6>
+                                </div>
+                            </div>
+
+                            <!-- 諸経費項目を縦並びで配置 -->
+                            <div class="row mb-3">
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_expense_item_1" class="form-label">
+                                        諸経費項目①
+                                    </label>
+                                    <input type="text" name="expense_item_1" maxlength="100" class="form-control" id="id_expense_item_1">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_expense_amount_1" class="form-label">
+                                        諸経費代①
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">¥</span>
+                                        <input type="number" name="expense_amount_1" value="0" step="1" class="form-control" id="id_expense_amount_1">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_expense_item_2" class="form-label">
+                                        諸経費項目②
+                                    </label>
+                                    <input type="text" name="expense_item_2" maxlength="100" class="form-control" id="id_expense_item_2">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_expense_amount_2" class="form-label">
+                                        諸経費代②
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">¥</span>
+                                        <input type="number" name="expense_amount_2" value="0" step="1" class="form-control" id="id_expense_amount_2">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">請求書状況</label>
+                                    <div class="form-check mt-2">
+                                        <input type="checkbox" class="form-check-input" id="id_invoice_issued" name="invoice_issued" >
+                                        <label class="form-check-label" for="id_invoice_issued">
+                                            請求書発行済み
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- スケジュール -->
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <h6 class="text-info border-bottom pb-2 mb-3">
+                                        <i class="fas fa-calendar-alt me-2"></i>スケジュール
+                                    </h6>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="id_work_start_date" class="form-label">
+                                        工事開始予定日
+                                    </label>
+                                    <input type="date" name="work_start_date" class="form-control" id="id_work_start_date">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="id_work_end_date" class="form-label">
+                                        工事終了予定日
+                                    </label>
+                                    <input type="date" name="work_end_date" class="form-control" id="id_work_end_date">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="id_payment_due_date" class="form-label">
+                                        入金予定日
+                                    </label>
+                                    <input type="date" name="payment_due_date" class="form-control" id="id_payment_due_date">
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- 備考 -->
+                    <div class="form-section mb-4">
+                        <div class="section-header">
+                            <h5><i class="fas fa-sticky-note me-2"></i>備考</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="id_notes" class="form-label">備考</label>
+                                <textarea name="notes" cols="40" rows="4" class="form-control" id="id_notes">
+</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 業者・担当情報 -->
+                    <div class="form-section mb-4">
+                        <div class="section-header">
+                            <h5><i class="fas fa-users me-2"></i>実施体制・業者情報</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- 追加済み実施体制・業者一覧 -->
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <h6 class="text-primary border-bottom pb-2 mb-3">
+                                        <i class="fas fa-user-cog me-2"></i>実施体制一覧
+                                    </h6>
+                                    <div id="implementationList">
+                                        <!-- 動的に追加される実施体制がここに表示される -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 実施体制・業者追加ボタン -->
+                            <div class="row">
+                                <div class="col-md-12 text-center">
+                                    <button type="button" class="btn btn-primary btn-lg" onclick="console.log('実施体制ボタンがクリックされました'); try { openAddImplementationModal(); } catch(e) { console.error('実施体制関数実行エラー:', e); alert('エラー: ' + e.message); }">
+                                        <i class="fas fa-plus me-2"></i>実施体制・業者を追加
+                                    </button>
+                                    <small class="d-block text-muted mt-2">外注先、社内リソース、または後で決定を追加できます</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- フォーム送信ボタン -->
+                    <div class="row mt-4">
+                        <div class="col-md-12 text-center">
+                            <button type="submit" class="btn btn-success btn-lg me-3">
+                                <i class="fas fa-save"></i> 案件を登録
+                            </button>
+                            <a href="/orders/list/" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-times"></i> キャンセル
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 実施体制・業者追加モーダル -->
+<div class="modal fade" id="addImplementationModal" tabindex="-1" aria-labelledby="addImplementationModalLabel" aria-hidden="true" style="z-index: 1055;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addImplementationModalLabel">実施体制・業者を追加</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 実施体制タイプ選択 -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h6 class="text-primary border-bottom pb-2 mb-3">実施体制タイプを選択</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="modal_implementation_type" id="modalOutsource" value="outsource" checked>
+                                    <label class="form-check-label fw-bold text-primary" for="modalOutsource">
+                                        <i class="fas fa-handshake me-2"></i>外注先に発注
+                                    </label>
+                                    <small class="d-block text-muted">外部業者に工事を依頼</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="modal_implementation_type" id="modalInternal" value="internal">
+                                    <label class="form-check-label fw-bold text-success" for="modalInternal">
+                                        <i class="fas fa-users me-2"></i>社内リソース
+                                    </label>
+                                    <small class="d-block text-muted">自社で工事を実施</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="modal_implementation_type" id="modalLater" value="later">
+                                    <label class="form-check-label fw-bold text-warning" for="modalLater">
+                                        <i class="fas fa-clock me-2"></i>後で決定
+                                    </label>
+                                    <small class="d-block text-muted">詳細画面で設定</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 外注先フォーム -->
+                <div id="modalContractorForm" class="implementation-form">
+                    <h6 class="text-primary border-bottom pb-2 mb-3">外注先詳細情報</h6>
+
+                    <!-- 工事業者情報 -->
+                    <div class="mb-3">
+                        <label class="form-label">工事業者選択方法 <span class="text-danger">*</span></label>
+                        <div class="mb-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="modal_contractor_input_type" id="modalExistingContractor" value="existing" checked>
+                                <label class="form-check-label" for="modalExistingContractor">
+                                    既存から選択
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="modal_contractor_input_type" id="modalNewContractor" value="new">
+                                <label class="form-check-label" for="modalNewContractor">
+                                    新規入力
+                                </label>
+                            </div>
+                        </div>
+                        <!-- 既存業者選択 -->
+                        <div id="modalExistingContractorDiv">
+                            <select name="modal_existing_contractor_id" class="form-select" id="modalContractorSelect">
+                                <option value="">-- 業者を選択してください --</option>
+                                
+                                <option value="2" data-name="山田工業" data-address="神奈川県横浜市">
+                                    山田工業 (神奈川県横浜市)
+                                </option>
+                                
+                                <option value="4" data-name="発注業者テスト株式会社" data-address="東京都渋谷区">
+                                    発注業者テスト株式会社 (東京都渋谷区)
+                                </option>
+                                
+                                <option value="3" data-name="ABC資材" data-address="埼玉県さいたま市">
+                                    ABC資材 (埼玉県さいたま市)
+                                </option>
+                                
+                                <option value="1" data-name="田中建設株式会社" data-address="東京都新宿区">
+                                    田中建設株式会社 (東京都新宿区)
+                                </option>
+                                
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="openContractorManagementPanel()">
+                                <i class="fas fa-building"></i> 工事業者管理
+                            </button>
+                        </div>
+                        <!-- 新規業者入力 -->
+                        <div id="modalNewContractorDiv" style="display: none;">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">業者名 <span class="text-danger">*</span></label>
+                                    <input type="text" name="modal_new_contractor_name" class="form-control" placeholder="例: 田中工務店" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">業種</label>
+                                    <select name="modal_new_contractor_type" class="form-select">
+                                        <option value="">-- 業種を選択 --</option>
+                                        <option value="construction">建設業</option>
+                                        <option value="electrical">電気工事業</option>
+                                        <option value="plumbing">管工事業</option>
+                                        <option value="painting">塗装業</option>
+                                        <option value="interior">内装業</option>
+                                        <option value="other">その他</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">住所</label>
+                                    <input type="text" name="modal_new_contractor_address" class="form-control" placeholder="例: 東京都港区六本木1-2-3">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">電話番号</label>
+                                    <input type="tel" name="modal_new_contractor_phone" class="form-control" placeholder="例: 03-1234-5678">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">担当者名</label>
+                                    <input type="text" name="modal_new_contractor_contact" class="form-control" placeholder="例: 田中太郎">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">専門分野</label>
+                                <input type="text" name="modal_new_contractor_specialties" class="form-control" placeholder="例: 外壁塗装、防水工事">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 作業内容 -->
+                    <div class="mb-3">
+                        <label class="form-label">作業内容 <span class="text-danger">*</span></label>
+                        <small class="text-muted d-block">最低限入力：どんな工事を依頼するかを記入</small>
+                        <textarea name="modal_work_description" class="form-control" rows="3" placeholder="例: 外壁塗装工事、足場設置"></textarea>
+                    </div>
+
+                    <!-- 金額情報 -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">依頼金額 <span class="text-muted">（後で入力可）</span></label>
+                            <small class="text-muted d-block">外注先への発注予定金額</small>
+                            <div class="input-group">
+                                <span class="input-group-text">¥</span>
+                                <input type="number" name="modal_contract_amount" class="form-control" placeholder="0">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">被請求額 <span class="text-muted">（後で入力可）</span></label>
+                            <small class="text-muted d-block">外注先から実際に請求された金額</small>
+                            <div class="input-group">
+                                <span class="input-group-text">¥</span>
+                                <input type="number" name="modal_billed_amount" class="form-control" placeholder="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 詳細情報 -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">出金予定日 <span class="text-muted">（後で入力可）</span></label>
+                            <input type="date" name="modal_payment_due_date" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">出金状況 <span class="text-muted">（後で変更可）</span></label>
+                            <select name="modal_payment_status" class="form-select">
+                                <option value="pending">未払い</option>
+                                <option value="paid">支払済み</option>
+                                <option value="partial">一部払い</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 発注書情報 -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="modal_purchase_order_issued" id="modalPurchaseOrder">
+                            <label class="form-check-label" for="modalPurchaseOrder">
+                                発注書発行済み <span class="text-muted">（後で変更可）</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 社内リソースフォーム -->
+                <div id="modalInternalForm" class="implementation-form" style="display: none;">
+                    <h6 class="text-success border-bottom pb-2 mb-3">社内リソース詳細情報</h6>
+
+                    <!-- 担当者選択方法 -->
+                    <div class="mb-3">
+                        <label class="form-label">担当者選択方法 <span class="text-danger">*</span></label>
+                        <div class="mb-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="modal_internal_input_type" id="modalExistingInternal" value="existing" checked>
+                                <label class="form-check-label" for="modalExistingInternal">
+                                    既存から選択
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="modal_internal_input_type" id="modalNewInternal" value="new">
+                                <label class="form-check-label" for="modalNewInternal">
+                                    新規入力
+                                </label>
+                            </div>
+                        </div>
+                        <!-- 既存担当者選択 -->
+                        <div id="modalExistingInternalDiv">
+                            <select name="modal_existing_internal_id" class="form-select" id="modalInternalSelect">
+                                <option value="">-- 担当者を選択してください --</option>
+                                
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="openCraftsmanManagementPanel()">
+                                <i class="fas fa-tools"></i> 職人管理
+                            </button>
+                        </div>
+                        <!-- 新規担当者入力 -->
+                        <div id="modalNewInternalDiv" style="display: none;">
+                            <input type="text" name="modal_new_internal_name" class="form-control" placeholder="例: 田中太郎">
+                        </div>
+                    </div>
+
+                    <!-- 所属部署 -->
+                    <div class="mb-3">
+                        <label class="form-label">所属部署 <span class="text-muted">（後で入力可）</span></label>
+                        <input type="text" name="modal_internal_department" class="form-control" placeholder="例: 施工部">
+                    </div>
+
+                    <!-- 担当する作業内容 -->
+                    <div class="mb-3">
+                        <label class="form-label">担当する作業内容</label>
+                        <small class="text-muted d-block">最低限入力：どんな作業を担当するかを記入</small>
+                        <textarea name="modal_internal_work_description" class="form-control" rows="2" placeholder="例: 電気配線工事、照明器具設置"></textarea>
+                    </div>
+
+                    <!-- 料金体系 -->
+                    <div class="mb-3">
+                        <label class="form-label">料金体系</label>
+                        <small class="text-muted d-block">作業コストの計算方法を選択</small>
+                        <div class="mb-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="modal_internal_pricing_type" id="modalHourlyPricing" value="hourly" checked>
+                                <label class="form-check-label" for="modalHourlyPricing">
+                                    時給ベース
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="modal_internal_pricing_type" id="modalProjectPricing" value="project">
+                                <label class="form-check-label" for="modalProjectPricing">
+                                    案件単位
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 時給ベースの場合 -->
+                    <div id="modalHourlyPricingFields">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">時給単価 <span class="text-muted">（後で入力可）</span></label>
+                                <small class="text-muted d-block">1時間あたりの作業コスト</small>
+                                <div class="input-group">
+                                    <span class="input-group-text">¥</span>
+                                    <input type="number" name="modal_internal_hourly_rate" class="form-control" placeholder="3000">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">見積工数（時間） <span class="text-muted">（後で入力可）</span></label>
+                                <small class="text-muted d-block">予想される作業時間</small>
+                                <input type="number" name="modal_estimated_hours" class="form-control" step="0.5" placeholder="8.0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 案件単位の場合 -->
+                    <div id="modalProjectPricingFields" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">案件単位料金 <span class="text-muted">（後で入力可）</span></label>
+                            <small class="text-muted d-block">この案件全体の作業コスト</small>
+                            <div class="input-group">
+                                <span class="input-group-text">¥</span>
+                                <input type="number" name="modal_internal_project_amount" class="form-control" placeholder="50000">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 税込/税抜選択 -->
+                    <div class="mb-3">
+                        <label class="form-label">税込/税抜 <span class="text-muted">（後で変更可）</span></label>
+                        <div class="mb-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="modal_tax_type" id="modalTaxInclude" value="include" checked>
+                                <label class="form-check-label" for="modalTaxInclude">
+                                    税込
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="modal_tax_type" id="modalTaxExclude" value="exclude">
+                                <label class="form-check-label" for="modalTaxExclude">
+                                    税抜
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 専門分野 -->
+                    <div class="mb-3">
+                        <label class="form-label">専門分野 <span class="text-muted">（後で入力可）</span></label>
+                        <input type="text" name="modal_internal_specialties" class="form-control" placeholder="例: 電気工事、配管">
+                    </div>
+
+                    <!-- 稼働状況 -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="modal_internal_is_active" id="modalInternalIsActive" checked>
+                            <label class="form-check-label" for="modalInternalIsActive">
+                                稼働中 <span class="text-muted">（後で変更可）</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 後で決定フォーム -->
+                <div id="modalLaterForm" class="implementation-form" style="display: none;">
+                    <div class="alert alert-warning border-warning">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-clock text-warning me-2"></i>
+                            <strong>後で決定</strong>
+                        </div>
+                        <p class="mb-0">この実施体制は詳細画面で後から設定できます。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" onclick="addImplementationItem()">追加</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 担当者管理モーダル（無効化済み） -->
+<div class="modal fade" id="staffManagementModalInvalid" tabindex="-1" aria-labelledby="staffManagementModalLabel" aria-hidden="true" style="z-index: 1060; display: none !important;">
+
+                                            <!-- 専門分野 -->
+                                            <div class="mb-3">
+                                                <label class="form-label">専門分野</label>
+                                                <input type="text" name="internal_specialties" class="form-control" id="internalSpecialties" placeholder="例: 電気工事、配管">
+                                            </div>
+
+                                            <!-- 稼働状況 -->
+                                            <div class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="internal_is_active" id="internalIsActive" checked>
+                                                    <label class="form-check-label" for="internalIsActive">
+                                                        稼働中
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 後で決定情報 -->
+                            <div class="row mb-4" id="later_info" style="display: none;">
+                                <div class="col-md-12">
+                                    <div class="alert alert-warning border-warning">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fas fa-clock text-warning me-2"></i>
+                                            <strong>後で決定（詳細画面）</strong>
+                                        </div>
+                                        <small class="text-muted">
+                                            詳細画面では以下の実施体制から選択できます：
+                                        </small>
+                                        <div class="mt-2 p-2 bg-light rounded">
+                                            <div class="form-check mb-1">
+                                                <input class="form-check-input" type="radio" disabled>
+                                                <label class="form-check-label">
+                                                    <i class="fas fa-building me-1"></i>外注先に発注
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" disabled>
+                                                <label class="form-check-label">
+                                                    <i class="fas fa-users me-1"></i>社内リソース
+                                                </label>
+                                            </div>
+                                            <small class="text-muted d-block mt-2">
+                                                • 複数の外注先と社内リソースの組み合わせも可能<br>
+                                                • 工程ごとに異なる実施体制を設定可能
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 担当者管理モーダル -->
+<div class="modal fade" id="staffManagementModal" tabindex="-1" aria-labelledby="staffManagementModalLabel" aria-hidden="true" style="z-index: 9999 !important;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staffManagementModalLabel">
+                    <i class="fas fa-users"></i> 担当者管理
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">担当者一覧</h6>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="addNewStaff()">
+                        <i class="fas fa-plus"></i> 新規追加
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>名前</th>
+                                <th>部署</th>
+                                <th>時給</th>
+                                <th>専門分野</th>
+                                <th>状態</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffTableBody">
+                            <!-- スタッフリストが動的に追加される -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 担当者編集/追加モーダル -->
+<div class="modal fade" id="staffModal" tabindex="-1" aria-labelledby="staffModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staffModalTitle">担当者を追加</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="staffForm">
+                    <input type="hidden" id="staffId" name="id">
+                    <div class="mb-3">
+                        <label for="staffName" class="form-label">担当者名 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="staffName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="staffDepartment" class="form-label">部署</label>
+                        <input type="text" class="form-control" id="staffDepartment" name="department" placeholder="例: 施工部">
+                    </div>
+                    <div class="mb-3">
+                        <label for="staffHourlyRate" class="form-label">時給</label>
+                        <div class="input-group">
+                            <span class="input-group-text">¥</span>
+                            <input type="number" class="form-control" id="staffHourlyRate" name="hourly_rate" placeholder="例: 3000">
+                            <span class="input-group-text">/時間</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="staffSpecialties" class="form-label">専門分野</label>
+                        <input type="text" class="form-control" id="staffSpecialties" name="specialties" placeholder="例: 電気工事、配管">
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="staffActive" name="active" checked>
+                        <label class="form-check-label" for="staffActive">
+                            有効
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" onclick="saveStaff()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 営業担当者管理モーダル -->
+<div class="modal fade" id="salesStaffManagementModal" tabindex="-1" aria-labelledby="salesStaffManagementModalLabel" aria-hidden="true" style="z-index: 9999 !important;">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="salesStaffManagementModalLabel">
+                    <i class="fas fa-chart-line"></i> 営業担当者管理
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">営業担当者一覧</h6>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-warning">※ バックエンド実装予定</span>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="alert('新規追加機能は後日実装予定です')" disabled>
+                            <i class="fas fa-plus"></i> 新規追加
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 営業実績テーブル -->
+                <div class="table-responsive" style="opacity: 0.6;">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>名前</th>
+                                <th>部署</th>
+                                <th>案件数</th>
+                                <th>リード数</th>
+                                <th>成約率</th>
+                                <th>平均利益率</th>
+                                <th>今月売上</th>
+                                <th>前月比</th>
+                                <th>状態</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>田中 営業</strong></td>
+                                <td>営業部</td>
+                                <td><span class="badge bg-primary">15</span></td>
+                                <td><span class="badge bg-info">45</span></td>
+                                <td><span class="badge bg-success">33.3%</span></td>
+                                <td><span class="badge bg-warning">18.5%</span></td>
+                                <td><strong>¥2,450,000</strong></td>
+                                <td><span class="text-success"><i class="fas fa-arrow-up"></i> +12%</span></td>
+                                <td><span class="badge bg-success">有効</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled>
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>佐藤 マーケ</strong></td>
+                                <td>マーケティング部</td>
+                                <td><span class="badge bg-primary">12</span></td>
+                                <td><span class="badge bg-info">38</span></td>
+                                <td><span class="badge bg-success">31.6%</span></td>
+                                <td><span class="badge bg-warning">22.1%</span></td>
+                                <td><strong>¥1,890,000</strong></td>
+                                <td><span class="text-danger"><i class="fas fa-arrow-down"></i> -5%</span></td>
+                                <td><span class="badge bg-success">有効</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled>
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>鈴木 セールス</strong></td>
+                                <td>営業部</td>
+                                <td><span class="badge bg-primary">8</span></td>
+                                <td><span class="badge bg-info">25</span></td>
+                                <td><span class="badge bg-success">32.0%</span></td>
+                                <td><span class="badge bg-warning">15.8%</span></td>
+                                <td><strong>¥1,220,000</strong></td>
+                                <td><span class="text-success"><i class="fas fa-arrow-up"></i> +8%</span></td>
+                                <td><span class="badge bg-success">有効</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled>
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 実績推移グラフ予定地 -->
+                <div class="mt-4" style="opacity: 0.6;">
+                    <h6 class="mb-3">実績推移</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">利益率推移</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div style="height: 200px; background: #f8f9fa; border: 2px dashed #dee2e6; display: flex; align-items: center; justify-content: center;">
+                                        <span class="text-muted">グラフ表示予定</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">案件数推移</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div style="height: 200px; background: #f8f9fa; border: 2px dashed #dee2e6; display: flex; align-items: center; justify-content: center;">
+                                        <span class="text-muted">グラフ表示予定</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 職人管理モーダル -->
+<div class="modal fade" id="craftsmanManagementModal" tabindex="-1" aria-labelledby="craftsmanManagementModalLabel" aria-hidden="true" style="z-index: 9999 !important;">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="craftsmanManagementModalLabel">
+                    <i class="fas fa-tools"></i> 職人管理
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">職人一覧</h6>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-warning">※ バックエンド実装予定</span>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="alert('新規追加機能は後日実装予定です')" disabled>
+                            <i class="fas fa-plus"></i> 新規追加
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 職人スキル・実績テーブル -->
+                <div class="table-responsive" style="opacity: 0.6;">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>名前</th>
+                                <th>職種</th>
+                                <th>スキルレベル</th>
+                                <th>専門分野</th>
+                                <th>資格</th>
+                                <th>経験年数</th>
+                                <th>完了案件数</th>
+                                <th>平均評価</th>
+                                <th>時給単価</th>
+                                <th>稼働状況</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>山田 職人</strong></td>
+                                <td>電気工事士</td>
+                                <td><span class="badge bg-success">上級</span></td>
+                                <td>高圧電気工事、制御盤</td>
+                                <td>第一種電気工事士、高圧電気工事技師</td>
+                                <td>15年</td>
+                                <td><span class="badge bg-primary">245</span></td>
+                                <td><span class="text-warning">★★★★☆</span> 4.2</td>
+                                <td><strong>¥4,500/時</strong></td>
+                                <td><span class="badge bg-success">稼働中</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled>
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>高橋 配管</strong></td>
+                                <td>配管工</td>
+                                <td><span class="badge bg-info">中級</span></td>
+                                <td>給排水配管、空調配管</td>
+                                <td>配管技能士1級、管工事施工管理技士</td>
+                                <td>8年</td>
+                                <td><span class="badge bg-primary">112</span></td>
+                                <td><span class="text-warning">★★★★☆</span> 3.8</td>
+                                <td><strong>¥3,200/時</strong></td>
+                                <td><span class="badge bg-warning">空き</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled>
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>伊藤 大工</strong></td>
+                                <td>大工</td>
+                                <td><span class="badge bg-success">上級</span></td>
+                                <td>木造建築、リフォーム、内装</td>
+                                <td>建築大工技能士1級、建築施工管理技士</td>
+                                <td>20年</td>
+                                <td><span class="badge bg-primary">320</span></td>
+                                <td><span class="text-warning">★★★★★</span> 4.7</td>
+                                <td><strong>¥4,000/時</strong></td>
+                                <td><span class="badge bg-success">稼働中</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled>
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- スキル統計 -->
+                <div class="mt-4" style="opacity: 0.6;">
+                    <h6 class="mb-3">スキル統計</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">職種別分布</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div style="height: 200px; background: #f8f9fa; border: 2px dashed #dee2e6; display: flex; align-items: center; justify-content: center;">
+                                        <span class="text-muted">円グラフ表示予定</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">スキルレベル分布</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div style="height: 200px; background: #f8f9fa; border: 2px dashed #dee2e6; display: flex; align-items: center; justify-content: center;">
+                                        <span class="text-muted">棒グラフ表示予定</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">稼働状況</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div style="height: 200px; background: #f8f9fa; border: 2px dashed #dee2e6; display: flex; align-items: center; justify-content: center;">
+                                        <span class="text-muted">稼働状況グラフ表示予定</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 業者管理モーダル -->
+<div class="modal fade" id="contractorManagementModal" tabindex="-1" aria-labelledby="contractorManagementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="contractorManagementModalLabel">
+                    <i class="fas fa-building"></i> 業者管理
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">業者一覧</h6>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="addNewContractor()">
+                        <i class="fas fa-plus"></i> 新規業者追加
+                    </button>
+                </div>
+
+                <!-- 業者テーブル -->
+                <div class="contractor-table-wrapper">
+                    <!-- スクロール可能な情報テーブル -->
+                    <div class="contractor-table-scroll">
+                        <table class="table table-hover contractor-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="min-width: 150px;">業者名</th>
+                                    <th style="min-width: 120px;">分類</th>
+                                    <th style="min-width: 150px;">専門分野</th>
+                                    <th style="min-width: 200px;">住所</th>
+                                    <th style="min-width: 120px;">電話番号</th>
+                                    <th style="min-width: 180px;">メール</th>
+                                    <th style="min-width: 100px;">担当者</th>
+                                    <th style="min-width: 80px;">状態</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contractorTableBodyScroll">
+                                <!-- 業者情報が動的に追加される -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 固定列（操作） -->
+                    <div class="contractor-table-fixed">
+                        <table class="table table-hover contractor-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 120px;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contractorTableBodyFixed">
+                                <!-- 操作ボタンが動的に追加される -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 業者編集/追加モーダル -->
+<div class="modal fade" id="contractorModal" tabindex="-1" aria-labelledby="contractorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="contractorModalTitle">業者を追加</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="contractorForm">
+                    <input type="hidden" id="contractorId" name="id">
+
+                    <!-- 業者選択方法 -->
+                    <div class="mb-3 contractor-input-method">
+                        <label class="form-label">業者選択方法 <span class="text-danger">*</span></label>
+                        <div class="mb-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="contractor_input_type" id="existingContractorChoice" value="existing" checked>
+                                <label class="form-check-label" for="existingContractorChoice">
+                                    既存から選択
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="contractor_input_type" id="newContractorChoice" value="new">
+                                <label class="form-check-label" for="newContractorChoice">
+                                    新規入力
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 既存業者選択 -->
+                    <div id="existingContractorDiv">
+                        <div class="mb-3">
+                            <label class="form-label">既存業者を選択</label>
+                            <select class="form-select" id="existingContractorSelect" name="existing_contractor_id">
+                                <option value="">-- 業者を選択してください --</option>
+                                
+                                <option value="2"
+                                        data-name="山田工業"
+                                        data-address="神奈川県横浜市"
+                                        data-phone="045-987-6543"
+                                        data-type=""
+                                        data-specialties="基礎工事、土木工事">
+                                    山田工業 - 神奈川県横浜市
+                                </option>
+                                
+                                <option value="4"
+                                        data-name="発注業者テスト株式会社"
+                                        data-address="東京都渋谷区"
+                                        data-phone="03-5555-6666"
+                                        data-type=""
+                                        data-specialties="総合建設業">
+                                    発注業者テスト株式会社 - 東京都渋谷区
+                                </option>
+                                
+                                <option value="3"
+                                        data-name="ABC資材"
+                                        data-address="埼玉県さいたま市"
+                                        data-phone="048-111-2222"
+                                        data-type=""
+                                        data-specialties="建築資材、設備機器">
+                                    ABC資材 - 埼玉県さいたま市
+                                </option>
+                                
+                                <option value="1"
+                                        data-name="田中建設株式会社"
+                                        data-address="東京都新宿区"
+                                        data-phone="03-1234-5678"
+                                        data-type=""
+                                        data-specialties="建築工事、内装工事">
+                                    田中建設株式会社 - 東京都新宿区
+                                </option>
+                                
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 新規業者入力 -->
+                    <div id="newContractorDiv" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="contractorName" class="form-label">業者名 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="contractorName" name="name" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">業者分類 <span class="text-danger">*</span></label>
+                                <div class="mt-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="contractor_classification" value="ordering" id="contractorOrdering">
+                                        <label class="form-check-label" for="contractorOrdering">
+                                            発注業者
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="contractor_classification" value="receiving" id="contractorReceiving">
+                                        <label class="form-check-label" for="contractorReceiving">
+                                            受注業者
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="contractor_classification" value="supplier" id="contractorSupplier">
+                                        <label class="form-check-label" for="contractorSupplier">
+                                            資材屋
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="contractor_classification" value="other" id="contractorOther">
+                                        <label class="form-check-label" for="contractorOther">
+                                            その他
+                                        </label>
+                                    </div>
+                                    <div class="mt-2" id="contractorOtherText" style="display: none;">
+                                        <input type="text" class="form-control form-control-sm" name="contractor_classification_other" placeholder="その他の分類を入力">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="contractorType" class="form-label">業種</label>
+                                <select class="form-select" id="contractorType" name="contractor_type">
+                                    <option value="">-- 業種を選択 --</option>
+                                    <option value="construction">建設業</option>
+                                    <option value="electrical">電気工事業</option>
+                                    <option value="plumbing">管工事業</option>
+                                    <option value="painting">塗装業</option>
+                                    <option value="interior">内装業</option>
+                                    <option value="other">その他</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="contractorAddress" class="form-label">住所</label>
+                            <input type="text" class="form-control" id="contractorAddress" name="address">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="contractorPhone" class="form-label">電話番号</label>
+                                <input type="tel" class="form-control" id="contractorPhone" name="phone">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="contractorEmail" class="form-label">メールアドレス</label>
+                                <input type="email" class="form-control" id="contractorEmail" name="email">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="contractorSpecialties" class="form-label">専門分野</label>
+                            <input type="text" class="form-control" id="contractorSpecialties" name="specialties" placeholder="例: 木造建築、リフォーム">
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="contractorActive" name="active" checked>
+                            <label class="form-check-label" for="contractorActive">
+                                有効
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" onclick="saveContractor()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center text-muted mt-5 mb-3">
+        <hr>
+        <p>&copy; 2025 建築派遣管理システム</p>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+    
+<script>
+console.log('🔥 JavaScript loading...');
+
+// 必須関数を定義
+window.openBasicInfoContractorManagementPanel = function() {
+    console.log('✅ openBasicInfoContractorManagementPanel called');
+
+    try {
+        // 既存のモーダル背景を削除
+        $('.modal-backdrop').remove();
+
+        // モーダル要素を取得
+        const modal = $('#contractorManagementModal');
+        if (modal.length > 0) {
+            modal.css('display', 'block').addClass('show');
+            $('body').append('<div class="modal-backdrop fade show"></div>');
+
+            // 業者リストを更新
+            refreshContractorList();
+
+            console.log('✅ 業者管理モーダルが表示されました');
+        } else {
+            console.error('❌ contractorManagementModal が見つかりません');
+            alert('モーダル要素が見つかりません。HTMLにモーダル要素を追加する必要があります。');
+        }
+    } catch(e) {
+        console.error('Error:', e);
+        alert('エラー: ' + e.message);
+    }
+};
+
+window.openAddImplementationModal = function() {
+    console.log('✅ openAddImplementationModal called');
+
+    try {
+        // 既存のモーダル背景を削除
+        $('.modal-backdrop').remove();
+
+        // モーダル要素を取得
+        const modal = $('#addImplementationModal');
+        if (modal.length > 0) {
+            modal.css('display', 'block').addClass('show');
+            $('body').append('<div class="modal-backdrop fade show"></div>');
+
+            // フォームをリセット
+            clearImplementationModalForms();
+
+            // 初期状態を外注先に設定
+            $('input[name="modal_implementation_type"][value="outsource"]').prop('checked', true);
+            toggleImplementationType();
+
+            // 業者選択方法を既存から選択に初期設定
+            $('input[name="modal_contractor_input_type"][value="existing"]').prop('checked', true);
+            toggleContractorInputType();
+
+            // 社内担当者選択方法を既存から選択に初期設定
+            $('input[name="modal_internal_input_type"][value="existing"]').prop('checked', true);
+            toggleInternalInputType();
+
+            console.log('✅ 実施体制モーダルが表示されました');
+        } else {
+            console.error('❌ addImplementationModal が見つかりません');
+            alert('モーダル要素が見つかりません。HTMLにモーダル要素を追加する必要があります。');
+        }
+    } catch(e) {
+        console.error('Error:', e);
+        alert('エラー: ' + e.message);
+    }
+};
+
+window.closeModal = function(modalId) {
+    if (modalId) {
+        $(`#${modalId}`).removeClass('show').css('display', 'none');
+    } else {
+        $('.modal').removeClass('show').css('display', 'none');
+    }
+    $('.modal-backdrop').remove();
+    console.log('モーダルを閉じました:', modalId || 'all');
+};
+
+// 追加の必須関数を定義
+window.openSalesStaffManagementPanel = function() {
+    alert('営業スタッフ管理パネル（未実装）');
+};
+
+window.openContractorManagementPanel = function() {
+    console.log('✅ openContractorManagementPanel called');
+
+    try {
+        // 既存のモーダル背景を削除
+        $('.modal-backdrop').remove();
+
+        // モーダル要素を取得
+        const modal = $('#contractorManagementModal');
+        if (modal.length > 0) {
+            modal.css('display', 'block').addClass('show');
+            $('body').append('<div class="modal-backdrop fade show"></div>');
+
+            // 業者リストを更新（発注業者優先）
+            refreshContractorListForImplementation();
+
+            console.log('✅ 工事業者管理モーダルが表示されました');
+        } else {
+            console.error('❌ contractorManagementModal が見つかりません');
+            alert('工事業者管理モーダル要素が見つかりません。');
+        }
+    } catch(e) {
+        console.error('Error:', e);
+        alert('エラー: ' + e.message);
+    }
+};
+
+window.openCraftsmanManagementPanel = function() {
+    console.log('✅ openCraftsmanManagementPanel called');
+
+    try {
+        // 既存のモーダル背景を削除
+        $('.modal-backdrop').remove();
+
+        // モーダル要素を取得
+        const modal = $('#craftsmanManagementModal');
+        if (modal.length > 0) {
+            modal.css('display', 'block').addClass('show');
+            $('body').append('<div class="modal-backdrop fade show"></div>');
+
+            // 職人リストを更新
+            refreshCraftsmanList();
+
+            console.log('✅ 職人管理モーダルが表示されました');
+        } else {
+            console.error('❌ craftsmanManagementModal が見つかりません');
+            alert('職人管理モーダル要素が見つかりません。');
+        }
+    } catch(e) {
+        console.error('Error:', e);
+        alert('エラー: ' + e.message);
+    }
+};
+
+window.addImplementationItem = function() {
+    console.log('✅ addImplementationItem called');
+
+    const implementationType = $('input[name="modal_implementation_type"]:checked').val();
+
+    if (!implementationType) {
+        alert('実施体制タイプを選択してください。');
+        return;
+    }
+
+    let itemData = {
+        type: implementationType,
+        id: Date.now() // 簡易的なID
+    };
+
+    if (implementationType === 'outsource') {
+        // 外注先の情報を取得
+        const contractorInputType = $('input[name="modal_contractor_input_type"]:checked').val();
+        let contractorName = '';
+
+        if (contractorInputType === 'existing') {
+            // 既存業者から選択
+            const selectedOption = $('#modalContractorSelect option:selected');
+            contractorName = selectedOption.data('name') || selectedOption.text();
+        } else {
+            // 新規業者
+            contractorName = $('input[name="modal_new_contractor_name"]').val();
+        }
+
+        const workDescription = $('textarea[name="modal_work_description"]').val();
+        const contractAmount = $('input[name="modal_contract_amount"]').val();
+
+        if (!contractorName || !workDescription) {
+            alert('業者名と作業内容を入力してください。');
+            return;
+        }
+
+        itemData.contractorName = contractorName;
+        itemData.workDescription = workDescription;
+        itemData.contractAmount = contractAmount || 0;
+
+    } else if (implementationType === 'internal') {
+        // 社内リソースの情報を取得
+        const internalInputType = $('input[name="modal_internal_input_type"]:checked').val();
+        let staffName = '';
+        let department = '';
+
+        if (internalInputType === 'existing') {
+            // 既存担当者から選択
+            const selectedOption = $('#modalInternalSelect option:selected');
+            staffName = selectedOption.data('name') || selectedOption.text();
+            department = selectedOption.data('department') || '';
+        } else {
+            // 新規担当者
+            staffName = $('input[name="modal_new_internal_name"]').val();
+            department = $('input[name="modal_internal_department"]').val();
+        }
+
+        if (!staffName) {
+            alert('担当者名を入力してください。');
+            return;
+        }
+
+        itemData.staffName = staffName;
+        itemData.department = department;
+
+    } else if (implementationType === 'later') {
+        itemData.description = '後で決定';
+    }
+
+    // 実施体制リストに追加
+    addToImplementationList(itemData);
+
+    // モーダルを閉じる
+    $('#addImplementationModal').removeClass('show').css('display', 'none');
+    $('.modal-backdrop').remove();
+
+    alert('実施体制が追加されました！');
+};
+
+window.addNewStaff = function() {
+    console.log('✅ addNewStaff called');
+
+    // スタッフ編集モーダルを開く
+    const modal = $('#staffModal');
+    modal.css('display', 'block').addClass('show');
+
+    // フォームをクリア
+    $('#staffForm')[0].reset();
+    $('#staffModalTitle').text('新しいスタッフを追加');
+    $('#staffId').val('');
+
+    // z-indexを調整
+    modal.css('z-index', '2060');
+    $('.modal-backdrop').css('z-index', '2059');
+
+    console.log('新規スタッフ追加モーダルを開きました');
+};
+
+window.saveStaff = function() {
+    console.log('✅ saveStaff called');
+
+    // フォームデータを取得
+    const formData = {
+        name: $('#staffName').val(),
+        department: $('#staffDepartment').val(),
+        hourlyRate: $('#staffHourlyRate').val(),
+        specialties: $('#staffSpecialties').val(),
+        active: $('#staffActive').is(':checked')
+    };
+
+    // バリデーション
+    if (!formData.name) {
+        alert('スタッフ名を入力してください。');
+        return;
+    }
+
+    // スタッフ一覧に追加
+    addStaffToList(formData);
+
+    // モーダルを閉じる
+    $('#staffModal').removeClass('show').css('display', 'none');
+
+    alert('スタッフが保存されました！');
+};
+
+window.addNewContractor = function() {
+    console.log('✅ addNewContractor called');
+
+    // 業者編集モーダルを開く
+    const modal = $('#contractorModal');
+    modal.css('display', 'block').addClass('show');
+
+    // フォームをクリア
+    $('#contractorForm')[0].reset();
+    $('#contractorModalTitle').text('新しい業者を追加');
+
+    // 新規追加時は業者選択方法を非表示にして、直接新規入力フォームを表示
+    $('.contractor-input-method').hide();
+    $('#existingContractorDiv').hide();
+    $('#newContractorDiv').show();
+
+    // z-indexを調整（業者管理モーダルより前面に）
+    modal.css('z-index', '2060');
+    $('.modal-backdrop').css('z-index', '2059');
+
+    console.log('新規業者追加モーダルを開きました');
+};
+
+window.saveContractor = function() {
+    console.log('✅ saveContractor called');
+
+    // フォームデータを取得（正しいフィールド名で）
+    const formData = {
+        name: $('#contractorName').val(),
+        type: $('#contractorType').val(),
+        address: $('#contractorAddress').val(),
+        phone: $('#contractorPhone').val(),
+        email: $('#contractorEmail').val(),
+        specialties: $('#contractorSpecialties').val()
+    };
+
+    // バリデーション
+    if (!formData.name) {
+        alert('業者名を入力してください。');
+        return;
+    }
+
+    // 業者一覧に追加（簡易実装）
+    addContractorToList(formData);
+
+    // モーダルを閉じる
+    $('#contractorModal').removeClass('show').css('display', 'none');
+
+    alert('業者が保存されました！');
+};
+
+// 業者一覧に追加
+window.addContractorToList = function(contractorData) {
+    const tableBody = $('#contractorTableBodyScroll');
+    const id = Date.now(); // 簡易ID
+
+    const newRow = `
+        <tr data-contractor-id="${id}">
+            <td><strong>${contractorData.name}</strong></td>
+            <td><span class="badge bg-primary me-1">新規</span></td>
+            <td>${contractorData.specialties || '-'}</td>
+            <td title="${contractorData.address}">${contractorData.address || '-'}</td>
+            <td>${contractorData.phone || '-'}</td>
+            <td title="${contractorData.email}">${contractorData.email || '-'}</td>
+            <td>-</td>
+            <td><span class="badge bg-success">有効</span></td>
+        </tr>
+    `;
+
+    tableBody.append(newRow);
+
+    // ドロップダウンにも追加
+    const option = `<option value="${id}" data-name="${contractorData.name}">${contractorData.name}</option>`;
+    $('#contractorCompanySelect').append(option);
+    $('#modalContractorSelect').append(option);
+};
+
+// ダミーデータ定義
+window.dummyContractors = [
+    {
+        id: 1,
+        name: '田中建設株式会社',
+        classification: ['発注業者'],
+        type: '建設業',
+        address: '東京都港区六本木1-2-3',
+        phone: '03-1234-5678',
+        email: 'tanaka@construction.com',
+        specialties: '木造建築、リフォーム',
+        active: true
+    },
+    {
+        id: 2,
+        name: '山田電気工事',
+        classification: ['受注業者'],
+        type: '電気工事業',
+        address: '東京都新宿区西新宿2-3-4',
+        phone: '03-2345-6789',
+        email: 'yamada@electric.com',
+        specialties: '高圧電気、制御盤',
+        active: true
+    },
+    {
+        id: 3,
+        name: '佐藤配管サービス',
+        classification: ['受注業者', '資材屋'],
+        type: '管工事業',
+        address: '東京都渋谷区渋谷1-5-6',
+        phone: '03-3456-7890',
+        email: 'sato@piping.com',
+        specialties: '給排水、空調配管',
+        active: true
+    },
+    {
+        id: 4,
+        name: '鈴木塗装工業',
+        classification: ['受注業者'],
+        type: '塗装業',
+        address: '東京都世田谷区下北沢2-1-3',
+        phone: '03-4567-8901',
+        email: 'suzuki@painting.com',
+        specialties: '外壁塗装、防水工事',
+        active: false
+    },
+    {
+        id: 5,
+        name: '高橋内装',
+        classification: ['受注業者'],
+        type: '内装業',
+        address: '東京都中野区中野3-4-5',
+        phone: '03-5678-9012',
+        email: 'takahashi@interior.com',
+        specialties: '内装仕上げ、床工事',
+        active: true
+    }
+];
+
+window.dummyCraftsmen = [
+    {
+        id: 1,
+        name: '伊藤職人',
+        specialties: '大工工事、木工',
+        experience: '15年',
+        hourlyRate: 3500,
+        phone: '090-1234-5678',
+        active: true
+    },
+    {
+        id: 2,
+        name: '渡辺塗装',
+        specialties: '塗装工事',
+        experience: '10年',
+        hourlyRate: 3000,
+        phone: '090-2345-6789',
+        active: true
+    },
+    {
+        id: 3,
+        name: '中村電工',
+        specialties: '電気工事',
+        experience: '8年',
+        hourlyRate: 3200,
+        phone: '090-3456-7890',
+        active: true
+    }
+];
+
+window.dummyInternalStaff = [
+    {
+        id: 1,
+        name: '田中太郎',
+        department: '工事部',
+        hourlyRate: 2500,
+        specialties: '現場管理、品質管理',
+        active: true
+    },
+    {
+        id: 2,
+        name: '佐藤花子',
+        department: '営業部',
+        hourlyRate: 2800,
+        specialties: '営業、顧客対応',
+        active: true
+    },
+    {
+        id: 3,
+        name: '山田次郎',
+        department: '設計部',
+        hourlyRate: 3000,
+        specialties: '設計、CAD',
+        active: true
+    }
+];
+
+// 業者リスト更新
+window.refreshContractorList = function() {
+    console.log('業者リストを更新中...');
+    renderContractorTable(window.dummyContractors);
+};
+
+// 基本情報用業者リスト更新（受注業者優先）
+window.refreshContractorListForBasicInfo = function() {
+    console.log('基本情報用業者リスト更新（受注業者優先）');
+    const sortedContractors = [...window.dummyContractors].sort((a, b) => {
+        if (a.active && !b.active) return -1;
+        if (!a.active && b.active) return 1;
+        if (a.classification.includes('受注業者') && !b.classification.includes('受注業者')) return -1;
+        if (!a.classification.includes('受注業者') && b.classification.includes('受注業者')) return 1;
+        return a.name.localeCompare(b.name);
+    });
+    renderContractorTable(sortedContractors);
+};
+
+// 実施体制用業者リスト更新（発注業者優先）
+window.refreshContractorListForImplementation = function() {
+    console.log('実施体制用業者リスト更新（発注業者優先）');
+    const sortedContractors = [...window.dummyContractors].sort((a, b) => {
+        if (a.active && !b.active) return -1;
+        if (!a.active && b.active) return 1;
+        if (a.classification.includes('発注業者') && !b.classification.includes('発注業者')) return -1;
+        if (!a.classification.includes('発注業者') && b.classification.includes('発注業者')) return 1;
+        return a.name.localeCompare(b.name);
+    });
+    renderContractorTable(sortedContractors);
+};
+
+// 職人リスト更新
+window.refreshCraftsmanList = function() {
+    console.log('職人リストを更新中...');
+    renderCraftsmanTable(window.dummyCraftsmen);
+};
+
+// スタッフリスト更新
+window.refreshStaffList = function() {
+    console.log('スタッフリストを更新中...');
+    renderStaffTable(window.dummyInternalStaff);
+};
+
+// 業者テーブル描画
+window.renderContractorTable = function(contractors) {
+    const scrollTbody = $('#contractorTableBodyScroll');
+    const fixedTbody = $('#contractorTableBodyFixed');
+
+    if (scrollTbody.length === 0 || fixedTbody.length === 0) {
+        console.log('業者テーブル要素が見つかりません');
+        return;
+    }
+
+    scrollTbody.empty();
+    fixedTbody.empty();
+
+    contractors.forEach((contractor) => {
+        const statusBadge = contractor.active ?
+            '<span class="badge bg-success">有効</span>' :
+            '<span class="badge bg-secondary">無効</span>';
+
+        const classificationBadges = contractor.classification.map(c =>
+            `<span class="badge bg-primary me-1">${c}</span>`
+        ).join('');
+
+        const rowClass = contractor.active ? 'clickable-row' : 'inactive-row';
+
+        // スクロール可能な情報部分
+        scrollTbody.append(`
+            <tr data-contractor-id="${contractor.id}" class="${rowClass}">
+                <td><strong>${contractor.name}</strong></td>
+                <td>${classificationBadges}</td>
+                <td>${contractor.specialties}</td>
+                <td title="${contractor.address}">${contractor.address}</td>
+                <td>${contractor.phone}</td>
+                <td title="${contractor.email}">${contractor.email}</td>
+                <td>-</td>
+                <td>${statusBadge}</td>
+            </tr>
+        `);
+
+        // 固定列（操作のみ）
+        fixedTbody.append(`
+            <tr data-contractor-id="${contractor.id}" class="${rowClass}">
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editContractor(${contractor.id})" title="編集">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteContractor(${contractor.id})" title="削除">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `);
+    });
+};
+
+// 職人テーブル描画
+window.renderCraftsmanTable = function(craftsmen) {
+    const tbody = $('#craftsmanTableBody');
+
+    if (tbody.length === 0) {
+        console.log('職人テーブル要素が見つかりません');
+        return;
+    }
+
+    tbody.empty();
+
+    craftsmen.forEach((craftsman) => {
+        const statusBadge = craftsman.active ?
+            '<span class="badge bg-success">有効</span>' :
+            '<span class="badge bg-secondary">無効</span>';
+
+        tbody.append(`
+            <tr data-craftsman-id="${craftsman.id}">
+                <td><strong>${craftsman.name}</strong></td>
+                <td>${craftsman.specialties}</td>
+                <td>${craftsman.experience}</td>
+                <td>¥${craftsman.hourlyRate.toLocaleString()}/時間</td>
+                <td>${craftsman.phone}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editCraftsman(${craftsman.id})" title="編集">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteCraftsman(${craftsman.id})" title="削除">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `);
+    });
+};
+
+// スタッフテーブル描画
+window.renderStaffTable = function(staff) {
+    const tbody = $('#staffTableBody');
+
+    if (tbody.length === 0) {
+        console.log('スタッフテーブル要素が見つかりません');
+        return;
+    }
+
+    tbody.empty();
+
+    staff.forEach((member) => {
+        const statusBadge = member.active ?
+            '<span class="badge bg-success">有効</span>' :
+            '<span class="badge bg-secondary">無効</span>';
+
+        tbody.append(`
+            <tr data-staff-id="${member.id}">
+                <td><strong>${member.name}</strong></td>
+                <td>${member.department}</td>
+                <td>¥${member.hourlyRate.toLocaleString()}/時間</td>
+                <td>${member.specialties}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editStaff(${member.id})" title="編集">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteStaff(${member.id})" title="削除">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `);
+    });
+};
+
+// スタッフリストに追加
+window.addStaffToList = function(staffData) {
+    const id = Date.now(); // 簡易ID
+    const newStaff = {
+        id: id,
+        name: staffData.name,
+        department: staffData.department,
+        hourlyRate: staffData.hourlyRate || 0,
+        specialties: staffData.specialties,
+        active: staffData.active
+    };
+
+    window.dummyInternalStaff.push(newStaff);
+
+    // ドロップダウンにも追加
+    const option = `<option value="${id}" data-name="${staffData.name}" data-department="${staffData.department}" data-hourly-rate="${staffData.hourlyRate}">${staffData.name} (${staffData.department})</option>`;
+    $('#modalInternalSelect').append(option);
+
+    // テーブルを再描画
+    renderStaffTable(window.dummyInternalStaff);
+};
+
+// 編集・削除関数のスタブ
+window.editContractor = function(id) {
+    alert(`業者ID ${id} の編集機能（未実装）`);
+};
+
+window.deleteContractor = function(id) {
+    if (confirm('この業者を削除しますか？')) {
+        window.dummyContractors = window.dummyContractors.filter(c => c.id !== id);
+        refreshContractorList();
+    }
+};
+
+window.editCraftsman = function(id) {
+    alert(`職人ID ${id} の編集機能（未実装）`);
+};
+
+window.deleteCraftsman = function(id) {
+    if (confirm('この職人を削除しますか？')) {
+        window.dummyCraftsmen = window.dummyCraftsmen.filter(c => c.id !== id);
+        refreshCraftsmanList();
+    }
+};
+
+window.editStaff = function(id) {
+    alert(`スタッフID ${id} の編集機能（未実装）`);
+};
+
+window.deleteStaff = function(id) {
+    if (confirm('このスタッフを削除しますか？')) {
+        window.dummyInternalStaff = window.dummyInternalStaff.filter(s => s.id !== id);
+        refreshStaffList();
+    }
+};
+
+// 実施体制タイプ切り替え機能
+window.toggleImplementationType = function() {
+    const selectedType = $('input[name="modal_implementation_type"]:checked').val();
+
+    // 全てのフォームセクションを非表示
+    $('.implementation-form').hide();
+
+    // 選択されたタイプに応じてフォームを表示
+    switch(selectedType) {
+        case 'outsource':
+            $('#modalContractorForm').show();
+            break;
+        case 'internal':
+            $('#modalInternalForm').show();
+            // 社内リソースが選択された時、料金体系も初期化
+            $('input[name="modal_internal_pricing_type"][value="hourly"]').prop('checked', true);
+            togglePricingType();
+            break;
+        case 'later':
+            $('#modalLaterForm').show();
+            break;
+    }
+
+    console.log('実施体制タイプ切り替え:', selectedType);
+};
+
+// モーダルフォームクリア機能
+window.clearImplementationModalForms = function() {
+    $('#addImplementationModal input[type="text"]').val('');
+    $('#addImplementationModal input[type="number"]').val('');
+    $('#addImplementationModal textarea').val('');
+    $('#addImplementationModal select').val('');
+    console.log('モーダルフォームをクリアしました');
+};
+
+// 実施体制リストに追加
+window.addToImplementationList = function(itemData) {
+    const listContainer = $('#implementationList');
+
+    let html = '';
+    if (itemData.type === 'outsource') {
+        html = `
+            <div class="card mb-2" data-item-id="${itemData.id}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title mb-1">
+                                <i class="fas fa-handshake text-primary me-2"></i>外注先: ${itemData.contractorName}
+                            </h6>
+                            <p class="card-text mb-1">
+                                <strong>作業内容:</strong> ${itemData.workDescription}
+                            </p>
+                            <p class="card-text mb-0">
+                                <strong>契約額:</strong> ¥${Number(itemData.contractAmount).toLocaleString()}
+                            </p>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeImplementationItem(${itemData.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (itemData.type === 'internal') {
+        html = `
+            <div class="card mb-2" data-item-id="${itemData.id}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title mb-1">
+                                <i class="fas fa-users text-success me-2"></i>社内: ${itemData.staffName}
+                            </h6>
+                            <p class="card-text mb-0">
+                                <strong>部署:</strong> ${itemData.department || '-'}
+                            </p>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeImplementationItem(${itemData.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (itemData.type === 'later') {
+        html = `
+            <div class="card mb-2" data-item-id="${itemData.id}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title mb-1">
+                                <i class="fas fa-clock text-warning me-2"></i>後で決定
+                            </h6>
+                            <p class="card-text mb-0">詳細画面で実施体制を設定します</p>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeImplementationItem(${itemData.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    listContainer.append(html);
+};
+
+// 実施体制アイテム削除
+window.removeImplementationItem = function(itemId) {
+    $(`[data-item-id="${itemId}"]`).remove();
+};
+
+// 業者選択方法の切り替え
+window.toggleContractorInputType = function() {
+    const inputType = $('input[name="modal_contractor_input_type"]:checked').val();
+    console.log('業者選択方法切り替え:', inputType);
+
+    if (inputType === 'existing') {
+        $('#modalExistingContractorDiv').show();
+        $('#modalNewContractorDiv').hide();
+        console.log('既存業者選択表示');
+    } else {
+        $('#modalExistingContractorDiv').hide();
+        $('#modalNewContractorDiv').show();
+        console.log('新規業者入力表示');
+    }
+};
+
+// 社内担当者選択方法の切り替え
+window.toggleInternalInputType = function() {
+    const inputType = $('input[name="modal_internal_input_type"]:checked').val();
+    console.log('社内担当者選択方法切り替え:', inputType);
+
+    if (inputType === 'existing') {
+        $('#modalExistingInternalDiv').show();
+        $('#modalNewInternalDiv').hide();
+        console.log('既存担当者選択表示');
+    } else {
+        $('#modalExistingInternalDiv').hide();
+        $('#modalNewInternalDiv').show();
+        console.log('新規担当者入力表示');
+    }
+};
+
+// 料金体系の切り替え
+window.togglePricingType = function() {
+    const pricingType = $('input[name="modal_internal_pricing_type"]:checked').val();
+    console.log('========================');
+    console.log('🔥 料金体系切り替え:', pricingType);
+
+    const hourlyFields = $('#modalHourlyPricingFields');
+    const projectFields = $('#modalProjectPricingFields');
+
+    console.log('🔧 Before changes:');
+    console.log('  - modalHourlyPricingFields visible:', hourlyFields.is(':visible'));
+    console.log('  - modalProjectPricingFields visible:', projectFields.is(':visible'));
+
+    if (pricingType === 'hourly') {
+        console.log('🔧 Setting to hourly mode');
+        hourlyFields.show();
+        projectFields.hide();
+    } else if (pricingType === 'project') {
+        console.log('🔧 Setting to project mode');
+        hourlyFields.hide();
+        projectFields.show();
+    }
+
+    console.log('🔧 After changes:');
+    console.log('  - modalHourlyPricingFields visible:', hourlyFields.is(':visible'));
+    console.log('  - modalProjectPricingFields visible:', projectFields.is(':visible'));
+    console.log('========================');
+};
+
+// モーダル内の社内リソース費用自動計算
+window.calculateModalInternalCost = function() {
+    const pricingType = $('input[name="modal_internal_pricing_type"]:checked').val();
+
+    if (pricingType === 'hourly') {
+        const hourlyRate = parseFloat($('input[name="modal_internal_hourly_rate"]').val()) || 0;
+        const hours = parseFloat($('input[name="modal_estimated_hours"]').val()) || 0;
+        const totalCost = hourlyRate * hours;
+
+        console.log('💰 時給ベース計算:', {
+            時給: hourlyRate,
+            工数: hours,
+            合計: totalCost
+        });
+
+        // 計算結果を表示する場所があれば更新
+        // (現在のHTMLに表示領域がない場合は、コンソールでの確認のみ)
+        if ($('#modalInternalTotalCost').length) {
+            $('#modalInternalTotalCost').text(totalCost.toLocaleString());
+        }
+
+        return totalCost;
+    }
+};
+
+// イベントリスナー設定
+$(document).ready(function() {
+    // 実施体制タイプ変更時のイベント
+    $(document).on('change', 'input[name="modal_implementation_type"]', toggleImplementationType);
+
+    // 業者選択方法変更時のイベント
+    $(document).on('change', 'input[name="modal_contractor_input_type"]', toggleContractorInputType);
+
+    // 社内担当者選択方法変更時のイベント
+    $(document).on('change', 'input[name="modal_internal_input_type"]', toggleInternalInputType);
+
+    // 料金体系切り替えイベント
+    $(document).on('change', 'input[name="modal_internal_pricing_type"]', togglePricingType);
+
+    // 既存担当者選択時の時給自動入力
+    $(document).on('change', '#modalInternalSelect', function() {
+        const selectedOption = $(this).find('option:selected');
+        const hourlyRate = selectedOption.data('hourly-rate');
+
+        if (hourlyRate) {
+            $('input[name="modal_internal_hourly_rate"]').val(hourlyRate);
+            console.log('🎯 担当者時給自動入力:', selectedOption.data('name'), '¥' + hourlyRate + '/時間');
+
+            // 時給ベースモードの場合、自動計算を実行
+            if ($('input[name="modal_internal_pricing_type"]:checked').val() === 'hourly') {
+                calculateModalInternalCost();
+            }
+        }
+    });
+
+    // 時給・工数変更時の自動計算
+    $(document).on('input', 'input[name="modal_internal_hourly_rate"], input[name="modal_estimated_hours"]', function() {
+        if ($('input[name="modal_internal_pricing_type"]:checked').val() === 'hourly') {
+            calculateModalInternalCost();
+        }
+    });
+
+    // モーダル閉じるイベント
+    $(document).on('click', '[data-bs-dismiss="modal"]', function() {
+        const modal = $(this).closest('.modal');
+        modal.removeClass('show').css('display', 'none');
+        $('.modal-backdrop').remove();
+        console.log('モーダル閉じるボタンがクリックされました');
+    });
+
+    // モーダル背景クリックで閉じる
+    $(document).on('click', '.modal-backdrop', function() {
+        $('.modal').removeClass('show').css('display', 'none');
+        $('.modal-backdrop').remove();
+        console.log('モーダル背景がクリックされました');
+    });
+
+    // ESCキーでモーダルを閉じる
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') {
+            $('.modal.show').removeClass('show').css('display', 'none');
+            $('.modal-backdrop').remove();
+            console.log('ESCキーでモーダルを閉じました');
+        }
+    });
+
+    // 初期化時にダミーデータをドロップダウンに追加
+    initializeDropdowns();
+
+    console.log('📌 イベントリスナーが設定されました');
+});
+
+// ドロップダウン初期化
+window.initializeDropdowns = function() {
+    // 業者ドロップダウンに追加
+    const contractorSelect = $('#contractorCompanySelect');
+    const modalContractorSelect = $('#modalContractorSelect');
+
+    window.dummyContractors.filter(c => c.active).forEach(contractor => {
+        const option = `<option value="${contractor.id}" data-name="${contractor.name}">${contractor.name}</option>`;
+        contractorSelect.append(option);
+        modalContractorSelect.append(option);
+    });
+
+    // 社内スタッフドロップダウンに追加
+    const internalSelect = $('#modalInternalSelect');
+
+    window.dummyInternalStaff.filter(s => s.active).forEach(staff => {
+        const option = `<option value="${staff.id}" data-name="${staff.name}" data-department="${staff.department}" data-hourly-rate="${staff.hourlyRate}">${staff.name} (${staff.department})</option>`;
+        internalSelect.append(option);
+    });
+
+    console.log('ドロップダウンにダミーデータを追加しました');
+};
+
+console.log('✅ All functions loaded:', {
+    fn1: typeof window.openBasicInfoContractorManagementPanel,
+    fn2: typeof window.openAddImplementationModal,
+    fn3: typeof window.closeModal,
+    fn4: typeof window.toggleImplementationType,
+    fn5: typeof window.clearImplementationModalForms,
+    fn6: typeof window.addToImplementationList,
+    fn7: typeof window.removeImplementationItem
+});
+</script>
+
+</body>
+</html>

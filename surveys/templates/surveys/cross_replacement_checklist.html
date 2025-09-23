@@ -1,0 +1,3905 @@
+{% extends 'surveys/base.html' %}
+{% load static %}
+
+{% block title %}クロス張り替え調査チェックリスト{% endblock %}
+
+{% block extra_css %}
+<style>
+    .checklist-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 0;
+    }
+
+    .progress-header {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 1rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .progress-bar-custom {
+        height: 8px;
+        border-radius: 10px;
+        background: #e2e8f0;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+        border-radius: 10px;
+        transition: width 0.5s ease;
+    }
+
+    /* Step Navigation Bar */
+    .step-navigation {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 1rem 0;
+        padding: 0.5rem;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 50px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .step-nav-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin: 0 0.25rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        border: 2px solid transparent;
+    }
+
+    .step-nav-item.completed {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .step-nav-item.current {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: #667eea;
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .step-nav-item.pending {
+        background: #f1f5f9;
+        color: #64748b;
+        border-color: #e2e8f0;
+    }
+
+    .step-nav-item:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .step-nav-item.completed:hover,
+    .step-nav-item.current:hover {
+        transform: scale(1.15);
+    }
+
+    .step-nav-connector {
+        width: 20px;
+        height: 2px;
+        background: #e2e8f0;
+        position: relative;
+    }
+
+    .step-nav-connector.completed {
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    }
+
+    /* Survey Overview Styles */
+    .survey-overview {
+        background: white;
+        border-radius: 20px;
+        margin: 1rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: 2px solid #667eea;
+    }
+
+    .overview-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem 2rem;
+        text-align: center;
+    }
+
+    .overview-content {
+        padding: 2rem;
+    }
+
+    .step-flow {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin: 1.5rem 0;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .flow-step {
+        width: 100%;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .flow-step:hover {
+        border-color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+    }
+
+    .flow-step-number {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.5rem;
+        font-weight: bold;
+    }
+
+    .flow-step-title {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+
+    .flow-step-desc {
+        font-size: 0.9rem;
+        color: #64748b;
+    }
+
+    .start-button {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .start-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+    }
+
+    .overview-toggle {
+        display: none;
+    }
+
+    /* Step Progress Indicator */
+    .step-progress-indicator {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1.5rem 0;
+    }
+
+    .progress-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .progress-stats {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .completed-count {
+        font-weight: 600;
+        color: #10b981;
+    }
+
+    .total-steps {
+        color: #64748b;
+    }
+
+    .progress-percentage {
+        font-weight: bold;
+        color: #667eea;
+        font-size: 1.1rem;
+    }
+
+    .mini-progress-bar {
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .mini-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+        border-radius: 3px;
+        transition: width 0.5s ease;
+    }
+
+    /* Room Management Styles */
+    .room-management {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+    }
+
+    .management-header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .management-header h5 {
+        margin-bottom: 0.5rem;
+        color: #1e293b;
+    }
+
+    .room-list {
+        margin-bottom: 1rem;
+    }
+
+    .room-item {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .room-item.active {
+        border-color: #667eea;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+    }
+
+    .room-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .room-name {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 1.1rem;
+    }
+
+    .btn-remove-room,
+    .btn-remove-wall {
+        background: #ef4444;
+        color: white;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.8rem;
+    }
+
+    .btn-remove-room:hover,
+    .btn-remove-wall:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+    }
+
+    .wall-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .wall-list .wall-record {
+        width: 100%;
+        max-width: none;
+        flex: none;
+    }
+
+    .wall-item {
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .wall-item:hover {
+        background: #e2e8f0;
+        border-color: #94a3b8;
+    }
+
+    .wall-name {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #475569;
+    }
+
+    .btn-add-wall,
+    .btn-add-room {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0 auto;
+    }
+
+    .btn-add-wall:hover,
+    .btn-add-room:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-add-room {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Editable Name Inputs */
+    .room-name-input,
+    .wall-name-input {
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        padding: 0.25rem 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .room-name-input {
+        font-size: 1.1rem;
+    }
+
+    .wall-name-input {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #475569;
+        flex: 1;
+    }
+
+    .room-name-input:hover,
+    .wall-name-input:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+    }
+
+    .room-name-input:focus,
+    .wall-name-input:focus {
+        outline: none;
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Wall Header */
+    .wall-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .wall-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .btn-photo {
+        background: #10b981;
+        color: white;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.8rem;
+    }
+
+    .btn-photo:hover {
+        background: #059669;
+        transform: scale(1.1);
+    }
+
+    /* Wall Photos */
+    .wall-photos {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .photo-item {
+        position: relative;
+        width: 80px;
+        height: 60px;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #f1f5f9;
+        border: 2px solid #e2e8f0;
+        transition: all 0.3s ease;
+    }
+
+    .photo-item:hover {
+        border-color: #667eea;
+        transform: scale(1.05);
+    }
+
+    .photo-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .photo-item .photo-comment {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(0,0,0,0.8));
+        color: white;
+        font-size: 0.7rem;
+        padding: 0.25rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    /* Photo Upload Area */
+    .upload-zone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+
+    .upload-zone:hover {
+        border-color: #667eea;
+        background: #f8fafc;
+    }
+
+    .photo-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .gallery-photo {
+        position: relative;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .gallery-photo:hover {
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+
+    .gallery-photo img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+    }
+
+    .gallery-photo .photo-info {
+        padding: 0.75rem;
+    }
+
+    .gallery-photo .photo-actions {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .gallery-photo .btn-delete {
+        background: rgba(239, 68, 68, 0.9);
+        color: white;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.7rem;
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+
+    .gallery-photo:hover .btn-delete {
+        opacity: 1;
+    }
+
+    .gallery-photo .btn-delete:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+    }
+
+    .photo-comment-input {
+        width: 100%;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        padding: 0.5rem;
+        font-size: 0.85rem;
+        resize: vertical;
+        min-height: 60px;
+    }
+
+    /* Photo Capture Specific Styles */
+    .photo-capture-section {
+        margin-top: 1.5rem;
+    }
+
+    .wall-photo-section h6 {
+        color: #475569;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .wall-photo-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .wall-photo-record {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .wall-photo-record:hover {
+        border-color: #667eea;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+    }
+
+    .wall-photo-header {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        gap: 1rem;
+    }
+
+    .wall-photo-header .wall-number {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+    }
+
+    .wall-photo-header .wall-name {
+        font-weight: 600;
+        color: #475569;
+        flex: 1;
+    }
+
+    .wall-photo-stats {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .photo-count {
+        background: #e2e8f0;
+        color: #64748b;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .photo-upload-zone {
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .photo-upload-zone:hover {
+        background: #f8fafc;
+    }
+
+    .photo-upload-zone i {
+        color: #cbd5e1;
+        margin-bottom: 1rem;
+    }
+
+    .photo-upload-zone p {
+        margin: 0.5rem 0 0.25rem 0;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .photo-upload-zone small {
+        color: #94a3b8;
+    }
+
+    .wall-photo-gallery {
+        padding: 1rem;
+        min-height: 100px;
+    }
+
+    .wall-photo-gallery:empty::before {
+        content: "まだ写真が追加されていません";
+        display: block;
+        text-align: center;
+        color: #94a3b8;
+        font-style: italic;
+        padding: 2rem 0;
+    }
+
+    /* Wall Measurement Specific Styles */
+    .wall-measurement-section {
+        margin-top: 1.5rem;
+    }
+
+    .wall-measurement-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .wall-measurement-record {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .wall-measurement-record:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+
+    .wall-measurement-header {
+        display: flex;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-bottom: 1px solid #e2e8f0;
+        gap: 1rem;
+    }
+
+    .wall-measurement-header .wall-number {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+    }
+
+    .wall-measurement-header .wall-name {
+        font-weight: 600;
+        color: #374151;
+        font-size: 1.1rem;
+        flex: 1;
+    }
+
+    .wall-measurement-progress {
+        display: flex;
+        align-items: center;
+    }
+
+    .measurement-status {
+        padding: 0.375rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .measurement-status.not-measured {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .measurement-status.partial {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .measurement-status.completed {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    .measurement-inputs-section {
+        padding: 1.25rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .measurement-input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .measurement-input-group label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.875rem;
+    }
+
+    .measurement-input-group input {
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .measurement-input-group input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .wall-measurement-photos {
+        padding: 1.25rem;
+    }
+
+    .wall-measurement-photos h7 {
+        display: block;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .measurement-photo-upload {
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 1rem;
+        background: #f9fafb;
+    }
+
+    .measurement-photo-upload:hover {
+        border-color: #667eea;
+        background: #f8fafc;
+        transform: translateY(-1px);
+    }
+
+    .measurement-photo-upload i {
+        color: #9ca3af;
+        margin-bottom: 0.5rem;
+    }
+
+    .measurement-photo-upload p {
+        margin: 0.5rem 0 0.25rem 0;
+        color: #4b5563;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .measurement-photo-upload small {
+        color: #6b7280;
+        font-size: 0.8rem;
+    }
+
+    .measurement-photo-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 0.75rem;
+        min-height: 60px;
+    }
+
+    .measurement-photo-gallery:empty::before {
+        content: "測定写真はまだありません";
+        display: block;
+        text-align: center;
+        color: #9ca3af;
+        font-style: italic;
+        grid-column: 1 / -1;
+        padding: 1.5rem 0;
+        font-size: 0.85rem;
+    }
+
+    /* Step Completion Checkbox Styles */
+    .step-completion {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+    }
+
+    .completion-checkbox {
+        display: flex;
+        align-items: center;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        user-select: none;
+        gap: 0.75rem;
+    }
+
+    .completion-checkbox input[type="checkbox"] {
+        display: none;
+    }
+
+    .completion-checkbox .checkmark {
+        width: 24px;
+        height: 24px;
+        border: 2px solid #cbd5e1;
+        border-radius: 6px;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .completion-checkbox input[type="checkbox"]:checked + .checkmark {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-color: #10b981;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .completion-checkbox input[type="checkbox"]:checked + .checkmark::after {
+        content: "✓";
+        color: white;
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .completion-checkbox:hover .checkmark {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+
+    /* All Steps View Styles */
+    .all-steps-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+    }
+
+    .step-card-compact {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .step-card-compact:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+    }
+
+    .step-header-compact {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .step-number-compact {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1rem;
+        margin-right: 1rem;
+    }
+
+    .step-number-compact.completed {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .step-number-compact.current {
+        background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+        color: white;
+        box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+        }
+    }
+
+    .step-number-compact.pending {
+        background: #f1f5f9;
+        color: #64748b;
+        border: 2px solid #e2e8f0;
+    }
+
+    .step-number-compact {
+        cursor: pointer;
+        position: relative;
+    }
+
+    .step-number-compact:hover::after {
+        content: '右クリック/ダブルクリックで完了状態を切り替え';
+        position: absolute;
+        bottom: -30px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        z-index: 1000;
+        pointer-events: none;
+    }
+
+    .step-info-compact {
+        flex: 1;
+    }
+
+    .step-title-compact {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    .step-desc-compact {
+        font-size: 0.9rem;
+        color: #64748b;
+        margin: 0;
+    }
+
+    .step-actions-compact {
+        display: flex;
+        align-items: center;
+    }
+
+    .step-content-compact {
+        padding: 1rem;
+        background: white;
+    }
+
+    .compact-content h6 {
+        color: #475569;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+
+    .compact-list {
+        margin: 0;
+        padding-left: 1.5rem;
+        font-size: 0.9rem;
+        color: #6b7280;
+    }
+
+    .compact-list li {
+        margin-bottom: 0.25rem;
+    }
+
+    .measurement-preview {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .measurement-preview span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: #475569;
+    }
+
+    .input-compact {
+        width: 80px;
+        padding: 0.25rem 0.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+
+    .condition-preview {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .condition-preview label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: #475569;
+        cursor: pointer;
+    }
+
+    .photo-upload-compact {
+        display: flex;
+        align-items: center;
+    }
+
+    .all-steps-actions {
+        text-align: center;
+        margin-top: 2rem;
+        padding: 2rem;
+        background: #f8fafc;
+        border-radius: 15px;
+    }
+
+    /* Voice Guide Styles */
+    .voice-guide-active {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+        color: white !important;
+        border-color: #10b981 !important;
+    }
+
+    .voice-guide-active i {
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+
+    /* Control Buttons */
+    .control-buttons .btn {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+    }
+
+    /* Survey Overview Styles */
+    .survey-overview-content {
+        padding: 1.5rem 0;
+    }
+
+    .overview-section {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .overview-section h5 {
+        color: #2d3748;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .info-box {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    .info-row {
+        display: flex;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #64748b;
+        width: 120px;
+    }
+
+    .info-value {
+        color: #2d3748;
+        flex: 1;
+    }
+
+    .task-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .task-list li {
+        padding: 0.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .time-estimate {
+        background: #f0fdfa;
+        border: 1px solid #10b981;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    .time-total {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #059669;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #d1fae5;
+    }
+
+    .time-breakdown {
+        display: grid;
+        gap: 0.5rem;
+    }
+
+    .time-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.25rem 0;
+    }
+
+    .step-name {
+        color: #64748b;
+    }
+
+    .step-time {
+        font-weight: 600;
+        color: #10b981;
+    }
+
+    /* Room Overview Photo Section */
+    .room-overview-section {
+        margin: 1rem 0;
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .room-overview-section h6 {
+        color: #475569;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+
+    .room-photo-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .room-photo-area:hover {
+        border-color: #667eea;
+        background: #f8fafc;
+    }
+
+    .room-photo-upload {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        position: relative;
+    }
+
+    .photo-count {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    /* Wall Section */
+    .wall-section {
+        margin: 1.5rem 0;
+    }
+
+    .wall-section h6 {
+        color: #475569;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    /* Wall Record Styles */
+    .wall-record {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .wall-record:hover {
+        border-color: #667eea;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+    }
+
+    .wall-record-header {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        gap: 1rem;
+    }
+
+    .wall-number {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+    }
+
+    .wall-record-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        margin-left: auto;
+    }
+
+    .btn-wall-action {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.8rem;
+    }
+
+    .btn-wall-action.btn-photo {
+        background: #10b981;
+        color: white;
+    }
+
+    .btn-wall-action.btn-edit {
+        background: #3b82f6;
+        color: white;
+    }
+
+    .btn-wall-action.btn-delete {
+        background: #ef4444;
+        color: white;
+    }
+
+    .btn-wall-action:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    /* Wall Measurements */
+    .wall-measurements {
+        padding: 1rem;
+        background: #fafbfc;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .measurement-section h7 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.75rem;
+        display: block;
+    }
+
+    .measurement-areas {
+        margin-bottom: 1rem;
+    }
+
+    .measurement-area {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .measurement-inputs {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .input-group label {
+        font-size: 0.8rem;
+        color: #6b7280;
+        font-weight: 500;
+    }
+
+    .measurement-input {
+        width: 100px;
+        padding: 0.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+
+    .measurement-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn-remove-area {
+        background: #ef4444;
+        color: white;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.7rem;
+        margin-left: auto;
+    }
+
+    .btn-remove-area:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+    }
+
+    .btn-add-area {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-add-area:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    /* Room Notes Section */
+    .room-notes-section {
+        margin: 1.5rem 0;
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .room-notes-section h6 {
+        color: #475569;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+
+    .room-notes-input {
+        width: 100%;
+        min-height: 80px;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        resize: vertical;
+        transition: all 0.3s ease;
+    }
+
+    .room-notes-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .room-notes-input::placeholder {
+        color: #9ca3af;
+    }
+
+    .step-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        margin: 1rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: 3px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .step-card.active {
+        border-color: #667eea;
+        transform: scale(1.02);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.2);
+    }
+
+    .step-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+    }
+
+    .step-number {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+
+    .step-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .step-status {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .status-not-started {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .status-in-progress {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .status-completed {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    .instruction-box {
+        background: #f8fafc;
+        border-left: 4px solid #667eea;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .measurement-diagram {
+        background: white;
+        border: 2px dashed #cbd5e1;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        margin: 1rem 0;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+    }
+
+    .diagram-placeholder {
+        width: 150px;
+        height: 100px;
+        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+
+    .btn-step {
+        padding: 1rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+    }
+
+    .btn-start {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .btn-complete {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .btn-complete:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-next {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .btn-next:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-back {
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        color: white;
+    }
+
+    .btn-step:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+
+    .measurement-input {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 1rem 0;
+        padding: 1rem;
+        background: white;
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+    }
+
+    .measurement-input input {
+        border: none;
+        background: #f8fafc;
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        text-align: center;
+        width: 120px;
+    }
+
+    .measurement-input label {
+        font-weight: 600;
+        color: #374151;
+        min-width: 80px;
+    }
+
+    .condition-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+
+    .condition-option {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .condition-option:hover,
+    .condition-option.selected {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.05);
+    }
+
+    .mobile-optimized {
+        padding: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .step-card {
+            margin: 0.5rem;
+            padding: 1.5rem;
+        }
+
+        .measurement-input {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .condition-options {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checklist-container">
+    <!-- 進捗ヘッダー -->
+    <div class="progress-header">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center">
+                <a href="/surveys/demo/" class="btn btn-outline-primary btn-sm me-3">
+                    <i class="fas fa-arrow-left"></i> デモに戻る
+                </a>
+                <h4 class="mb-0">
+                    <i class="fas fa-clipboard-check text-primary"></i>
+                    クロス張り替え調査
+                </h4>
+            </div>
+            <div class="text-end">
+                <div class="control-buttons mb-2">
+                    <button class="btn btn-sm btn-outline-secondary me-2" onclick="toggleViewMode()" id="viewModeBtn">
+                        <i class="fas fa-list"></i> 全ステップ表示
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" onclick="toggleVoiceGuide()" id="voiceGuideBtn">
+                        <i class="fas fa-volume-up"></i> 音声ガイド
+                    </button>
+                </div>
+                <div>
+                    <small class="text-muted">{{ survey.project.site_name }}</small><br>
+                    <span class="badge bg-primary">{{ completion_percentage }}% 完了</span>
+                </div>
+            </div>
+        </div>
+        <div class="progress-bar-custom">
+            <div class="progress-fill" style="width: {{ completion_percentage }}%"></div>
+        </div>
+
+        <!-- Clickable Step Navigation -->
+        <div class="step-navigation">
+            {% for step_data in steps_progress %}
+                {% if not forloop.first %}
+                    <div class="step-nav-connector {% if step_data.is_completed %}completed{% endif %}"></div>
+                {% endif %}
+                <div class="step-nav-item
+                    {% if step_data.step.id == current_step.id %}current
+                    {% elif step_data.is_completed %}completed
+                    {% else %}pending{% endif %}"
+                    onclick="navigateToStep({{ step_data.step.id }})"
+                    title="{{ step_data.step.title }}">
+                    {{ step_data.step.step_number }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <!-- Survey Overview Section -->
+                {% if current_step.step_number == 1 %}
+                <div class="survey-overview" id="surveyOverview">
+                    <div class="overview-header">
+                        <h2><i class="fas fa-clipboard-list"></i> クロス張り替え調査の流れ</h2>
+                        <p class="mb-0">調査を開始する前に、全体の流れを確認しましょう</p>
+                    </div>
+                    <div class="overview-content">
+                        <div class="step-flow">
+                            {% for step_data in steps_progress %}
+                            <div class="flow-step">
+                                <div class="flow-step-number">{{ step_data.step.step_number }}</div>
+                                <div class="flow-step-title">{{ step_data.step.title }}</div>
+                                <div class="flow-step-desc">{{ step_data.step.description }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="text-center mt-4">
+                            <button class="start-button" onclick="startSurvey()">
+                                <i class="fas fa-play"></i> 調査を開始する
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="step-card active" {% if current_step.step_number == 1 %}id="stepContent" style="display: none;"{% endif %}>
+                    <div class="step-header">
+                        <div class="d-flex align-items-center">
+                            <div class="step-number">{{ current_step.step_number }}</div>
+                            <div class="ms-3">
+                                <h3 class="step-title">{{ current_step.title }}</h3>
+                                <p class="text-muted mb-0">{{ current_step.description }}</p>
+                            </div>
+                        </div>
+                        {% for step_data in steps_progress %}
+                            {% if step_data.step.id == current_step.id %}
+                                {% if step_data.is_completed %}
+                                    <div class="step-status status-completed">
+                                        <i class="fas fa-check-circle"></i> 完了
+                                    </div>
+                                {% elif step_data.is_current %}
+                                    <div class="step-status status-in-progress">
+                                        <i class="fas fa-play-circle"></i> 進行中
+                                    </div>
+                                {% else %}
+                                    <div class="step-status status-not-started">
+                                        <i class="fas fa-circle"></i> 未開始
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <!-- Step Progress Indicator -->
+                    <div class="step-progress-indicator">
+                        <div class="progress-info">
+                            <div class="progress-stats">
+                                <span class="completed-count">
+                                    {% for step_data in steps_progress %}
+                                        {% if step_data.is_completed %}{% endif %}
+                                    {% endfor %}
+                                    {% widthratio completion_percentage 100 steps_progress|length %}完了
+                                </span>
+                                <span class="total-steps">/ {{ steps_progress|length }}ステップ</span>
+                            </div>
+                            <div class="progress-percentage">{{ completion_percentage }}%</div>
+                        </div>
+                        <div class="mini-progress-bar">
+                            <div class="mini-progress-fill" style="width: {{ completion_percentage }}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- ステップ別コンテンツ -->
+                    {% if current_step.step_type == 'survey_overview' %}
+                        <!-- ステップ0: 調査概要 -->
+                        <div class="survey-overview-content">
+                            <div class="overview-section">
+                                <h5><i class="fas fa-building text-primary"></i> 物件情報</h5>
+                                <div class="info-box">
+                                    <div class="info-row">
+                                        <span class="info-label">物件名:</span>
+                                        <span class="info-value">{{ survey.project.site_name }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">住所:</span>
+                                        <span class="info-value">{{ survey.project.site_address|default:"未設定" }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">作業種別:</span>
+                                        <span class="info-value">クロス張り替え</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="overview-section">
+                                <h5><i class="fas fa-tasks text-success"></i> 調査内容</h5>
+                                <ul class="task-list">
+                                    <li><i class="fas fa-check-circle text-success"></i> 部屋と壁面の登録</li>
+                                    <li><i class="fas fa-check-circle text-success"></i> 各壁面の寸法測定</li>
+                                    <li><i class="fas fa-check-circle text-success"></i> 現状の記録（損傷・汚れ）</li>
+                                    <li><i class="fas fa-check-circle text-success"></i> 写真撮影</li>
+                                </ul>
+                            </div>
+
+                            <div class="overview-section">
+                                <h5><i class="fas fa-exclamation-triangle text-warning"></i> 注意事項</h5>
+                                <div class="alert alert-warning">
+                                    <ul class="mb-0">
+                                        <li>正確な測定を心がけてください</li>
+                                        <li>損傷箇所は必ず写真に記録してください</li>
+                                        <li>お客様の物品に触れないよう注意してください</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="overview-section">
+                                <h5><i class="fas fa-clock text-info"></i> 予想所要時間</h5>
+                                <div class="time-estimate">
+                                    <div class="time-total">
+                                        <i class="fas fa-hourglass-half"></i>
+                                        合計: 約30分
+                                    </div>
+                                    <div class="time-breakdown">
+                                        {% for step_info in steps_progress %}
+                                        <div class="time-item">
+                                            <span class="step-name">{{ step_info.step.title }}:</span>
+                                            <span class="step-time">{{ step_info.step.estimated_minutes }}分</span>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    {% elif current_step.step_type == 'room_setup' %}
+                        <div class="instruction-box">
+                            <h5><i class="fas fa-info-circle text-primary"></i> 部屋の準備</h5>
+                            <p>調査を開始する前に、以下を確認してください：</p>
+                            <ul>
+                                <li>部屋の明かりをつけて、十分な明るさを確保</li>
+                                <li>大きな家具は可能な限り壁から離す</li>
+                                <li>メジャーとカメラを準備</li>
+                                <li>安全に作業できる環境を整える</li>
+                            </ul>
+                        </div>
+
+                        <!-- Room Setup Interface -->
+                        <div class="room-setup">
+                            <div class="setup-header">
+                                <h5><i class="fas fa-home text-primary"></i> 部屋設定</h5>
+                                <p class="text-muted">調査対象の部屋を設定してください</p>
+                            </div>
+
+                            <!-- Room List -->
+                            <div class="room-list" id="roomList">
+                                <div class="room-item active" data-room-id="1">
+                                    <div class="room-header">
+                                        <input type="text" class="room-name-input" value="{{ current_room.name|default:"リビングルーム" }}"
+                                               onblur="updateRoomName(1, this.value)" onkeypress="handleEnterKey(event, () => updateRoomName(1, this.value))">
+                                        <button class="btn-remove-room" onclick="removeRoom(1)" title="部屋を削除">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Room Overview Photo Section -->
+                                    <div class="room-overview-section">
+                                        <h6><i class="fas fa-home"></i> 部屋全体写真</h6>
+                                        <div class="room-photo-area" onclick="openRoomPhotoManager(1)">
+                                            <div class="room-photo-upload" id="roomPhotoArea1">
+                                                <i class="fas fa-camera fa-2x text-muted"></i>
+                                                <p class="text-muted mb-0">クリックして部屋全体の写真を追加</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Room Notes Section -->
+                                    <div class="room-notes-section">
+                                        <h6><i class="fas fa-sticky-note"></i> 部屋全体の備考</h6>
+                                        <textarea class="room-notes-input" id="roomNotes1" placeholder="部屋全体に関する特記事項があれば記入してください..."
+                                                  onblur="updateRoomNotes(1, this.value)"></textarea>
+                                    </div>
+
+                                    <!-- Step Completion Checkbox -->
+                                    <div class="step-completion">
+                                        <label class="completion-checkbox">
+                                            <input type="checkbox" id="roomSetupComplete" onchange="updateStepCompletion('room_setup', this.checked)">
+                                            <span class="checkmark"></span>
+                                            部屋設定を完了しました
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Add Room Button -->
+                            <button class="btn-add-room" onclick="addRoom()">
+                                <i class="fas fa-plus"></i> 部屋を追加
+                            </button>
+                        </div>
+
+                    {% elif current_step.step_type == 'wall_setup' %}
+                        <div class="instruction-box">
+                            <h5><i class="fas fa-th-large text-primary"></i> 壁面管理</h5>
+                            <p>各部屋の壁面を設定・管理してください：</p>
+                            <ul>
+                                <li>各壁面に分かりやすい名前をつける</li>
+                                <li>必要に応じて壁面を追加・削除する</li>
+                                <li>壁面の基本情報を記録する</li>
+                            </ul>
+                        </div>
+
+                        <!-- Wall Management Interface -->
+                        <div class="wall-management">
+                            <div class="management-header">
+                                <h5><i class="fas fa-th-large text-primary"></i> 壁面管理</h5>
+                                <p class="text-muted">調査対象の壁面を設定してください</p>
+                            </div>
+
+                            <!-- Room List -->
+                            <div class="room-list" id="roomList">
+                                <div class="room-item active" data-room-id="1">
+                                    <div class="room-header">
+                                        <input type="text" class="room-name-input" value="{{ current_room.name|default:"リビングルーム" }}"
+                                               onblur="updateRoomName(1, this.value)" onkeypress="handleEnterKey(event, () => updateRoomName(1, this.value))">
+                                        <button class="btn-remove-room" onclick="removeRoom(1)" title="部屋を削除">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Room Overview Photo Section -->
+                                    <div class="room-overview-section">
+                                        <h6><i class="fas fa-home"></i> 部屋全体写真</h6>
+                                        <div class="room-photo-area" onclick="openRoomPhotoManager(1)">
+                                            <div class="room-photo-upload" id="roomPhotoArea1">
+                                                <i class="fas fa-camera fa-2x text-muted"></i>
+                                                <p class="text-muted mb-0">クリックして部屋全体の写真を追加</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Wall List for this room -->
+                                    <div class="wall-section">
+                                        <h6><i class="fas fa-th-large"></i> 壁面リスト</h6>
+                                        <div class="wall-list" id="wallList1">
+                                            <div class="wall-record" data-wall-id="1">
+                                                <div class="wall-record-header">
+                                                    <span class="wall-number">1</span>
+                                                    <input type="text" class="wall-name-input" value="北壁"
+                                                           onblur="updateWallName(1, 1, this.value)" onkeypress="handleEnterKey(event, () => updateWallName(1, 1, this.value))">
+                                                    <div class="wall-record-actions">
+                                                        <button class="btn-wall-action btn-photo" onclick="openPhotoManager(1, 1)" title="写真管理">
+                                                            <i class="fas fa-camera"></i>
+                                                        </button>
+                                                        <button class="btn-wall-action btn-edit" onclick="editWall(1, 1)" title="編集">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button class="btn-wall-action btn-delete" onclick="removeWall(1, 1)" title="削除">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="wall-photos" id="wallPhotos1-1">
+                                                    <!-- Photos will be dynamically added here -->
+                                                </div>
+                                            </div>
+                                            <div class="wall-record" data-wall-id="2">
+                                                <div class="wall-record-header">
+                                                    <span class="wall-number">2</span>
+                                                    <input type="text" class="wall-name-input" value="東壁"
+                                                           onblur="updateWallName(1, 2, this.value)" onkeypress="handleEnterKey(event, () => updateWallName(1, 2, this.value))">
+                                                    <div class="wall-record-actions">
+                                                        <button class="btn-wall-action btn-photo" onclick="openPhotoManager(1, 2)" title="写真管理">
+                                                            <i class="fas fa-camera"></i>
+                                                        </button>
+                                                        <button class="btn-wall-action btn-edit" onclick="editWall(1, 2)" title="編集">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button class="btn-wall-action btn-delete" onclick="removeWall(1, 2)" title="削除">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="wall-photos" id="wallPhotos1-2">
+                                                    <!-- Photos will be dynamically added here -->
+                                                </div>
+                                            </div>
+                                            <div class="wall-record" data-wall-id="3">
+                                                <div class="wall-record-header">
+                                                    <span class="wall-number">3</span>
+                                                    <input type="text" class="wall-name-input" value="南壁"
+                                                           onblur="updateWallName(1, 3, this.value)" onkeypress="handleEnterKey(event, () => updateWallName(1, 3, this.value))">
+                                                    <div class="wall-record-actions">
+                                                        <button class="btn-wall-action btn-photo" onclick="openPhotoManager(1, 3)" title="写真管理">
+                                                            <i class="fas fa-camera"></i>
+                                                        </button>
+                                                        <button class="btn-wall-action btn-edit" onclick="editWall(1, 3)" title="編集">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button class="btn-wall-action btn-delete" onclick="removeWall(1, 3)" title="削除">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="wall-photos" id="wallPhotos1-3">
+                                                    <!-- Photos will be dynamically added here -->
+                                                </div>
+                                            </div>
+                                            <div class="wall-record" data-wall-id="4">
+                                                <div class="wall-record-header">
+                                                    <span class="wall-number">4</span>
+                                                    <input type="text" class="wall-name-input" value="西壁"
+                                                           onblur="updateWallName(1, 4, this.value)" onkeypress="handleEnterKey(event, () => updateWallName(1, 4, this.value))">
+                                                    <div class="wall-record-actions">
+                                                        <button class="btn-wall-action btn-photo" onclick="openPhotoManager(1, 4)" title="写真管理">
+                                                            <i class="fas fa-camera"></i>
+                                                        </button>
+                                                        <button class="btn-wall-action btn-edit" onclick="editWall(1, 4)" title="編集">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button class="btn-wall-action btn-delete" onclick="removeWall(1, 4)" title="削除">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="wall-photos" id="wallPhotos1-4">
+                                                    <!-- Photos will be dynamically added here -->
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Add Wall Button -->
+                                        <button class="btn-add-wall" onclick="addWall(1)">
+                                            <i class="fas fa-plus"></i> 壁面を追加
+                                        </button>
+                                    </div>
+
+                                    <!-- Step Completion Checkbox -->
+                                    <div class="step-completion">
+                                        <label class="completion-checkbox">
+                                            <input type="checkbox" id="wallSetupComplete" onchange="updateStepCompletion('wall_setup', this.checked)">
+                                            <span class="checkmark"></span>
+                                            壁面管理を完了しました
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Add Room Button -->
+                            <button class="btn-add-room" onclick="addRoom()">
+                                <i class="fas fa-plus"></i> 部屋を追加
+                            </button>
+                        </div>
+
+
+                    {% elif current_step.step_type == 'wall_measurement' %}
+                        <div class="instruction-box">
+                            <h5><i class="fas fa-ruler text-primary"></i> 壁面の測定方法</h5>
+                            <p>各壁面を個別に測定し、必要に応じて写真を追加してください。メジャーで正確に測り、cm単位で入力してください。</p>
+                        </div>
+
+                        <!-- Wall-by-Wall Measurement Interface -->
+                        <div class="wall-measurement-section">
+                            <!-- Room List for Measurements -->
+                            <div class="room-list" id="measurementRoomList">
+                                <div class="room-item active" data-room-id="1">
+                                    <div class="room-header">
+                                        <h6><i class="fas fa-home"></i> {{ current_room.name|default:"リビングルーム" }}</h6>
+                                    </div>
+
+                                    <!-- Wall List for Measurements -->
+                                    <div class="wall-measurement-list">
+                                        <!-- Wall 1 -->
+                                        <div class="wall-measurement-record" data-wall-id="1">
+                                            <div class="wall-measurement-header">
+                                                <span class="wall-number">1</span>
+                                                <span class="wall-name">北壁</span>
+                                                <div class="wall-measurement-progress">
+                                                    <span class="measurement-status" id="measurementStatus1-1">未測定</span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Measurement Inputs -->
+                                            <div class="measurement-inputs-section">
+                                                <div class="measurement-input-group">
+                                                    <label>横幅 (cm):</label>
+                                                    <input type="number" id="wall-width-1-1" placeholder="例: 350" step="0.1"
+                                                           onchange="updateMeasurementStatus(1, 1)">
+                                                </div>
+                                                <div class="measurement-input-group">
+                                                    <label>高さ (cm):</label>
+                                                    <input type="number" id="wall-height-1-1" placeholder="例: 240" step="0.1"
+                                                           onchange="updateMeasurementStatus(1, 1)">
+                                                </div>
+                                            </div>
+
+                                            <!-- Photo Upload for this Wall -->
+                                            <div class="wall-measurement-photos">
+                                                <h7><i class="fas fa-camera"></i> 測定写真</h7>
+                                                <div class="measurement-photo-upload" onclick="openMeasurementPhotoUpload(1, 1)">
+                                                    <i class="fas fa-camera fa-lg"></i>
+                                                    <p>測定箇所の写真を追加</p>
+                                                    <small class="text-muted">メジャーで測定している様子など</small>
+                                                </div>
+                                                <div class="measurement-photo-gallery" id="measurementPhotoGallery1-1">
+                                                    <!-- Photos will be added here -->
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Wall 2 -->
+                                        <div class="wall-measurement-record" data-wall-id="2">
+                                            <div class="wall-measurement-header">
+                                                <span class="wall-number">2</span>
+                                                <span class="wall-name">東壁</span>
+                                                <div class="wall-measurement-progress">
+                                                    <span class="measurement-status" id="measurementStatus1-2">未測定</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="measurement-inputs-section">
+                                                <div class="measurement-input-group">
+                                                    <label>横幅 (cm):</label>
+                                                    <input type="number" id="wall-width-1-2" placeholder="例: 350" step="0.1"
+                                                           onchange="updateMeasurementStatus(1, 2)">
+                                                </div>
+                                                <div class="measurement-input-group">
+                                                    <label>高さ (cm):</label>
+                                                    <input type="number" id="wall-height-1-2" placeholder="例: 240" step="0.1"
+                                                           onchange="updateMeasurementStatus(1, 2)">
+                                                </div>
+                                            </div>
+
+                                            <div class="wall-measurement-photos">
+                                                <h7><i class="fas fa-camera"></i> 測定写真</h7>
+                                                <div class="measurement-photo-upload" onclick="openMeasurementPhotoUpload(1, 2)">
+                                                    <i class="fas fa-camera fa-lg"></i>
+                                                    <p>測定箇所の写真を追加</p>
+                                                    <small class="text-muted">メジャーで測定している様子など</small>
+                                                </div>
+                                                <div class="measurement-photo-gallery" id="measurementPhotoGallery1-2">
+                                                    <!-- Photos will be added here -->
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Wall 3 -->
+                                        <div class="wall-measurement-record" data-wall-id="3">
+                                            <div class="wall-measurement-header">
+                                                <span class="wall-number">3</span>
+                                                <span class="wall-name">南壁</span>
+                                                <div class="wall-measurement-progress">
+                                                    <span class="measurement-status" id="measurementStatus1-3">未測定</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="measurement-inputs-section">
+                                                <div class="measurement-input-group">
+                                                    <label>横幅 (cm):</label>
+                                                    <input type="number" id="wall-width-1-3" placeholder="例: 350" step="0.1"
+                                                           onchange="updateMeasurementStatus(1, 3)">
+                                                </div>
+                                                <div class="measurement-input-group">
+                                                    <label>高さ (cm):</label>
+                                                    <input type="number" id="wall-height-1-3" placeholder="例: 240" step="0.1"
+                                                           onchange="updateMeasurementStatus(1, 3)">
+                                                </div>
+                                            </div>
+
+                                            <div class="wall-measurement-photos">
+                                                <h7><i class="fas fa-camera"></i> 測定写真</h7>
+                                                <div class="measurement-photo-upload" onclick="openMeasurementPhotoUpload(1, 3)">
+                                                    <i class="fas fa-camera fa-lg"></i>
+                                                    <p>測定箇所の写真を追加</p>
+                                                    <small class="text-muted">メジャーで測定している様子など</small>
+                                                </div>
+                                                <div class="measurement-photo-gallery" id="measurementPhotoGallery1-3">
+                                                    <!-- Photos will be added here -->
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Wall 4 -->
+                                        <div class="wall-measurement-record" data-wall-id="4">
+                                            <div class="wall-measurement-header">
+                                                <span class="wall-number">4</span>
+                                                <span class="wall-name">西壁</span>
+                                                <div class="wall-measurement-progress">
+                                                    <span class="measurement-status" id="measurementStatus1-4">未測定</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="measurement-inputs-section">
+                                                <div class="measurement-input-group">
+                                                    <label>横幅 (cm):</label>
+                                                    <input type="number" id="wall-width-1-4" placeholder="例: 350" step="0.1"
+                                                           onchange="updateMeasurementStatus(1, 4)">
+                                                </div>
+                                                <div class="measurement-input-group">
+                                                    <label>高さ (cm):</label>
+                                                    <input type="number" id="wall-height-1-4" placeholder="例: 240" step="0.1"
+                                                           onchange="updateMeasurementStatus(1, 4)">
+                                                </div>
+                                            </div>
+
+                                            <div class="wall-measurement-photos">
+                                                <h7><i class="fas fa-camera"></i> 測定写真</h7>
+                                                <div class="measurement-photo-upload" onclick="openMeasurementPhotoUpload(1, 4)">
+                                                    <i class="fas fa-camera fa-lg"></i>
+                                                    <p>測定箇所の写真を追加</p>
+                                                    <small class="text-muted">メジャーで測定している様子など</small>
+                                                </div>
+                                                <div class="measurement-photo-gallery" id="measurementPhotoGallery1-4">
+                                                    <!-- Photos will be added here -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    {% elif current_step.step_type == 'condition_check' %}
+                        <div class="instruction-box">
+                            <h5><i class="fas fa-search text-primary"></i> 壁面状態の確認</h5>
+                            <p>現在の壁面の下地状態を選択してください：</p>
+                        </div>
+
+                        <div class="condition-options">
+                            <div class="condition-option" data-value="gypsum_board">
+                                <i class="fas fa-square fa-2x text-secondary mb-2"></i>
+                                <h6>石膏ボード</h6>
+                                <small>一般的な内壁材</small>
+                            </div>
+                            <div class="condition-option" data-value="concrete">
+                                <i class="fas fa-cube fa-2x text-dark mb-2"></i>
+                                <h6>コンクリート</h6>
+                                <small>RC造の壁面</small>
+                            </div>
+                            <div class="condition-option" data-value="plywood">
+                                <i class="fas fa-tree fa-2x text-warning mb-2"></i>
+                                <h6>合板</h6>
+                                <small>木質系下地材</small>
+                            </div>
+                            <div class="condition-option" data-value="other">
+                                <i class="fas fa-question fa-2x text-info mb-2"></i>
+                                <h6>その他</h6>
+                                <small>上記以外の材質</small>
+                            </div>
+                        </div>
+
+                        <div class="condition-options mt-4">
+                            <h6>下地の状態:</h6>
+                            <div class="condition-option" data-value="good">
+                                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                                <h6>良好</h6>
+                                <small>そのまま施工可能</small>
+                            </div>
+                            <div class="condition-option" data-value="needs_repair">
+                                <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                                <h6>補修必要</h6>
+                                <small>事前補修が必要</small>
+                            </div>
+                        </div>
+
+                    {% elif current_step.step_type == 'photo_capture' %}
+                        <div class="instruction-box">
+                            <h5><i class="fas fa-camera text-primary"></i> 壁面状態の写真撮影</h5>
+                            <p>各壁面の状態を写真で記録してください。壁面ごとに複数枚の写真を撮影し、必要に応じてキャプションを追加してください。</p>
+                        </div>
+
+                        <!-- Photo Capture Section with Walls from Step 1 -->
+                        <div class="photo-capture-section">
+                            <!-- Room List for Photo Capture -->
+                            <div class="room-list" id="photoCaptureRoomList">
+                                <div class="room-item active" data-room-id="1">
+                                    <div class="room-header">
+                                        <h6><i class="fas fa-home"></i> {{ current_room.name|default:"リビングルーム" }}</h6>
+                                    </div>
+
+                                    <!-- Wall List for Photo Capture -->
+                                    <div class="wall-photo-section">
+                                        <h6><i class="fas fa-th-large"></i> 壁面別写真撮影</h6>
+                                        <div class="wall-photo-list" id="wallPhotoList1">
+                                            <!-- Wall 1 -->
+                                            <div class="wall-photo-record" data-wall-id="1">
+                                                <div class="wall-photo-header">
+                                                    <span class="wall-number">1</span>
+                                                    <span class="wall-name">北壁</span>
+                                                    <div class="wall-photo-stats">
+                                                        <span class="photo-count" id="photoCount1-1">0枚</span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Photo Upload Zone -->
+                                                <div class="photo-upload-zone" onclick="openWallPhotoUpload(1, 1)">
+                                                    <i class="fas fa-camera fa-2x"></i>
+                                                    <p>クリックして写真を追加</p>
+                                                    <small class="text-muted">複数枚の写真を撮影できます</small>
+                                                </div>
+
+                                                <!-- Photo Gallery -->
+                                                <div class="wall-photo-gallery" id="wallPhotoGallery1-1">
+                                                    <!-- Photos will be dynamically added here -->
+                                                </div>
+                                            </div>
+
+                                            <!-- Wall 2 -->
+                                            <div class="wall-photo-record" data-wall-id="2">
+                                                <div class="wall-photo-header">
+                                                    <span class="wall-number">2</span>
+                                                    <span class="wall-name">東壁</span>
+                                                    <div class="wall-photo-stats">
+                                                        <span class="photo-count" id="photoCount1-2">0枚</span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="photo-upload-zone" onclick="openWallPhotoUpload(1, 2)">
+                                                    <i class="fas fa-camera fa-2x"></i>
+                                                    <p>クリックして写真を追加</p>
+                                                    <small class="text-muted">複数枚の写真を撮影できます</small>
+                                                </div>
+
+                                                <div class="wall-photo-gallery" id="wallPhotoGallery1-2">
+                                                    <!-- Photos will be dynamically added here -->
+                                                </div>
+                                            </div>
+
+                                            <!-- Wall 3 -->
+                                            <div class="wall-photo-record" data-wall-id="3">
+                                                <div class="wall-photo-header">
+                                                    <span class="wall-number">3</span>
+                                                    <span class="wall-name">南壁</span>
+                                                    <div class="wall-photo-stats">
+                                                        <span class="photo-count" id="photoCount1-3">0枚</span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="photo-upload-zone" onclick="openWallPhotoUpload(1, 3)">
+                                                    <i class="fas fa-camera fa-2x"></i>
+                                                    <p>クリックして写真を追加</p>
+                                                    <small class="text-muted">複数枚の写真を撮影できます</small>
+                                                </div>
+
+                                                <div class="wall-photo-gallery" id="wallPhotoGallery1-3">
+                                                    <!-- Photos will be dynamically added here -->
+                                                </div>
+                                            </div>
+
+                                            <!-- Wall 4 -->
+                                            <div class="wall-photo-record" data-wall-id="4">
+                                                <div class="wall-photo-header">
+                                                    <span class="wall-number">4</span>
+                                                    <span class="wall-name">西壁</span>
+                                                    <div class="wall-photo-stats">
+                                                        <span class="photo-count" id="photoCount1-4">0枚</span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="photo-upload-zone" onclick="openWallPhotoUpload(1, 4)">
+                                                    <i class="fas fa-camera fa-2x"></i>
+                                                    <p>クリックして写真を追加</p>
+                                                    <small class="text-muted">複数枚の写真を撮影できます</small>
+                                                </div>
+
+                                                <div class="wall-photo-gallery" id="wallPhotoGallery1-4">
+                                                    <!-- Photos will be dynamically added here -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    {% endif %}
+
+                    <!-- アクションボタン -->
+                    <div class="action-buttons">
+                        <!-- 前のステップに戻るボタン（ステップ1以外で表示） -->
+                        {% if previous_step_id %}
+                            <button class="btn-step btn-back" onclick="goToPreviousStep()">
+                                <i class="fas fa-arrow-left"></i> 前のステップに戻る
+                            </button>
+                        {% endif %}
+
+                        {% if current_step.step_type == 'survey_overview' %}
+                            <button class="btn-step btn-complete" onclick="completeStep('{{ current_step.id }}')">
+                                <i class="fas fa-play"></i> 調査開始
+                            </button>
+                        {% elif current_step.step_type == 'room_setup' %}
+                            <button class="btn-step btn-complete" onclick="completeStep('{{ current_step.id }}')">
+                                <i class="fas fa-check"></i> 部屋設定完了
+                            </button>
+                        {% elif current_step.step_type == 'wall_measurement' %}
+                            <button class="btn-step btn-complete" onclick="completeMeasurement()">
+                                <i class="fas fa-save"></i> 測定完了
+                            </button>
+                        {% elif current_step.step_type == 'condition_check' %}
+                            <button class="btn-step btn-complete" onclick="completeConditionCheck()" disabled id="condition-complete-btn">
+                                <i class="fas fa-check"></i> 状態確認完了
+                            </button>
+                        {% elif current_step.step_type == 'photo_capture' %}
+                            <button class="btn-step btn-complete" onclick="completePhotoCapture()">
+                                <i class="fas fa-images"></i> 撮影完了
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- All Steps View (Hidden by default) -->
+                <div id="allStepsView" style="display: none;">
+                    <div class="all-steps-header">
+                        <h3><i class="fas fa-list-alt"></i> 全ステップ一覧</h3>
+                        <p class="text-muted">すべてのステップを一画面で確認・操作できます</p>
+                    </div>
+
+                    {% for step_data in steps_progress %}
+                    <div class="step-card-compact" data-step-id="{{ step_data.step.id }}">
+                        <div class="step-header-compact">
+                            <div class="step-number-compact
+                                {% if step_data.is_completed %}completed
+                                {% elif step_data.step.id == current_step.id %}current
+                                {% else %}pending{% endif %}">
+                                {{ step_data.step.step_number }}
+                            </div>
+                            <div class="step-info-compact">
+                                <h5 class="step-title-compact">{{ step_data.step.title }}</h5>
+                                <p class="step-desc-compact">{{ step_data.step.description }}</p>
+                            </div>
+                            <div class="step-actions-compact">
+                                {% if step_data.is_completed %}
+                                    <span class="badge bg-success">完了</span>
+                                {% elif step_data.step.id == current_step.id %}
+                                    <span class="badge bg-primary">進行中</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">未開始</span>
+                                {% endif %}
+                                <button class="btn btn-sm btn-outline-primary ms-2" onclick="navigateToStep({{ step_data.step.id }})">
+                                    実行
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="step-content-compact">
+                            {% if step_data.step.step_type == 'room_setup' %}
+                                <div class="compact-content">
+                                    <h6><i class="fas fa-home"></i> 部屋準備</h6>
+                                    <ul class="compact-list">
+                                        <li>照明の確保</li>
+                                        <li>家具の移動</li>
+                                        <li>必要機材の準備</li>
+                                        <li>安全確認</li>
+                                    </ul>
+                                </div>
+                            {% elif step_data.step.step_type == 'wall_measurement' %}
+                                <div class="compact-content">
+                                    <h6><i class="fas fa-ruler"></i> 壁面測定</h6>
+                                    <div class="measurement-preview">
+                                        <span>幅: <input type="number" class="input-compact" placeholder="cm"></span>
+                                        <span>高さ: <input type="number" class="input-compact" placeholder="cm"></span>
+                                        <span>開口部: <input type="number" class="input-compact" placeholder="cm²"></span>
+                                    </div>
+                                </div>
+                            {% elif step_data.step.step_type == 'condition_check' %}
+                                <div class="compact-content">
+                                    <h6><i class="fas fa-search"></i> 状態確認</h6>
+                                    <div class="condition-preview">
+                                        <label><input type="radio" name="condition_{{ step_data.step.id }}"> 良好</label>
+                                        <label><input type="radio" name="condition_{{ step_data.step.id }}"> 要注意</label>
+                                        <label><input type="radio" name="condition_{{ step_data.step.id }}"> 要修理</label>
+                                    </div>
+                                </div>
+                            {% elif step_data.step.step_type == 'photo_capture' %}
+                                <div class="compact-content">
+                                    <h6><i class="fas fa-camera"></i> 写真撮影</h6>
+                                    <div class="photo-upload-compact">
+                                        <button class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-plus"></i> 写真追加
+                                        </button>
+                                        <small class="text-muted ms-2">0枚の写真</small>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <div class="all-steps-actions">
+                        <button class="btn btn-success btn-lg" onclick="completeAllSteps()">
+                            <i class="fas fa-check-circle"></i> 全ステップ完了
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden file input for photo capture -->
+<input type="file" id="photo-input" accept="image/*" capture="environment" style="display: none;">
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedFoundationType = null;
+let selectedFoundationCondition = null;
+let currentStepId = {{ current_step.id }};
+let surveyId = {{ survey.id }};
+
+// 状態選択の処理
+document.querySelectorAll('.condition-option').forEach(option => {
+    option.addEventListener('click', function() {
+        const value = this.dataset.value;
+        const parent = this.parentElement;
+
+        // 同じグループの他の選択を解除
+        parent.querySelectorAll('.condition-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+
+        // 現在の選択をマーク
+        this.classList.add('selected');
+
+        // 選択値を保存
+        if (['gypsum_board', 'concrete', 'plywood', 'other'].includes(value)) {
+            selectedFoundationType = value;
+        } else if (['good', 'needs_repair'].includes(value)) {
+            selectedFoundationCondition = value;
+        }
+
+        // 両方選択されたらボタンを有効化
+        if (selectedFoundationType && selectedFoundationCondition) {
+            document.getElementById('condition-complete-btn').disabled = false;
+        }
+    });
+});
+
+// 写真撮影機能
+function capturePhoto(photoType) {
+    const input = document.getElementById('photo-input');
+    input.dataset.photoType = photoType;
+    input.click();
+}
+
+document.getElementById('photo-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        uploadPhoto(file, this.dataset.photoType);
+    }
+});
+
+// 写真アップロード
+function uploadPhoto(file, photoType) {
+    const formData = new FormData();
+    formData.append('photo', file);
+    formData.append('photo_type', photoType);
+
+    fetch(`/surveys/${surveyId}/step/${currentStepId}/upload-photo/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('写真がアップロードされました');
+        } else {
+            showError('写真のアップロードに失敗しました');
+        }
+    });
+}
+
+// ステップ完了関数
+function completeStep(stepId) {
+    fetch(`/surveys/${surveyId}/step/${stepId}/complete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.next_step_id) {
+                window.location.href = `?step=${data.next_step_id}`;
+            } else {
+                showSuccess('調査が完了しました！');
+                window.location.href = `/surveys/${surveyId}/`;
+            }
+        }
+    });
+}
+
+function completeMeasurement() {
+    const width = document.getElementById('wall-width').value;
+    const height = document.getElementById('wall-height').value;
+    const opening = document.getElementById('wall-opening').value || 0;
+
+    if (!width || !height) {
+        showError('横幅と高さを入力してください');
+        return;
+    }
+
+    const data = {
+        width: parseFloat(width),
+        height: parseFloat(height),
+        opening_area: parseFloat(opening)
+    };
+
+    fetch(`/surveys/${surveyId}/step/${currentStepId}/complete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.next_step_id) {
+                window.location.href = `?step=${data.next_step_id}`;
+            } else {
+                showSuccess('測定が完了しました！');
+            }
+        }
+    });
+}
+
+function completeConditionCheck() {
+    const data = {
+        foundation_type: selectedFoundationType,
+        foundation_condition: selectedFoundationCondition
+    };
+
+    fetch(`/surveys/${surveyId}/step/${currentStepId}/complete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.next_step_id) {
+                window.location.href = `?step=${data.next_step_id}`;
+            } else {
+                showSuccess('状態確認が完了しました！');
+            }
+        }
+    });
+}
+
+function completePhotoCapture() {
+    completeStep(currentStepId);
+}
+
+// Wall Photo Upload Functions
+let currentWallForUpload = {roomId: null, wallId: null};
+let wallPhotoCounters = {};
+
+function openWallPhotoUpload(roomId, wallId) {
+    currentWallForUpload = {roomId, wallId};
+
+    // Create file input for multiple photos
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.capture = 'environment';
+
+    input.onchange = function(event) {
+        const files = Array.from(event.target.files);
+        files.forEach(file => {
+            uploadWallPhoto(roomId, wallId, file);
+        });
+    };
+
+    input.click();
+}
+
+function uploadWallPhoto(roomId, wallId, file) {
+    const formData = new FormData();
+    formData.append('photo', file);
+    formData.append('wall_id', wallId);
+    formData.append('room_id', roomId);
+
+    // Show loading state
+    showMessage('写真をアップロード中...', 'info');
+
+    fetch(`/surveys/${surveyId}/step/${currentStepId}/upload-photo/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            addPhotoToGallery(roomId, wallId, data.photo_id, data.photo_url, file.name);
+            updatePhotoCount(roomId, wallId);
+            showMessage('写真がアップロードされました', 'success');
+        } else {
+            showMessage('写真のアップロードに失敗しました', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        showMessage('写真のアップロードに失敗しました', 'error');
+    });
+}
+
+function addPhotoToGallery(roomId, wallId, photoId, photoUrl, fileName) {
+    const gallery = document.getElementById(`wallPhotoGallery${roomId}-${wallId}`);
+
+    const photoHtml = `
+        <div class="gallery-photo" data-photo-id="${photoId}">
+            <img src="${photoUrl}" alt="${fileName}">
+            <div class="photo-actions">
+                <button class="btn-delete" onclick="deleteWallPhoto(${roomId}, ${wallId}, ${photoId})">
+                    ×
+                </button>
+            </div>
+            <div class="photo-info">
+                <textarea class="photo-comment-input" placeholder="写真にキャプションを追加..."
+                         onblur="updatePhotoCaption(${photoId}, this.value)"
+                         onkeypress="handleCaptionEnter(event, ${photoId}, this)"></textarea>
+            </div>
+        </div>
+    `;
+
+    gallery.insertAdjacentHTML('beforeend', photoHtml);
+
+    // Initialize counter if not exists
+    const key = `${roomId}-${wallId}`;
+    if (!wallPhotoCounters[key]) {
+        wallPhotoCounters[key] = 0;
+    }
+    wallPhotoCounters[key]++;
+}
+
+function deleteWallPhoto(roomId, wallId, photoId) {
+    if (!confirm('この写真を削除しますか？')) {
+        return;
+    }
+
+    fetch(`/surveys/${surveyId}/photos/${photoId}/delete/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const photoElement = document.querySelector(`[data-photo-id="${photoId}"]`);
+            if (photoElement) {
+                photoElement.remove();
+                updatePhotoCount(roomId, wallId);
+                showMessage('写真が削除されました', 'success');
+            }
+        } else {
+            showMessage('写真の削除に失敗しました', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Delete error:', error);
+        showMessage('写真の削除に失敗しました', 'error');
+    });
+}
+
+function updatePhotoCount(roomId, wallId) {
+    const gallery = document.getElementById(`wallPhotoGallery${roomId}-${wallId}`);
+    const photoCount = gallery.querySelectorAll('.gallery-photo').length;
+    const countElement = document.getElementById(`photoCount${roomId}-${wallId}`);
+
+    if (countElement) {
+        countElement.textContent = `${photoCount}枚`;
+
+        // Update counter state
+        const key = `${roomId}-${wallId}`;
+        wallPhotoCounters[key] = photoCount;
+    }
+}
+
+function updatePhotoCaption(photoId, caption) {
+    fetch(`/surveys/${surveyId}/photos/${photoId}/update-caption/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({caption: caption})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Caption updated successfully');
+        } else {
+            showMessage('キャプションの保存に失敗しました', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Caption update error:', error);
+    });
+}
+
+function handleCaptionEnter(event, photoId, element) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        updatePhotoCaption(photoId, element.value);
+        element.blur();
+    }
+}
+
+// Wall Measurement Functions
+function updateMeasurementStatus(roomId, wallId) {
+    const widthInput = document.getElementById(`wall-width-${roomId}-${wallId}`);
+    const heightInput = document.getElementById(`wall-height-${roomId}-${wallId}`);
+    const statusElement = document.getElementById(`measurementStatus${roomId}-${wallId}`);
+
+    if (!statusElement) return;
+
+    const width = widthInput?.value;
+    const height = heightInput?.value;
+
+    let status = 'not-measured';
+    let statusText = '未測定';
+
+    if (width && height) {
+        status = 'completed';
+        statusText = '完了';
+    } else if (width || height) {
+        status = 'partial';
+        statusText = '一部完了';
+    }
+
+    // Update status display
+    statusElement.className = `measurement-status ${status}`;
+    statusElement.textContent = statusText;
+
+    // Save measurement data
+    saveMeasurementData(roomId, wallId, {
+        width: width || '',
+        height: height || ''
+    });
+}
+
+function saveMeasurementData(roomId, wallId, data) {
+    fetch(`/surveys/${surveyId}/step/${currentStepId}/save-measurement/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            room_id: roomId,
+            wall_id: wallId,
+            measurements: data
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Measurement data saved successfully');
+        } else {
+            console.error('Failed to save measurement data');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving measurement data:', error);
+    });
+}
+
+function openMeasurementPhotoUpload(roomId, wallId) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.capture = 'environment';
+
+    input.onchange = function(event) {
+        const files = Array.from(event.target.files);
+        files.forEach(file => {
+            uploadMeasurementPhoto(roomId, wallId, file);
+        });
+    };
+
+    input.click();
+}
+
+function uploadMeasurementPhoto(roomId, wallId, file) {
+    const formData = new FormData();
+    formData.append('photo', file);
+    formData.append('wall_id', wallId);
+    formData.append('room_id', roomId);
+    formData.append('photo_type', 'measurement');
+
+    showMessage('測定写真をアップロード中...', 'info');
+
+    fetch(`/surveys/${surveyId}/step/${currentStepId}/upload-photo/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            addMeasurementPhotoToGallery(roomId, wallId, data.photo_id, data.photo_url, file.name);
+            showMessage('測定写真がアップロードされました', 'success');
+        } else {
+            showMessage('写真のアップロードに失敗しました', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        showMessage('写真のアップロードに失敗しました', 'error');
+    });
+}
+
+function addMeasurementPhotoToGallery(roomId, wallId, photoId, photoUrl, fileName) {
+    const gallery = document.getElementById(`measurementPhotoGallery${roomId}-${wallId}`);
+
+    const photoHtml = `
+        <div class="gallery-photo" data-photo-id="${photoId}">
+            <img src="${photoUrl}" alt="${fileName}">
+            <div class="photo-actions">
+                <button class="btn-delete" onclick="deleteMeasurementPhoto(${roomId}, ${wallId}, ${photoId})">
+                    ×
+                </button>
+            </div>
+            <div class="photo-info">
+                <textarea class="photo-comment-input" placeholder="測定写真のキャプション..."
+                         onblur="updatePhotoCaption(${photoId}, this.value)"
+                         onkeypress="handleCaptionEnter(event, ${photoId}, this)"></textarea>
+            </div>
+        </div>
+    `;
+
+    gallery.insertAdjacentHTML('beforeend', photoHtml);
+}
+
+function deleteMeasurementPhoto(roomId, wallId, photoId) {
+    if (!confirm('この測定写真を削除しますか？')) {
+        return;
+    }
+
+    fetch(`/surveys/${surveyId}/photos/${photoId}/delete/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const photoElement = document.querySelector(`[data-photo-id="${photoId}"]`);
+            if (photoElement) {
+                photoElement.remove();
+                showMessage('測定写真が削除されました', 'success');
+            }
+        } else {
+            showMessage('写真の削除に失敗しました', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Delete error:', error);
+        showMessage('写真の削除に失敗しました', 'error');
+    });
+}
+
+// Step Completion Management
+function updateStepCompletion(stepType, isCompleted) {
+    fetch(`/surveys/${surveyId}/step-completion/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            step_type: stepType,
+            completed: isCompleted
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (isCompleted) {
+                showMessage('ステップ完了状況を保存しました', 'success');
+            } else {
+                showMessage('ステップ完了状況を更新しました', 'info');
+            }
+        } else {
+            showMessage('完了状況の保存に失敗しました', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Step completion error:', error);
+        showMessage('完了状況の保存に失敗しました', 'error');
+    });
+}
+
+// 前のステップに戻る機能
+function goToPreviousStep() {
+    {% if previous_step_id %}
+        // 前のステップIDが分かっているので直接遷移
+        const url = new URL(window.location);
+        url.searchParams.set('step', '{{ previous_step_id }}');
+        window.location.href = url.toString();
+    {% else %}
+        showMessage('前のステップがありません', 'info');
+    {% endif %}
+}
+
+// ステップナビゲーション機能
+function navigateToStep(stepId) {
+    if (stepId === {{ current_step.id }}) {
+        return; // 現在のステップには遷移しない
+    }
+
+    const url = new URL(window.location);
+    url.searchParams.set('step', stepId);
+    window.location.href = url.toString();
+}
+
+// 調査開始機能
+function startSurvey() {
+    const overview = document.getElementById('surveyOverview');
+    const stepContent = document.getElementById('stepContent');
+
+    if (overview && stepContent) {
+        overview.style.display = 'none';
+        stepContent.style.display = 'block';
+
+        // ページの上部にスクロール
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+// Room Management Functions
+let roomCounter = 1;
+let wallCounter = 4;
+
+function addRoom() {
+    roomCounter++;
+    const roomList = document.getElementById('roomList');
+
+    const roomHtml = `
+        <div class="room-item" data-room-id="${roomCounter}">
+            <div class="room-header">
+                <input type="text" class="room-name-input" value="新しい部屋 ${roomCounter}"
+                       onblur="updateRoomName(${roomCounter}, this.value)" onkeypress="handleEnterKey(event, () => updateRoomName(${roomCounter}, this.value))">
+                <button class="btn-remove-room" onclick="removeRoom(${roomCounter})" title="部屋を削除">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Room Overview Photo Section -->
+            <div class="room-overview-section">
+                <h6><i class="fas fa-home"></i> 部屋全体写真</h6>
+                <div class="room-photo-area" onclick="openRoomPhotoManager(${roomCounter})">
+                    <div class="room-photo-upload" id="roomPhotoArea${roomCounter}">
+                        <i class="fas fa-camera fa-2x text-muted"></i>
+                        <p class="text-muted mb-0">クリックして部屋全体の写真を追加</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wall Records Section -->
+            <div class="wall-section">
+                <h6><i class="fas fa-square"></i> 壁面記録</h6>
+                <div class="wall-list" id="wallList${roomCounter}">
+                    <div class="wall-record" data-wall-id="1">
+                        <div class="wall-record-header">
+                            <span class="wall-number">1</span>
+                            <input type="text" class="wall-name-input" value="北壁">
+                            <div class="wall-record-actions">
+                                <button class="btn-wall-action btn-photo" onclick="openPhotoManager(${roomCounter}, 1)" title="写真管理">
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                                <button class="btn-wall-action btn-edit" onclick="editWall(${roomCounter}, 1)" title="編集">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-wall-action btn-delete" onclick="removeWall(${roomCounter}, 1)" title="削除">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="wall-photos" id="wallPhotos${roomCounter}-1">
+                            <!-- Photos will be dynamically added here -->
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-add-wall" onclick="addWall(${roomCounter})">
+                    <i class="fas fa-plus"></i> 壁面を追加
+                </button>
+            </div>
+
+            <!-- Room Notes Section -->
+            <div class="room-notes-section">
+                <h6><i class="fas fa-sticky-note"></i> 部屋備考</h6>
+                <textarea class="room-notes-input" placeholder="部屋に関する備考を入力してください..."
+                          onblur="updateRoomNotes(${roomCounter}, this.value)"></textarea>
+            </div>
+        </div>
+    `;
+
+    roomList.insertAdjacentHTML('beforeend', roomHtml);
+    showMessage('新しい部屋が追加されました', 'success');
+}
+
+function removeRoom(roomId) {
+    if (confirm('この部屋を削除しますか？')) {
+        const roomElement = document.querySelector(`[data-room-id="${roomId}"]`);
+        if (roomElement) {
+            roomElement.remove();
+            showMessage('部屋が削除されました', 'info');
+        }
+    }
+}
+
+function addWall(roomId) {
+    wallCounter++;
+    const wallList = document.getElementById(`wallList${roomId}`);
+    const wallCount = wallList.children.length + 1;
+
+    // 現在のステップタイプを取得
+    const isWallMeasurement = document.querySelector('.step-card.active')?.querySelector('[data-step-type="wall_measurement"]') !== null ||
+                             window.location.href.includes('wall_measurement');
+
+    const wallHtml = `
+        <div class="wall-record" data-wall-id="${wallCounter}">
+            <div class="wall-record-header">
+                <span class="wall-number">${wallCount}</span>
+                <input type="text" class="wall-name-input" value="壁${wallCount}">
+                <div class="wall-record-actions">
+                    <button class="btn-wall-action btn-photo" onclick="openPhotoManager(${roomId}, ${wallCounter})" title="写真管理">
+                        <i class="fas fa-camera"></i>
+                    </button>
+                    <button class="btn-wall-action btn-edit" onclick="editWall(${roomId}, ${wallCounter})" title="編集">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-wall-action btn-delete" onclick="removeWall(${roomId}, ${wallCounter})" title="削除">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            ${isWallMeasurement || '{{ current_step.step_type }}' === 'wall_measurement' ? `
+            <div class="wall-measurements" id="wallMeasurements${roomId}-${wallCounter}">
+                <div class="measurement-section">
+                    <h7>面の寸法</h7>
+                    <div class="measurement-areas" id="measurementAreas${roomId}-${wallCounter}">
+                        <div class="measurement-area" data-area-id="1">
+                            <div class="measurement-inputs">
+                                <div class="input-group">
+                                    <label>縦 (cm)</label>
+                                    <input type="number" class="measurement-input" placeholder="0">
+                                </div>
+                                <div class="input-group">
+                                    <label>横 (cm)</label>
+                                    <input type="number" class="measurement-input" placeholder="0">
+                                </div>
+                                <button class="btn-remove-area" onclick="removeMeasurementArea(${roomId}, ${wallCounter}, 1)" title="面を削除">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-add-area" onclick="addMeasurementArea(${roomId}, ${wallCounter})">
+                        <i class="fas fa-plus"></i> 面を追加
+                    </button>
+                </div>
+            </div>
+            ` : ''}
+            <div class="wall-photos" id="wallPhotos${roomId}-${wallCounter}">
+                <!-- Photos will be dynamically added here -->
+            </div>
+        </div>
+    `;
+
+    wallList.insertAdjacentHTML('beforeend', wallHtml);
+    showMessage('新しい壁面が追加されました', 'success');
+}
+
+function removeWall(roomId, wallId) {
+    if (confirm('この壁面を削除しますか？')) {
+        const wallElement = document.querySelector(`#wallList${roomId} [data-wall-id="${wallId}"]`);
+        if (wallElement) {
+            wallElement.remove();
+            showMessage('壁面が削除されました', 'info');
+        }
+    }
+}
+
+// Message display function
+function showMessage(message, type) {
+    const msgDiv = document.createElement('div');
+    msgDiv.textContent = message;
+    msgDiv.style.cssText = `
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#e53e3e' : '#3b82f6'};
+        color: white; padding: 15px 25px; border-radius: 10px;
+        font-size: 16px; font-weight: 600; z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-width: 300px; text-align: center;
+    `;
+    document.body.appendChild(msgDiv);
+    setTimeout(() => { msgDiv.remove(); }, 3000);
+}
+
+// Name editing functions
+function updateRoomName(roomId, newName) {
+    if (newName.trim()) {
+        showMessage(`部屋名を「${newName}」に更新しました`, 'success');
+    }
+}
+
+function updateWallName(roomId, wallId, newName) {
+    if (newName.trim()) {
+        showMessage(`壁名を「${newName}」に更新しました`, 'success');
+    }
+}
+
+function handleEnterKey(event, callback) {
+    if (event.key === 'Enter') {
+        event.target.blur();
+        callback();
+    }
+}
+
+// Photo management
+let currentRoomId = null;
+let currentWallId = null;
+let wallPhotos = {}; // Store photos for each wall
+
+function openPhotoManager(roomId, wallId) {
+    currentRoomId = roomId;
+    currentWallId = wallId;
+
+    const wallName = document.querySelector(`#wallList${roomId} [data-wall-id="${wallId}"] .wall-name-input`).value;
+    document.getElementById('photoModalTitle').textContent = `${wallName} - 写真管理`;
+
+    displayPhotos();
+
+    // Show modal using Bootstrap
+    const modal = new bootstrap.Modal(document.getElementById('photoModal'));
+    modal.show();
+}
+
+function displayPhotos() {
+    const wallKey = `${currentRoomId}-${currentWallId}`;
+    const photos = wallPhotos[wallKey] || [];
+    const gallery = document.getElementById('photoGallery');
+
+    gallery.innerHTML = '';
+
+    photos.forEach((photo, index) => {
+        const photoElement = document.createElement('div');
+        photoElement.className = 'gallery-photo';
+        photoElement.innerHTML = `
+            <img src="${photo.url}" alt="Wall photo">
+            <div class="photo-actions">
+                <button class="btn-delete" onclick="deletePhoto(${index})" title="削除">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="photo-info">
+                <textarea class="photo-comment-input" placeholder="コメントを入力..."
+                          onblur="updatePhotoComment(${index}, this.value)">${photo.comment || ''}</textarea>
+            </div>
+        `;
+        gallery.appendChild(photoElement);
+    });
+
+    // Update wall photo thumbnails
+    updateWallPhotoThumbnails();
+}
+
+function updateWallPhotoThumbnails() {
+    const wallKey = `${currentRoomId}-${currentWallId}`;
+    const photos = wallPhotos[wallKey] || [];
+    const wallPhotosContainer = document.getElementById(`wallPhotos${wallKey}`);
+
+    wallPhotosContainer.innerHTML = '';
+
+    photos.slice(0, 4).forEach((photo, index) => {
+        const thumbnail = document.createElement('div');
+        thumbnail.className = 'photo-item';
+        thumbnail.onclick = () => openPhotoManager(currentRoomId, currentWallId);
+        thumbnail.innerHTML = `
+            <img src="${photo.url}" alt="Wall photo">
+            ${photo.comment ? `<div class="photo-comment">${photo.comment}</div>` : ''}
+        `;
+        wallPhotosContainer.appendChild(thumbnail);
+    });
+
+    if (photos.length > 4) {
+        const moreIndicator = document.createElement('div');
+        moreIndicator.className = 'photo-item';
+        moreIndicator.style.cssText = 'display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #6b7280; font-size: 0.8rem; cursor: pointer;';
+        moreIndicator.textContent = `+${photos.length - 4}`;
+        moreIndicator.onclick = () => openPhotoManager(currentRoomId, currentWallId);
+        wallPhotosContainer.appendChild(moreIndicator);
+    }
+}
+
+function deletePhoto(index) {
+    if (confirm('この写真を削除しますか？')) {
+        const wallKey = `${currentRoomId}-${currentWallId}`;
+        wallPhotos[wallKey].splice(index, 1);
+        displayPhotos();
+        showMessage('写真を削除しました', 'info');
+    }
+}
+
+function updatePhotoComment(index, comment) {
+    const wallKey = `${currentRoomId}-${currentWallId}`;
+    if (wallPhotos[wallKey] && wallPhotos[wallKey][index]) {
+        wallPhotos[wallKey][index].comment = comment;
+        updateWallPhotoThumbnails();
+    }
+}
+
+// File upload handling
+document.getElementById('photoFileInput').addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    const wallKey = `${currentRoomId}-${currentWallId}`;
+
+    if (!wallPhotos[wallKey]) {
+        wallPhotos[wallKey] = [];
+    }
+
+    files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            wallPhotos[wallKey].push({
+                url: e.target.result,
+                comment: '',
+                file: file
+            });
+            displayPhotos();
+        };
+        reader.readAsDataURL(file);
+    });
+
+    showMessage(`${files.length}枚の写真を追加しました`, 'success');
+    e.target.value = ''; // Reset file input
+});
+
+// View Mode Toggle
+let isAllStepsView = false;
+
+function toggleViewMode() {
+    const singleStepView = document.querySelector('.step-card.active').parentElement;
+    const allStepsView = document.getElementById('allStepsView');
+    const viewModeBtn = document.getElementById('viewModeBtn');
+
+    isAllStepsView = !isAllStepsView;
+
+    if (isAllStepsView) {
+        singleStepView.style.display = 'none';
+        allStepsView.style.display = 'block';
+        viewModeBtn.innerHTML = '<i class="fas fa-eye"></i> 単一ステップ表示';
+        viewModeBtn.classList.remove('btn-outline-secondary');
+        viewModeBtn.classList.add('btn-secondary');
+
+        if (voiceGuideActive) {
+            speakText('全ステップ表示に切り替えました。すべてのステップを一画面で確認できます。');
+        }
+    } else {
+        singleStepView.style.display = 'block';
+        allStepsView.style.display = 'none';
+        viewModeBtn.innerHTML = '<i class="fas fa-list"></i> 全ステップ表示';
+        viewModeBtn.classList.remove('btn-secondary');
+        viewModeBtn.classList.add('btn-outline-secondary');
+
+        if (voiceGuideActive) {
+            speakText('単一ステップ表示に切り替えました。');
+        }
+    }
+}
+
+// Voice Guide
+let voiceGuideActive = false;
+let speechSynthesis = window.speechSynthesis;
+
+function toggleVoiceGuide() {
+    const voiceGuideBtn = document.getElementById('voiceGuideBtn');
+
+    voiceGuideActive = !voiceGuideActive;
+
+    if (voiceGuideActive) {
+        voiceGuideBtn.classList.add('voice-guide-active');
+        voiceGuideBtn.innerHTML = '<i class="fas fa-volume-up"></i> 音声ON';
+        speakText('音声ガイドを開始します。調査の手順を音声で説明いたします。');
+
+        // Provide initial guidance
+        setTimeout(() => {
+            if (voiceGuideActive) {
+                const currentStepTitle = document.querySelector('.step-title').textContent;
+                speakText(`現在のステップは「${currentStepTitle}」です。`);
+            }
+        }, 2000);
+    } else {
+        voiceGuideBtn.classList.remove('voice-guide-active');
+        voiceGuideBtn.innerHTML = '<i class="fas fa-volume-mute"></i> 音声OFF';
+        speechSynthesis.cancel(); // Stop current speech
+    }
+}
+
+function speakText(text) {
+    if (!voiceGuideActive) return;
+
+    // Cancel any ongoing speech
+    speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ja-JP';
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 0.8;
+
+    speechSynthesis.speak(utterance);
+}
+
+// Complete All Steps
+function completeAllSteps() {
+    if (confirm('全てのステップを完了としてマークしますか？')) {
+        // Mark all steps as completed (this would typically involve API calls)
+        document.querySelectorAll('.step-number-compact').forEach(step => {
+            step.classList.remove('current', 'pending');
+            step.classList.add('completed');
+        });
+
+        document.querySelectorAll('.step-actions-compact .badge').forEach(badge => {
+            badge.className = 'badge bg-success';
+            badge.textContent = '完了';
+        });
+
+        showMessage('全ステップが完了しました！', 'success');
+
+        if (voiceGuideActive) {
+            speakText('全てのステップが完了しました。お疲れ様でした。');
+        }
+
+        // Update progress bar
+        document.querySelector('.progress-fill').style.width = '100%';
+        document.querySelector('.badge.bg-primary').textContent = '100% 完了';
+    }
+}
+
+// Enhanced navigation with voice guide
+const originalNavigateToStep = navigateToStep;
+navigateToStep = function(stepId) {
+    if (voiceGuideActive) {
+        const stepElement = document.querySelector(`[data-step-id="${stepId}"]`);
+        if (stepElement) {
+            const stepTitle = stepElement.querySelector('.step-title-compact, .step-title').textContent;
+            speakText(`${stepTitle}に移動します。`);
+        }
+    }
+    originalNavigateToStep(stepId);
+};
+
+// ユーティリティ関数
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showSuccess(message) {
+    // 簡単な成功メッセージ表示
+    alert(message);
+}
+
+
+// ページ読み込み時の処理
+document.addEventListener('DOMContentLoaded', function() {
+    // ステップ開始API呼び出し
+    fetch(`/surveys/${surveyId}/step/${currentStepId}/start/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    });
+
+    // ステップ完了バッジの手動切り替え機能
+    const stepBadges = document.querySelectorAll('.step-number-compact');
+    console.log('Found step badges:', stepBadges.length);
+
+    stepBadges.forEach(stepBadge => {
+        // スタイルを追加してクリック可能であることを示す
+        stepBadge.style.cursor = 'pointer';
+        stepBadge.title = '右クリックまたはダブルクリックで完了状態を切り替え';
+
+        stepBadge.addEventListener('contextmenu', function(e) {
+            e.preventDefault(); // 右クリックメニューを無効化
+            console.log('Right click on step badge');
+            toggleStepCompletion(this);
+        });
+
+        // ダブルクリックでも切り替え可能にする（モバイル対応）
+        stepBadge.addEventListener('dblclick', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Double click on step badge');
+            toggleStepCompletion(this);
+        });
+
+        // クリックイベントも追加（よりシンプルなUX）
+        stepBadge.addEventListener('click', function(e) {
+            // シフトキーを押しながらクリックで切り替え
+            if (e.shiftKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Shift+click on step badge');
+                toggleStepCompletion(this);
+            }
+        });
+    });
+});
+
+// Room Overview Photo Management
+let roomPhotos = {}; // Store room overview photos
+
+function openRoomPhotoManager(roomId) {
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">部屋全体写真管理</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input type="file" accept="image/*" multiple class="form-control" id="roomPhotoInput${roomId}">
+                    </div>
+                    <div class="room-photos-gallery" id="roomPhotosGallery${roomId}">
+                        <!-- Room photos will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    const bootstrapModal = new bootstrap.Modal(modal);
+
+    // Display existing photos
+    displayRoomPhotos(roomId);
+
+    // Handle file upload
+    document.getElementById(`roomPhotoInput${roomId}`).addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        if (!roomPhotos[roomId]) {
+            roomPhotos[roomId] = [];
+        }
+
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                roomPhotos[roomId].push({
+                    url: e.target.result,
+                    comment: '',
+                    file: file
+                });
+                displayRoomPhotos(roomId);
+                updateRoomPhotoDisplay(roomId);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        showMessage(`${files.length}枚の写真を追加しました`, 'success');
+        e.target.value = '';
+    });
+
+    // Clean up modal when closed
+    modal.addEventListener('hidden.bs.modal', function() {
+        document.body.removeChild(modal);
+    });
+
+    bootstrapModal.show();
+}
+
+function displayRoomPhotos(roomId) {
+    const photos = roomPhotos[roomId] || [];
+    const gallery = document.getElementById(`roomPhotosGallery${roomId}`);
+
+    if (!gallery) return;
+
+    gallery.innerHTML = '';
+
+    photos.forEach((photo, index) => {
+        const photoElement = document.createElement('div');
+        photoElement.className = 'gallery-photo mb-3';
+        photoElement.innerHTML = `
+            <img src="${photo.url}" alt="Room photo" style="width: 100%; max-width: 300px; border-radius: 8px;">
+            <div class="mt-2">
+                <textarea class="form-control" placeholder="コメントを入力..."
+                          onblur="updateRoomPhotoComment(${roomId}, ${index}, this.value)">${photo.comment || ''}</textarea>
+                <button class="btn btn-sm btn-danger mt-1" onclick="deleteRoomPhoto(${roomId}, ${index})">
+                    <i class="fas fa-trash"></i> 削除
+                </button>
+            </div>
+        `;
+        gallery.appendChild(photoElement);
+    });
+}
+
+function updateRoomPhotoDisplay(roomId) {
+    const photos = roomPhotos[roomId] || [];
+    const photoArea = document.getElementById(`roomPhotoArea${roomId}`);
+
+    if (!photoArea) return;
+
+    if (photos.length > 0) {
+        const firstPhoto = photos[0];
+        photoArea.innerHTML = `
+            <img src="${firstPhoto.url}" alt="Room overview" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">
+            <div class="photo-count">${photos.length}枚</div>
+        `;
+    } else {
+        photoArea.innerHTML = `
+            <i class="fas fa-camera fa-2x text-muted"></i>
+            <p class="text-muted mb-0">クリックして部屋全体の写真を追加</p>
+        `;
+    }
+}
+
+function updateRoomPhotoComment(roomId, index, comment) {
+    if (roomPhotos[roomId] && roomPhotos[roomId][index]) {
+        roomPhotos[roomId][index].comment = comment;
+    }
+}
+
+function deleteRoomPhoto(roomId, index) {
+    if (confirm('この写真を削除しますか？')) {
+        roomPhotos[roomId].splice(index, 1);
+        displayRoomPhotos(roomId);
+        updateRoomPhotoDisplay(roomId);
+        showMessage('写真を削除しました', 'info');
+    }
+}
+
+// Wall Edit Functionality
+function editWall(roomId, wallId) {
+    const wallElement = document.querySelector(`#wallList${roomId} [data-wall-id="${wallId}"]`);
+    if (!wallElement) return;
+
+    const wallNameInput = wallElement.querySelector('.wall-name-input');
+    const currentName = wallNameInput.value;
+
+    const newName = prompt('壁面名を入力してください:', currentName);
+    if (newName && newName !== currentName) {
+        wallNameInput.value = newName;
+        showMessage('壁面名を更新しました', 'success');
+    }
+}
+
+// Measurement Area Management
+let measurementCounter = 0;
+
+function addMeasurementArea(roomId, wallId) {
+    measurementCounter++;
+    const wallElement = document.querySelector(`#wallList${roomId} [data-wall-id="${wallId}"]`);
+    if (!wallElement) return;
+
+    let measurementContainer = wallElement.querySelector('.measurement-container');
+    if (!measurementContainer) {
+        measurementContainer = document.createElement('div');
+        measurementContainer.className = 'measurement-container';
+        wallElement.appendChild(measurementContainer);
+    }
+
+    const measurementArea = document.createElement('div');
+    measurementArea.className = 'measurement-area';
+    measurementArea.setAttribute('data-area-id', measurementCounter);
+    measurementArea.innerHTML = `
+        <div class="measurement-inputs">
+            <div class="input-group">
+                <label>縦 (cm)</label>
+                <input type="number" class="measurement-input" placeholder="0" min="0">
+            </div>
+            <div class="input-group">
+                <label>横 (cm)</label>
+                <input type="number" class="measurement-input" placeholder="0" min="0">
+            </div>
+            <button class="btn-remove-area" onclick="removeMeasurementArea(${roomId}, ${wallId}, ${measurementCounter})" title="測定エリアを削除">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+
+    measurementContainer.appendChild(measurementArea);
+    showMessage('測定エリアを追加しました', 'success');
+}
+
+function removeMeasurementArea(roomId, wallId, areaId) {
+    if (confirm('この測定エリアを削除しますか？')) {
+        const areaElement = document.querySelector(`#wallList${roomId} [data-wall-id="${wallId}"] [data-area-id="${areaId}"]`);
+        if (areaElement) {
+            areaElement.remove();
+            showMessage('測定エリアを削除しました', 'info');
+        }
+    }
+}
+
+// Room Notes Management
+function updateRoomNotes(roomId, notes) {
+    const roomElement = document.querySelector(`[data-room-id="${roomId}"]`);
+    if (!roomElement) return;
+
+    // Store notes in a data attribute or local storage
+    roomElement.setAttribute('data-notes', notes);
+    showMessage('部屋の備考を保存しました', 'success');
+}
+
+// Step Completion Badge Manual Toggle
+function toggleStepCompletion(stepElement) {
+    const isCompleted = stepElement.classList.contains('completed');
+    const isCurrent = stepElement.classList.contains('current');
+
+    if (isCompleted) {
+        // Change from completed to pending
+        stepElement.classList.remove('completed');
+        stepElement.classList.add('pending');
+        showMessage('ステップを未完了に変更しました', 'info');
+    } else if (!isCurrent) {
+        // Change from pending to completed (don't change current step)
+        stepElement.classList.remove('pending');
+        stepElement.classList.add('completed');
+        showMessage('ステップを完了に変更しました', 'success');
+    }
+}
+
+</script>
+
+<!-- Photo Management Modal -->
+<div class="modal fade" id="photoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="photoModalTitle">壁面写真管理</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="photo-upload-area">
+                    <input type="file" id="photoFileInput" accept="image/*" multiple style="display: none;">
+                    <div class="upload-zone" onclick="document.getElementById('photoFileInput').click()">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                        <h5>写真をアップロード</h5>
+                        <p class="text-muted">クリックするか、ファイルをドラッグしてください</p>
+                    </div>
+                </div>
+                <div class="photo-gallery" id="photoGallery">
+                    <!-- Photos will be displayed here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
