@@ -15,29 +15,19 @@ django.setup()
 
 from django.contrib.auth.models import User
 from order_management.models import Project
-from surveys.models import Survey, SurveyRoom, SurveyWall, SurveyDamage
+from surveys.models import Survey, SurveyRoom, SurveyWall, SurveyDamage, Surveyor
 
 def create_test_data():
-    # Create test users if they don't exist (架空の人物)
-    surveyor1, created = User.objects.get_or_create(
-        username='sample_taro',
-        defaults={
-            'first_name': '太郎',
-            'last_name': 'サンプル',
-            'email': 'sample.taro@demo.example.com',
-            'is_active': True
-        }
-    )
+    # Get existing surveyors instead of creating users
+    surveyor1 = Surveyor.objects.filter(is_active=True).first()
+    surveyor2 = Surveyor.objects.filter(is_active=True).last()
 
-    surveyor2, created = User.objects.get_or_create(
-        username='test_hanako',
-        defaults={
-            'first_name': '花子',
-            'last_name': 'テスト',
-            'email': 'test.hanako@demo.example.com',
-            'is_active': True
-        }
-    )
+    if not surveyor1:
+        print("調査員が見つかりません。先に調査員を作成してください。")
+        return
+
+    if not surveyor2:
+        surveyor2 = surveyor1  # Use same surveyor if only one exists
 
     # Get first project or create one
     project = Project.objects.first()

@@ -124,7 +124,7 @@ def create_test_data():
             project = Project.objects.create(
                 management_no=f'P{project_counter:04d}',
                 site_name=f'{contractor.name.split("株式会社")[0].split("工")[0]}案件{i+1}',
-                site_address=f'テスト県{random.choice(["デモ市", "架空市", "サンプル市"])}ダミー町{i}-{j}-{k}',
+                site_address=f'テスト県{random.choice(["デモ市", "架空市", "サンプル市"])}ダミー町{i+1}-{random.randint(1,10)}-{random.randint(1,30)}',
                 work_type=contractor.specialties.split('、')[0],
                 order_status='受注',
                 contractor_name=contractor.name,  # 業者名を設定
