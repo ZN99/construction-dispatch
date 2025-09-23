@@ -1120,6 +1120,73 @@ def generate_client_invoice_api(request):
 
 
 @csrf_exempt
+def get_client_invoice_preview_api(request):
+    """クライアント向け複数プロジェクト請求書プレビューAPI"""
+    if request.method == 'POST':
+        try:
+            import json
+            data = json.loads(request.body)
+            client_name = data.get('client_name')
+            project_ids = data.get('project_ids', [])
+
+            if not client_name or not project_ids:
+                return JsonResponse({'error': 'クライアント名またはプロジェクトIDが指定されていません'}, status=400)
+
+            # 指定されたプロジェクトを取得
+            projects = Project.objects.filter(id__in=project_ids, contractor_name=client_name)
+
+            if not projects.exists():
+                return JsonResponse({'error': '指定されたプロジェクトが見つかりません'}, status=404)
+
+            # 合計金額を計算
+            total_subtotal = sum((p.estimate_amount or Decimal('0')) for p in projects)
+            tax_rate = Decimal('10.00')
+            tax_amount = (total_subtotal * tax_rate / Decimal('100')).quantize(Decimal('1'))
+            total_amount = total_subtotal + tax_amount
+
+            # 請求書番号を生成
+            today = timezone.now()
+            year_month = today.strftime('%Y%m')
+            preview_invoice_number = f"INV-{year_month}-{Invoice.objects.filter(invoice_number__startswith=f'INV-{year_month}').count() + 1:03d}"
+
+            # 項目リストを作成
+            items = []
+            for project in projects:
+                project_amount = project.estimate_amount or Decimal('0')
+                items.append({
+                    'description': f"{project.work_type} - {project.site_name}",
+                    'quantity': 1.0,
+                    'unit': '式',
+                    'unit_price': float(project_amount),
+                    'amount': float(project_amount),
+                    'work_period': f"{project.work_start_date.strftime('%Y/%m/%d') if project.work_start_date else '未定'} ～ {project.work_end_date.strftime('%Y/%m/%d') if project.work_end_date else '未定'}"
+                })
+
+            preview_data = {
+                'invoice_number': preview_invoice_number,
+                'issue_date': today.strftime('%Y年%m月%d日'),
+                'due_date': (today + timedelta(days=30)).strftime('%Y年%m月%d日'),
+                'client_name': client_name,
+                'billing_period': f"{today.strftime('%Y年%m月分')}",
+                'items': items,
+                'subtotal': f"{total_subtotal:,}",
+                'tax_amount': f"{tax_amount:,}",
+                'total_amount': f"{total_amount:,}",
+                'project_count': len(projects)
+            }
+
+            return JsonResponse({
+                'success': True,
+                'preview_data': preview_data
+            })
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@csrf_exempt
 def get_invoice_preview_api(request, project_id):
     """請求書プレビューデータ取得API"""
     if request.method == 'GET':

@@ -22,7 +22,7 @@ class UltimateDashboardView(TemplateView):
         today = now.date()
         year = int(self.request.GET.get('year', now.year))
         month = int(self.request.GET.get('month', now.month))
-        view_type = self.request.GET.get('view', 'executive')  # executive, financial, operational
+        view_type = self.request.GET.get('view', 'financial')  # financial, operational
 
         # 月の開始日と終了日
         start_date = datetime(year, month, 1).date()
@@ -284,7 +284,6 @@ class UltimateDashboardView(TemplateView):
 
             # ビュータイプ選択肢
             'view_type_choices': [
-                ('executive', 'エグゼクティブビュー'),
                 ('financial', '財務詳細ビュー'),
                 ('operational', '運用詳細ビュー'),
             ],

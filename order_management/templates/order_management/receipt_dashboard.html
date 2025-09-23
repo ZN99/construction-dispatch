@@ -2043,10 +2043,8 @@ function showFullPreview() {
 
 // 請求書プレビュー
 function previewClientInvoice(clientName, projectIds) {
-    // Use the first project ID for preview (multiple projects support can be added later)
-    const projectId = projectIds && projectIds.length > 0 ? projectIds[0] : null;
-
-    if (!projectId) {
+    // 複数プロジェクトに対応
+    if (!projectIds || projectIds.length === 0) {
         alert('プレビューするプロジェクトが見つかりません。');
         return;
     }
@@ -2062,13 +2060,17 @@ function previewClientInvoice(clientName, projectIds) {
     document.getElementById('pdfLoading').style.display = 'block';
     document.getElementById('pdfContent').style.display = 'none';
 
-    // Fetch real invoice preview data from API
-    fetch(`/orders/api/invoice/preview/${projectId}/`, {
-        method: 'GET',
+    // Fetch real invoice preview data from API for multiple projects
+    fetch(`/orders/api/invoice/preview/client/`, {
+        method: 'POST',
         headers: {
             'X-CSRFToken': getCsrfToken(),
             'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({
+            client_name: clientName,
+            project_ids: projectIds
+        })
     })
     .then(response => response.json())
     .then(data => {

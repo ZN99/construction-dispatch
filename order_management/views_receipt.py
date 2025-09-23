@@ -24,12 +24,9 @@ class ReceiptDashboardView(TemplateView):
         end_date = datetime(year, month, calendar.monthrange(year, month)[1]).date()
 
         # 入金ベース：今月入金予定または実際に入金があった案件
-        # - payment_due_dateが今月の範囲内
-        # - または実際に入金があった案件（入金済みの案件）
+        # 範囲を広げて全案件を表示（テスト用）
         base_query = Project.objects.filter(
-            Q(payment_due_date__range=[start_date, end_date]) |
-            Q(invoice_issued=True, billing_amount__gt=0) |  # 請求済み案件
-            Q(order_status='受注', billing_amount__gt=0)     # 受注済み案件
+            estimate_amount__gt=0
         ).exclude(
             contractor_name__isnull=True
         ).exclude(

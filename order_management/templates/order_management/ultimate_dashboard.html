@@ -531,10 +531,6 @@
     <div class="view-tabs">
         <div class="container-fluid">
             <div class="tab-buttons">
-                <button class="tab-btn {% if view_type == 'executive' %}active{% endif %}"
-                        onclick="location.href='?year={{ year }}&month={{ month }}&view=executive'">
-                    <i class="fas fa-tachometer-alt"></i> エグゼクティブビュー
-                </button>
                 <button class="tab-btn {% if view_type == 'financial' %}active{% endif %}"
                         onclick="location.href='?year={{ year }}&month={{ month }}&view=financial'">
                     <i class="fas fa-coins"></i> 財務詳細ビュー
@@ -550,8 +546,6 @@
     <!-- メインコンテンツ -->
     <div class="content-area">
         <div class="container-fluid">
-            {% if view_type == 'executive' %}
-                <!-- エグゼクティブビュー -->
                 <div class="row">
                     <!-- 左カラム: プロジェクト収益性 -->
                     <div class="col-lg-6">
@@ -655,7 +649,7 @@
                     </div>
                 </div>
 
-            {% elif view_type == 'financial' %}
+            {% if view_type == 'financial' %}
                 <!-- 財務詳細ビュー（Accounting Dashboardの全機能） -->
                 {% include 'order_management/partials/financial_detail.html' %}
 
