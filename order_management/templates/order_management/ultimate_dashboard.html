@@ -153,6 +153,17 @@
         min-height: 500px;
     }
 
+    /* 邪魔なrowを隠すための修正 */
+    .problematic-row-hidden {
+        display: none !important;
+    }
+
+    /* operationalビューの時は正常表示 */
+    .operational-row {
+        display: block !important;
+        margin-top: 1rem;
+    }
+
     /* プロジェクトカード */
     .project-card {
         background: white;
@@ -655,7 +666,7 @@
 
             {% elif view_type == 'operational' %}
                 <!-- 運用詳細ビュー -->
-                <div class="row">
+                <div class="row operational-row">
                     <!-- 進行中案件リスト -->
                     <div class="col-lg-6">
                         <h4><i class="fas fa-hard-hat"></i> 進行中案件</h4>
@@ -705,6 +716,15 @@ document.addEventListener('DOMContentLoaded', function() {
     cards.forEach((card, index) => {
         card.style.animationDelay = `${index * 0.1}s`;
     });
+
+    // 邪魔なrowを隠すための緊急修正
+    const currentView = '{{ view_type }}';
+    const problematicRow = document.querySelector('.content-area > .container-fluid > .row:first-child');
+
+    if (currentView === 'financial' && problematicRow && !problematicRow.classList.contains('operational-row')) {
+        problematicRow.classList.add('problematic-row-hidden');
+        console.log('Hidden problematic row in financial view');
+    }
 
     {% if view_type == 'executive' %}
     // ステータス分布チャート
