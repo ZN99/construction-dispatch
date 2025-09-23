@@ -38,4 +38,7 @@ python create_sample_surveys.py
 echo "Creating payment data..."
 python create_payment_data.py
 
+echo "Creating survey data..."
+python create_survey_data.py
+
 echo "Build completed successfully!"
