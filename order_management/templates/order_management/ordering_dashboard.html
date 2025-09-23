@@ -511,7 +511,7 @@
                                 </div>
                                 <div class="d-flex justify-content-between">
                                     <span class="text-muted">請求予定額:</span>
-                                    <span class="fw-bold text-success">¥{{ total_invoice_amount|floatformat:0|add_commas }}</span>
+                                    <span class="fw-bold text-success">¥{{ total_invoice_amount|floatformat:0|intcomma }}</span>
                                 </div>
                             </div>
 
@@ -546,7 +546,7 @@
                                 </div>
                                 <div class="d-flex justify-content-between">
                                     <span class="text-muted">発注予定額:</span>
-                                    <span class="fw-bold text-primary">¥{{ total_purchase_amount|floatformat:0|add_commas }}</span>
+                                    <span class="fw-bold text-primary">¥{{ total_purchase_amount|floatformat:0|intcomma }}</span>
                                 </div>
                             </div>
 
