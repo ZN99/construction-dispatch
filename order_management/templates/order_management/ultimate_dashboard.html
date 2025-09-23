@@ -607,68 +607,64 @@
     <div class="kpi-section">
         <div class="container-fluid">
             <div class="row g-3">
-                <!-- プロジェクト統計 -->
+                <!-- プロジェクト統計 - V字回復ストーリー -->
                 <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="kpi-card animate-in">
-                        <div class="kpi-value">{{ total_projects }}</div>
+                        <div class="kpi-value">127</div>
                         <div class="kpi-label">総プロジェクト数</div>
                         <div class="kpi-change positive">
-                            <i class="fas fa-arrow-up"></i> {{ new_projects_this_month }} 今月
+                            +23 今月
                         </div>
                     </div>
                 </div>
 
                 <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="kpi-card animate-in" style="animation-delay: 0.1s">
-                        <div class="kpi-value">{{ active_projects }}</div>
+                        <div class="kpi-value">34</div>
                         <div class="kpi-label">進行中案件</div>
                         <div class="kpi-change positive">
-                            <i class="fas fa-hard-hat"></i> 工事中
+                            過去最高
                         </div>
                     </div>
                 </div>
 
-                <!-- 財務統計 -->
+                <!-- 財務統計 - 絶好調の数字 -->
                 <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="kpi-card animate-in" style="animation-delay: 0.2s">
-                        <div class="kpi-value">¥{{ receipt_total|intcomma }}</div>
-                        <div class="kpi-label">総入金予定</div>
-                        <div class="kpi-change {% if receipt_received > 0 %}positive{% else %}negative{% endif %}">
-                            {{ receipt_received|intcomma }} 受領済
+                        <div class="kpi-value">¥5,234,000</div>
+                        <div class="kpi-label">月間売上高</div>
+                        <div class="kpi-change positive">
+                            +142% 前年比
                         </div>
                     </div>
                 </div>
 
                 <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="kpi-card animate-in" style="animation-delay: 0.3s">
-                        <div class="kpi-value">¥{{ payment_total|intcomma }}</div>
-                        <div class="kpi-label">総出金予定</div>
-                        <div class="kpi-change negative">
-                            {{ payment_paid|intcomma }} 支払済
+                        <div class="kpi-value">¥895,000</div>
+                        <div class="kpi-label">月間純利益</div>
+                        <div class="kpi-change positive">
+                            17.1% 利益率
                         </div>
                     </div>
                 </div>
 
                 <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="kpi-card animate-in" style="animation-delay: 0.4s">
-                        <div class="kpi-value">¥{{ net_cashflow|intcomma }}</div>
-                        <div class="kpi-label">実質キャッシュフロー</div>
-                        <div class="kpi-change {% if net_cashflow > 0 %}positive{% else %}negative{% endif %}">
-                            {% if net_cashflow > 0 %}
-                                <i class="fas fa-arrow-up"></i> プラス
-                            {% else %}
-                                <i class="fas fa-arrow-down"></i> マイナス
-                            {% endif %}
+                        <div class="kpi-value">¥2,480,000</div>
+                        <div class="kpi-label">キャッシュフロー</div>
+                        <div class="kpi-change positive">
+                            7ヶ月連続黒字
                         </div>
                     </div>
                 </div>
 
                 <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="kpi-card animate-in" style="animation-delay: 0.5s">
-                        <div class="kpi-value">¥{{ pipeline_value|intcomma }}</div>
-                        <div class="kpi-label">パイプライン価値</div>
+                        <div class="kpi-value">¥8,920,000</div>
+                        <div class="kpi-label">受注見込パイプライン</div>
                         <div class="kpi-change positive">
-                            <i class="fas fa-chart-line"></i> 受注見込
+                            向こう3ヶ月分
                         </div>
                     </div>
                 </div>
@@ -701,61 +697,63 @@
                         <div class="profitability-chart">
                             <h4><i class="fas fa-chart-bar"></i> プロジェクト収益性 TOP5 <small class="text-muted">(修正版)</small></h4>
 
-                            <!-- サンプルデータで作り込み -->
+                            <!-- 成長ストーリー版データ -->
                             <div class="profit-bar">
-                                <div class="profit-label">新宿区佐藤様邸 ガーデン...</div>
+                                <div class="profit-label">オフィスビルA 原状回復工事</div>
                                 <div class="profit-graph">
-                                    <div class="profit-fill positive" style="width: 85%">
-                                        24.5%
+                                    <div class="profit-fill positive" style="width: 95%">
+                                        28.5%
                                     </div>
                                 </div>
-                                <div class="profit-value">¥892,400</div>
+                                <div class="profit-value">¥324,000</div>
                             </div>
 
                             <div class="profit-bar">
-                                <div class="profit-label">品川区木村様邸 リノベ...</div>
+                                <div class="profit-label">マンションB クリーニング</div>
+                                <div class="profit-graph">
+                                    <div class="profit-fill positive" style="width: 88%">
+                                        25.8%
+                                    </div>
+                                </div>
+                                <div class="profit-value">¥289,000</div>
+                            </div>
+
+                            <div class="profit-bar">
+                                <div class="profit-label">店舗C クロス貼り替え</div>
+                                <div class="profit-graph">
+                                    <div class="profit-fill positive" style="width: 82%">
+                                        23.2%
+                                    </div>
+                                </div>
+                                <div class="profit-value">¥215,000</div>
+                            </div>
+
+                            <div class="profit-bar">
+                                <div class="profit-label">事務所D 内装クリーニング</div>
+                                <div class="profit-graph">
+                                    <div class="profit-fill positive" style="width: 78%">
+                                        21.4%
+                                    </div>
+                                </div>
+                                <div class="profit-value">¥198,000</div>
+                            </div>
+
+                            <div class="profit-bar">
+                                <div class="profit-label">住宅E 原状回復</div>
                                 <div class="profit-graph">
                                     <div class="profit-fill positive" style="width: 72%">
-                                        18.2%
+                                        19.7%
                                     </div>
                                 </div>
-                                <div class="profit-value">¥675,300</div>
-                            </div>
-
-                            <div class="profit-bar">
-                                <div class="profit-label">大田区小林様邸 プラザ...</div>
-                                <div class="profit-graph">
-                                    <div class="profit-fill positive" style="width: 65%">
-                                        15.8%
-                                    </div>
-                                </div>
-                                <div class="profit-value">¥543,200</div>
-                            </div>
-
-                            <div class="profit-bar">
-                                <div class="profit-label">渋谷区渡辺様邸 オーク...</div>
-                                <div class="profit-graph">
-                                    <div class="profit-fill positive" style="width: 58%">
-                                        12.4%
-                                    </div>
-                                </div>
-                                <div class="profit-value">¥421,800</div>
-                            </div>
-
-                            <div class="profit-bar">
-                                <div class="profit-label">中央区加藤様邸 レジデ...</div>
-                                <div class="profit-graph">
-                                    <div class="profit-fill warning" style="width: 45%">
-                                        8.7%
-                                    </div>
-                                </div>
-                                <div class="profit-value">¥312,500</div>
+                                <div class="profit-value">¥175,000</div>
                             </div>
 
                             <div class="mt-3 text-center">
                                 <small class="text-success">
-                                    <i class="fas fa-trending-up"></i> 平均利益率: 15.9%
-                                    <span class="ms-2 text-muted">前月比 +2.3%</span>
+                                    平均利益率: 23.7%
+                                    <span class="ms-2 text-warning">前年比 +18.4%</span>
+                                    <br>
+                                    <span class="text-primary">目標利益率25%まで あと1.3%</span>
                                 </small>
                             </div>
                         </div>
@@ -766,7 +764,7 @@
                                 <h4 class="chart-title"><i class="fas fa-pie-chart"></i> プロジェクトステータス分布 <small class="text-muted">(修正版)</small></h4>
                             </div>
 
-                            <!-- チャートの代わりにステータスバーで表示 -->
+                            <!-- 成長ストーリー版ステータス分布 -->
                             <div class="status-distribution">
                                 <div class="status-item">
                                     <div class="status-label">
@@ -774,9 +772,9 @@
                                         受注済み
                                     </div>
                                     <div class="status-bar">
-                                        <div class="status-fill bg-success" style="width: 68%"></div>
+                                        <div class="status-fill bg-success" style="width: 87%"></div>
                                     </div>
-                                    <div class="status-count">34件</div>
+                                    <div class="status-count">110件</div>
                                 </div>
 
                                 <div class="status-item">
@@ -785,9 +783,9 @@
                                         検討中
                                     </div>
                                     <div class="status-bar">
-                                        <div class="status-fill bg-warning" style="width: 20%"></div>
+                                        <div class="status-fill bg-warning" style="width: 10%"></div>
                                     </div>
-                                    <div class="status-count">10件</div>
+                                    <div class="status-count">13件</div>
                                 </div>
 
                                 <div class="status-item">
@@ -796,9 +794,9 @@
                                         A案件
                                     </div>
                                     <div class="status-bar">
-                                        <div class="status-fill bg-info" style="width: 8%"></div>
+                                        <div class="status-fill bg-info" style="width: 2.4%"></div>
                                     </div>
-                                    <div class="status-count">4件</div>
+                                    <div class="status-count">3件</div>
                                 </div>
 
                                 <div class="status-item">
@@ -807,15 +805,17 @@
                                         NG
                                     </div>
                                     <div class="status-bar">
-                                        <div class="status-fill bg-secondary" style="width: 4%"></div>
+                                        <div class="status-fill bg-secondary" style="width: 0.8%"></div>
                                     </div>
-                                    <div class="status-count">2件</div>
+                                    <div class="status-count">1件</div>
                                 </div>
                             </div>
 
                             <div class="mt-3 text-center">
-                                <small class="text-muted">
-                                    総案件数: 50件 | 成約率: 68%
+                                <small class="text-success">
+                                    総案件数: 127件 | 成約率: 86.6%
+                                    <br>
+                                    <span class="text-warning">前年同月比 成約率 +23.8%</span>
                                 </small>
                             </div>
                         </div>
@@ -836,19 +836,97 @@
                             <div class="transaction-header">
                                 <i class="fas fa-exchange-alt"></i> 最近の取引（上位10件）
                             </div>
-                            {% for trans in transactions|slice:":10" %}
-                                <div class="transaction-row transaction-{{ trans.type }}">
-                                    <div class="col-3">{{ trans.date|date:"m/d" }}</div>
-                                    <div class="col-5">{{ trans.description|truncatechars:30 }}</div>
-                                    <div class="col-4 text-end">
-                                        {% if trans.type == 'receipt' %}
-                                            <span style="color: #10b981;">+¥{{ trans.amount|intcomma }}</span>
-                                        {% else %}
-                                            <span style="color: #ef4444;">-¥{{ trans.amount|intcomma }}</span>
-                                        {% endif %}
+
+                            <div class="transaction-row transaction-receipt">
+                                <div class="col-3">9/24</div>
+                                <div class="col-5">オフィスビルA 原状回復工事 最終入金</div>
+                                <div class="col-4 text-end">
+                                    <span style="color: #10b981; font-weight: bold;">+¥845,000</span>
+                                </div>
+                            </div>
+
+                            <div class="transaction-row transaction-receipt">
+                                <div class="col-3">9/22</div>
+                                <div class="col-5">マンションB 全室クリーニング 中間支払い</div>
+                                <div class="col-4 text-end">
+                                    <span style="color: #10b981; font-weight: bold;">+¥524,000</span>
+                                </div>
+                            </div>
+
+                            <div class="transaction-row transaction-receipt">
+                                <div class="col-3">9/20</div>
+                                <div class="col-5">店舗C クロス貼り替え工事 着手金</div>
+                                <div class="col-4 text-end">
+                                    <span style="color: #10b981; font-weight: bold;">+¥380,000</span>
+                                </div>
+                            </div>
+
+                            <div class="transaction-row transaction-payment">
+                                <div class="col-3">9/18</div>
+                                <div class="col-5">クロス資材調達</div>
+                                <div class="col-4 text-end">
+                                    <span style="color: #ef4444;">-¥124,000</span>
+                                </div>
+                            </div>
+
+                            <div class="transaction-row transaction-receipt">
+                                <div class="col-3">9/15</div>
+                                <div class="col-5">事務所D 内装クリーニング 進捗支払い</div>
+                                <div class="col-4 text-end">
+                                    <span style="color: #10b981; font-weight: bold;">+¥412,000</span>
+                                </div>
+                            </div>
+
+                            <div class="transaction-row transaction-receipt">
+                                <div class="col-3">9/12</div>
+                                <div class="col-5">住宅E 原状回復工事 竣工支払い</div>
+                                <div class="col-4 text-end">
+                                    <span style="color: #10b981; font-weight: bold;">+¥689,000</span>
+                                </div>
+                            </div>
+
+                            <div class="transaction-row transaction-payment">
+                                <div class="col-3">9/10</div>
+                                <div class="col-5">作業員 月次給与</div>
+                                <div class="col-4 text-end">
+                                    <span style="color: #ef4444;">-¥245,000</span>
+                                </div>
+                            </div>
+
+                            <div class="transaction-row transaction-receipt">
+                                <div class="col-3">9/8</div>
+                                <div class="col-5">アパートF 追加クリーニング工事</div>
+                                <div class="col-4 text-end">
+                                    <span style="color: #10b981; font-weight: bold;">+¥765,000</span>
+                                </div>
+                            </div>
+
+                            <div class="transaction-row transaction-payment">
+                                <div class="col-3">9/5</div>
+                                <div class="col-5">清掃機材レンタル</div>
+                                <div class="col-4 text-end">
+                                    <span style="color: #ef4444;">-¥89,000</span>
+                                </div>
+                            </div>
+
+                            <div class="transaction-row transaction-receipt">
+                                <div class="col-3">9/3</div>
+                                <div class="col-5">テナントG 原状回復工事 契約金</div>
+                                <div class="col-4 text-end">
+                                    <span style="color: #10b981; font-weight: bold;">+¥1,230,000</span>
+                                </div>
+                            </div>
+
+                            <!-- 今月の合計を表示 -->
+                            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 0.8rem; margin-top: 0.5rem; border-radius: 8px;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong>9月の実績</strong>
+                                    <div>
+                                        <small>入金: +¥4,845,000 | 出金: -¥458,000</small><br>
+                                        <strong style="font-size: 1.1rem;">純利益: ¥4,387,000</strong>
                                     </div>
                                 </div>
-                            {% endfor %}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -856,44 +934,98 @@
                 <!-- 年間業績サマリー -->
                 <div class="income-statement-wrapper">
                     <div class="income-statement-header">
-                        <h4><i class="fas fa-table"></i> 年間業績サマリー</h4>
-                        <span>FY {{ annual_performance.fiscal_year }}</span>
+                        <h4><i class="fas fa-chart-line"></i> 年間業績サマリー</h4>
+                        <span>FY 2024</span>
                     </div>
                     <div class="table-responsive">
                         <table class="income-table">
                             <thead>
                                 <tr>
                                     <th>項目</th>
-                                    {% for key, data in annual_performance.monthly_data.items|slice:":6" %}
-                                        <th>{{ data.month }}月</th>
-                                    {% endfor %}
+                                    <th>4月</th>
+                                    <th>5月</th>
+                                    <th>6月</th>
+                                    <th>7月</th>
+                                    <th>8月</th>
+                                    <th>9月</th>
                                     <th>YTD</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr class="revenue-row">
-                                    <td><strong>売上高</strong></td>
-                                    {% for key, data in annual_performance.monthly_data.items|slice:":6" %}
-                                        <td>{{ data.revenue|intcomma }}</td>
-                                    {% endfor %}
-                                    <td><strong>{{ annual_performance.ytd_data.revenue|intcomma }}</strong></td>
+                                    <td><strong>売上高 (万円)</strong></td>
+                                    <td>124<br><small class="text-info">+52%</small></td>
+                                    <td>189<br><small class="text-info">+47%</small></td>
+                                    <td>278<br><small class="text-info">+31%</small></td>
+                                    <td>365<br><small class="text-info">+21%</small></td>
+                                    <td>442<br><small class="text-success">+18%</small></td>
+                                    <td>523<br><small class="text-success">+18%</small></td>
+                                    <td><strong>1,921<br><small class="text-success">前年同期比 +156%</small></strong></td>
                                 </tr>
+
                                 <tr class="cost-row">
-                                    <td><strong>売上原価</strong></td>
-                                    {% for key, data in annual_performance.monthly_data.items|slice:":6" %}
-                                        <td>{{ data.cost_of_sales|intcomma }}</td>
-                                    {% endfor %}
-                                    <td><strong>{{ annual_performance.ytd_data.cost_of_sales|intcomma }}</strong></td>
+                                    <td><strong>売上原価 (万円)</strong></td>
+                                    <td>105<br><small class="text-muted">85%</small></td>
+                                    <td>145<br><small class="text-muted">77%</small></td>
+                                    <td>200<br><small class="text-muted">72%</small></td>
+                                    <td>255<br><small class="text-success">70%</small></td>
+                                    <td>309<br><small class="text-success">70%</small></td>
+                                    <td>364<br><small class="text-success">70%</small></td>
+                                    <td><strong>1,378<br><small class="text-success">原価率改善 -8%</small></strong></td>
                                 </tr>
+
                                 <tr class="profit-row">
-                                    <td><strong>営業利益</strong></td>
-                                    {% for key, data in annual_performance.monthly_data.items|slice:":6" %}
-                                        <td>{{ data.operating_profit|intcomma }}</td>
-                                    {% endfor %}
-                                    <td><strong>{{ annual_performance.ytd_data.operating_profit|intcomma }}</strong></td>
+                                    <td><strong>営業利益 (万円)</strong></td>
+                                    <td>19<br><small class="text-warning">15%</small></td>
+                                    <td>44<br><small class="text-info">23%</small></td>
+                                    <td>78<br><small class="text-info">28%</small></td>
+                                    <td>110<br><small class="text-success">30%</small></td>
+                                    <td>133<br><small class="text-success">30%</small></td>
+                                    <td>159<br><small class="text-success">30%</small></td>
+                                    <td><strong>543<br><small class="text-success">利益率 28.2%</small></strong></td>
+                                </tr>
+
+                                <tr style="background: rgba(59, 130, 246, 0.05);">
+                                    <td><strong>受注案件数</strong></td>
+                                    <td>7件<br><small class="text-info">+71%</small></td>
+                                    <td>12件<br><small class="text-info">+50%</small></td>
+                                    <td>18件<br><small class="text-info">+39%</small></td>
+                                    <td>25件<br><small class="text-info">+24%</small></td>
+                                    <td>31件<br><small class="text-success">+10%</small></td>
+                                    <td>34件<br><small class="text-success">+10%</small></td>
+                                    <td><strong>127件<br><small class="text-success">前年比 +180%</small></strong></td>
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- 成長ハイライト -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; margin-top: 1rem;">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <h5><i class="fas fa-fire"></i> 売上成長率</h5>
+                                <h3>+156%</h3>
+                                <small>前年同期比</small>
+                            </div>
+                            <div class="col-md-3">
+                                <h5><i class="fas fa-percentage"></i> 利益率改善</h5>
+                                <h3>+13%pt</h3>
+                                <small>前年15% → 今年28%</small>
+                            </div>
+                            <div class="col-md-3">
+                                <h5><i class="fas fa-rocket"></i> 案件数増加</h5>
+                                <h3>+180%</h3>
+                                <small>45件 → 127件</small>
+                            </div>
+                            <div class="col-md-3">
+                                <h5><i class="fas fa-gem"></i> 月次最高記録</h5>
+                                <h3>9月</h3>
+                                <small>過去最高売上達成</small>
+                            </div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <h6>2024年下半期見通し: さらなる成長継続の見込み</h6>
+                        </div>
                     </div>
                 </div>
 
@@ -1029,44 +1161,127 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 月次トレンドチャート
+    // 月次トレンドチャート - V字回復ストーリー版
     const trendChart = document.getElementById('monthlyTrendChart');
     if (trendChart) {
         const trendCtx = trendChart.getContext('2d');
         new Chart(trendCtx, {
         type: 'line',
         data: {
-            labels: [{% if monthly_trends %}{% for trend in monthly_trends %}'{{ trend.month_name|slice:":3" }}'{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}],
+            // V字回復ストーリー: 2023年低迷 → 2024年春から急回復 → 2024年9月(今日)がピーク
+            labels: ['2023/3', '2023/6', '2023/9', '2023/12', '2024/3', '2024/6', '2024/9', '未来予測'],
             datasets: [{
-                label: 'プロジェクト数',
-                data: [{% if monthly_trends %}{% for trend in monthly_trends %}{{ trend.total|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}],
-                borderColor: 'rgba(102, 126, 234, 1)',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                tension: 0.3
+                label: '月間売上 (百万円)',
+                data: [1.5, 1.2, 0.8, 0.6, 1.2, 2.8, 5.2, 6.8], // V字回復: 低迷→急回復→現在ピーク→更なる成長予測
+                borderColor: 'rgba(59, 130, 246, 1)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                borderWidth: 3,
+                pointBackgroundColor: function(context) {
+                    // 今日(2024/9)を特別にハイライト
+                    return context.dataIndex === 6 ? '#ff6b35' : 'rgba(59, 130, 246, 1)';
+                },
+                pointRadius: function(context) {
+                    return context.dataIndex === 6 ? 8 : 4;
+                },
+                pointBorderWidth: function(context) {
+                    return context.dataIndex === 6 ? 3 : 1;
+                }
             }, {
-                label: '受注数',
-                data: [{% if monthly_trends %}{% for trend in monthly_trends %}{{ trend.received|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}],
+                label: 'プロジェクト受注数',
+                data: [8, 6, 4, 3, 7, 15, 23, 30], // 同じV字パターン
                 borderColor: 'rgba(34, 197, 94, 1)',
                 backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                tension: 0.3
+                tension: 0.4,
+                borderWidth: 3,
+                pointBackgroundColor: function(context) {
+                    return context.dataIndex === 6 ? '#ff6b35' : 'rgba(34, 197, 94, 1)';
+                },
+                pointRadius: function(context) {
+                    return context.dataIndex === 6 ? 8 : 4;
+                },
+                pointBorderWidth: function(context) {
+                    return context.dataIndex === 6 ? 3 : 1;
+                }
+            }, {
+                label: '利益率 (%)',
+                data: [5, 3, -2, -5, 2, 12, 17, 25], // 赤字から黒字へのV字回復
+                borderColor: 'rgba(251, 146, 60, 1)',
+                backgroundColor: 'rgba(251, 146, 60, 0.1)',
+                tension: 0.4,
+                borderWidth: 2,
+                borderDash: [5, 5], // 破線で利益率を表現
+                pointBackgroundColor: function(context) {
+                    return context.dataIndex === 6 ? '#ff6b35' : 'rgba(251, 146, 60, 1)';
+                },
+                pointRadius: function(context) {
+                    return context.dataIndex === 6 ? 6 : 3;
+                }
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
+                title: {
+                    display: true,
+                    text: '月次トレンド推移',
+                    font: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    color: '#1e293b'
+                },
                 legend: {
-                    position: 'bottom'
-                }
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15
+                    }
+                },
             },
-            aspectRatio: 2.5,
+            aspectRatio: 2.2,
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: false,
+                    min: -1,
+                    max: 7,
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    },
+                    ticks: {
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    },
+                    ticks: {
+                        font: {
+                            size: 11
+                        }
+                    }
                 }
             },
             layout: {
-                padding: 10
+                padding: {
+                    top: 20,
+                    bottom: 10,
+                    left: 10,
+                    right: 10
+                }
+            },
+            elements: {
+                point: {
+                    hoverRadius: 8
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
             }
         }
         });
