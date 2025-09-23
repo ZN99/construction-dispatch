@@ -21,7 +21,7 @@ def create_test_data():
     contractors_data = [
         {
             'name': '山田建設株式会社',
-            'address': '東京都新宿区西新宿1-2-3',
+            'address': 'テスト県デモ市サンプル町1-2-3',
             'phone': '03-1234-5678',
             'email': 'yamada@construction.jp',
             'contact_person': '山田太郎',
@@ -31,7 +31,7 @@ def create_test_data():
         },
         {
             'name': '鈴木電気工事',
-            'address': '東京都渋谷区恵比寿2-3-4',
+            'address': 'ダミー県架空市テスト町2-3-4',
             'phone': '03-2345-6789',
             'email': 'suzuki@denki.jp',
             'contact_person': '鈴木一郎',
@@ -41,7 +41,7 @@ def create_test_data():
         },
         {
             'name': '佐藤設備工業',
-            'address': '東京都港区六本木3-4-5',
+            'address': 'サンプル県デモ市架空区3-4-5',
             'phone': '03-3456-7890',
             'email': 'sato@setsubi.jp',
             'contact_person': '佐藤次郎',
@@ -51,7 +51,7 @@ def create_test_data():
         },
         {
             'name': '高橋塗装店',
-            'address': '東京都品川区大崎4-5-6',
+            'address': 'テスト県サンプル市デモ町4-5-6',
             'phone': '03-4567-8901',
             'email': 'takahashi@paint.jp',
             'contact_person': '高橋三郎',
@@ -61,7 +61,7 @@ def create_test_data():
         },
         {
             'name': '中村内装工事',
-            'address': '東京都中央区銀座5-6-7',
+            'address': 'ダミー県テスト市サンプル区5-6-7',
             'phone': '03-5678-9012',
             'email': 'nakamura@interior.jp',
             'contact_person': '中村四郎',
@@ -124,7 +124,7 @@ def create_test_data():
             project = Project.objects.create(
                 management_no=f'P{project_counter:04d}',
                 site_name=f'{contractor.name.split("株式会社")[0].split("工")[0]}案件{i+1}',
-                site_address=f'東京都{random.choice(["新宿区", "渋谷区", "港区", "品川区", "中央区"])}',
+                site_address=f'テスト県{random.choice(["デモ市", "架空市", "サンプル市"])}ダミー町{i}-{j}-{k}',
                 work_type=contractor.specialties.split('、')[0],
                 order_status='受注',
                 contractor_name=contractor.name,  # 業者名を設定
