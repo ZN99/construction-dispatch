@@ -3790,56 +3790,86 @@ $(document).ready(function() {
         `;
     }
 
+    // 現場調査ステップHTML生成
+    function generateSiteSurveyStepHtml() {
+        return `
+            <div class="progress-step" data-step="site_survey">
+                <div class="progress-step-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-search me-2"></i>
+                        <span class="progress-step-title">現場調査</span>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-step-btn" data-step="site_survey">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="progress-step-content mt-2">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">調査予定日</label>
+                            <input type="date" name="site_survey_scheduled_date" class="form-control" value="{{ project.site_survey_scheduled_date|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">調査実施日</label>
+                            <input type="date" name="site_survey_actual_date" class="form-control" value="{{ project.site_survey_actual_date|date:'Y-m-d' }}">
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-12">
+                            <label class="form-label">調査担当者</label>
+                            <input type="text" name="site_survey_staff" class="form-control" value="{{ project.site_survey_staff }}" placeholder="担当者名を入力">
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-12">
+                            <label class="form-label">調査結果・メモ</label>
+                            <textarea name="site_survey_notes" class="form-control" rows="3" placeholder="調査結果や特記事項を入力">{{ project.site_survey_notes }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     // 利用可能なステップデータ
     const availableSteps = [
         {
             name: '見積もり',
             icon: 'fas fa-calculator',
             key: 'estimate',
-            type: 'basic',
-            description: '見積もり作成・発行のステップです'
-        },
-        {
-            name: '現地調査',
-            icon: 'fas fa-clipboard-list',
-            key: 'survey',
-            type: 'basic',
-            description: 'システム連携の現地調査ステップです',
-            apiEndpoint: '{% url "api_add_survey_step" project.pk %}'
+            type: 'basic'
         },
         {
             name: '契約',
             icon: 'fas fa-handshake',
             key: 'contract',
-            type: 'basic',
-            description: '契約締結のステップです'
+            type: 'basic'
         },
         {
             name: '作業開始',
             icon: 'fas fa-play',
             key: 'work_start',
-            type: 'basic',
-            description: '作業開始のステップです'
+            type: 'basic'
         },
         {
             name: '作業完了',
             icon: 'fas fa-check',
             key: 'work_end',
-            type: 'basic',
-            description: '作業完了のステップです'
+            type: 'basic'
         },
         {
             name: '請求書発行',
             icon: 'fas fa-file-invoice-dollar',
             key: 'invoice',
-            type: 'basic',
-            description: '請求書発行のステップです'
+            type: 'basic'
         },
         {
             name: '現場調査',
             icon: 'fas fa-search',
             key: 'site_survey',
-            type: 'complex',
+            type: 'basic',
             fields: [
                 {
                     name: 'scheduled_date',
@@ -4103,6 +4133,9 @@ $(document).ready(function() {
                             break;
                         case 'invoice':
                             stepHtml = generateInvoiceStepHtml();
+                            break;
+                        case 'site_survey':
+                            stepHtml = generateSiteSurveyStepHtml();
                             break;
                         default:
                             stepHtml = generateAvailableStepHtml(stepData);

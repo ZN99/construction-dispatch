@@ -120,6 +120,12 @@ def project_list(request):
             Q(project_manager__icontains=search_query)
         )
 
+    # 統計情報を計算（フィルター適用後の全体から）
+    total_count = projects.count()
+    received_count = projects.filter(order_status='受注').count()
+    in_progress_count = projects.filter(work_start_completed=True, work_end_completed=False).count()
+    completed_count = projects.filter(work_end_completed=True).count()
+
     # ページネーション（50件ずつ表示に変更してパフォーマンス向上）
     paginator = Paginator(projects, 50)
     page_number = request.GET.get('page')
@@ -133,6 +139,10 @@ def project_list(request):
         'work_type': work_type,
         'project_manager': project_manager,
         'search_query': search_query,
+        'total_count': total_count,
+        'received_count': received_count,
+        'in_progress_count': in_progress_count,
+        'completed_count': completed_count,
     }
 
     return render(request, 'order_management/project_list.html', context)
@@ -1142,11 +1152,26 @@ def get_client_invoice_preview_api(request):
             client_name = data.get('client_name')
             project_ids = data.get('project_ids', [])
 
+            # 年月の指定があれば、その月の入金予定日でフィルター
+            year = data.get('year')
+            month = data.get('month')
+
             if not client_name or not project_ids:
                 return JsonResponse({'error': 'クライアント名またはプロジェクトIDが指定されていません'}, status=400)
 
             # 指定されたプロジェクトを取得
             projects = Project.objects.filter(id__in=project_ids, contractor_name=client_name)
+
+            # 年月が指定されている場合は、入金予定日でフィルター
+            if year and month:
+                import calendar
+                from datetime import datetime
+                start_date = datetime(int(year), int(month), 1).date()
+                end_date = datetime(int(year), int(month), calendar.monthrange(int(year), int(month))[1]).date()
+                projects = projects.filter(
+                    payment_due_date__gte=start_date,
+                    payment_due_date__lte=end_date
+                )
 
             if not projects.exists():
                 return JsonResponse({'error': '指定されたプロジェクトが見つかりません'}, status=404)
@@ -1195,6 +1220,107 @@ def get_client_invoice_preview_api(request):
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@csrf_exempt
+def generate_invoices_by_client_api(request):
+    """入金予定日ベースで当月の請求書を受注先別に生成するAPI"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            year = int(data.get('year', timezone.now().year))
+            month = int(data.get('month', timezone.now().month))
+
+            # 月の開始日と終了日
+            import calendar
+            from datetime import datetime
+            start_date = datetime(year, month, 1).date()
+            end_date = datetime(year, month, calendar.monthrange(year, month)[1]).date()
+
+            # 入金予定日が当月のプロジェクトのみ取得
+            projects = Project.objects.filter(
+                payment_due_date__gte=start_date,
+                payment_due_date__lte=end_date,
+                estimate_amount__gt=0
+            ).exclude(
+                contractor_name__isnull=True
+            ).exclude(
+                contractor_name=''
+            )
+
+            # 受注先別にグループ化
+            client_projects = {}
+            for project in projects:
+                client_name = project.contractor_name
+                if client_name not in client_projects:
+                    client_projects[client_name] = []
+                client_projects[client_name].append(project)
+
+            # 請求書を生成
+            invoices_created = []
+            for client_name, client_project_list in client_projects.items():
+                # 合計金額を計算
+                subtotal = sum((p.billing_amount or p.estimate_amount or Decimal('0')) for p in client_project_list)
+                tax_rate = Decimal('10.00')
+                tax_amount = (subtotal * tax_rate / Decimal('100')).quantize(Decimal('1'))
+                total_amount = subtotal + tax_amount
+
+                # 請求書番号を生成
+                today = timezone.now()
+                year_month = today.strftime('%Y%m')
+                invoice_count = Invoice.objects.filter(invoice_number__startswith=f'INV-{year_month}').count()
+                invoice_number = f"INV-{year_month}-{invoice_count + 1:03d}"
+
+                # 請求書を作成
+                invoice = Invoice.objects.create(
+                    invoice_number=invoice_number,
+                    client_name=client_name,
+                    client_address=client_project_list[0].site_address if client_project_list else '',
+                    issue_date=today.date(),
+                    due_date=today.date() + timedelta(days=30),
+                    billing_period_start=start_date,
+                    billing_period_end=end_date,
+                    subtotal=subtotal,
+                    tax_rate=tax_rate,
+                    tax_amount=tax_amount,
+                    total_amount=total_amount,
+                    status='draft',
+                    created_by=request.user.username if request.user.is_authenticated else 'system'
+                )
+
+                # 請求書明細を作成（当月の入金予定案件のみ）
+                for idx, project in enumerate(client_project_list, 1):
+                    project_amount = project.billing_amount or project.estimate_amount or Decimal('0')
+                    InvoiceItem.objects.create(
+                        invoice=invoice,
+                        project=project,
+                        description=f"{project.work_type} - {project.site_name}",
+                        work_period_start=project.work_start_date,
+                        work_period_end=project.work_end_date,
+                        quantity=Decimal('1.00'),
+                        unit='式',
+                        unit_price=project_amount,
+                        amount=project_amount,
+                        order=idx
+                    )
+
+                invoices_created.append({
+                    'client_name': client_name,
+                    'invoice_number': invoice_number,
+                    'amount': float(total_amount)
+                })
+
+            return JsonResponse({
+                'success': True,
+                'invoice_count': len(invoices_created),
+                'invoices': invoices_created,
+                'message': f'{len(invoices_created)}件の請求書を生成しました'
+            })
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 

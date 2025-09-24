@@ -119,9 +119,8 @@
         background: white;
         padding: 1rem 0;
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        position: sticky;
-        top: 0;
-        z-index: 100;
+        border-radius: 10px;
+        margin-bottom: 2rem;
     }
 
     .tab-buttons {
@@ -559,6 +558,19 @@
         margin-left: 0;
         margin-right: 0;
     }
+
+    /* 折りたたみアイコンのアニメーション */
+    .collapse-icon {
+        transition: transform 0.3s ease;
+    }
+
+    .income-statement-header[aria-expanded="true"] .collapse-icon {
+        transform: rotate(180deg);
+    }
+
+    .income-statement-header:hover {
+        background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+    }
 </style>
 {% endblock %}
 
@@ -672,21 +684,6 @@
         </div>
     </div>
 
-    <!-- ビュー切替タブ -->
-    <div class="view-tabs">
-        <div class="container-fluid">
-            <div class="tab-buttons">
-                <button class="tab-btn {% if view_type == 'financial' %}active{% endif %}"
-                        onclick="location.href='?year={{ year }}&month={{ month }}&view=financial'">
-                    <i class="fas fa-coins"></i> 財務詳細ビュー
-                </button>
-                <button class="tab-btn {% if view_type == 'operational' %}active{% endif %}"
-                        onclick="location.href='?year={{ year }}&month={{ month }}&view=operational'">
-                    <i class="fas fa-tasks"></i> 運用詳細ビュー
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- メインコンテンツ -->
     <div class="content-area">
@@ -933,12 +930,18 @@
 
                 <!-- 年間業績サマリー -->
                 <div class="income-statement-wrapper">
-                    <div class="income-statement-header">
-                        <h4><i class="fas fa-chart-line"></i> 年間業績サマリー</h4>
-                        <span>FY 2024</span>
+                    <div class="income-statement-header" data-bs-toggle="collapse" data-bs-target="#annualPerformanceTable" aria-expanded="false" style="cursor: pointer;">
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <div>
+                                <h4><i class="fas fa-chart-line"></i> 年間業績サマリー</h4>
+                                <span>FY 2024</span>
+                            </div>
+                            <i class="fas fa-chevron-down collapse-icon"></i>
+                        </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="income-table">
+                    <div id="annualPerformanceTable" class="collapse">
+                        <div class="table-responsive">
+                            <table class="income-table">
                             <thead>
                                 <tr>
                                     <th>項目</th>
@@ -1000,31 +1003,48 @@
                     </div>
 
                     <!-- 成長ハイライト -->
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; margin-top: 1rem;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem 1.5rem; margin-top: 1rem;">
                         <div class="row text-center">
-                            <div class="col-md-3">
+                            <div class="col-md-3" style="padding-top: 1rem; padding-bottom: 1rem;">
                                 <h5><i class="fas fa-fire"></i> 売上成長率</h5>
                                 <h3>+156%</h3>
                                 <small>前年同期比</small>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3" style="padding-top: 1rem; padding-bottom: 1rem;">
                                 <h5><i class="fas fa-percentage"></i> 利益率改善</h5>
                                 <h3>+13%pt</h3>
                                 <small>前年15% → 今年28%</small>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3" style="padding-top: 1rem; padding-bottom: 1rem;">
                                 <h5><i class="fas fa-rocket"></i> 案件数増加</h5>
                                 <h3>+180%</h3>
                                 <small>45件 → 127件</small>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3" style="padding-top: 1rem; padding-bottom: 1rem;">
                                 <h5><i class="fas fa-gem"></i> 月次最高記録</h5>
                                 <h3>9月</h3>
                                 <small>過去最高売上達成</small>
                             </div>
                         </div>
-                        <div class="text-center mt-3">
-                            <h6>2024年下半期見通し: さらなる成長継続の見込み</h6>
+                            <div class="text-center mt-3">
+                                <h6>2024年下半期見通し: さらなる成長継続の見込み</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ビュー切替タブ -->
+                <div class="view-tabs mt-4">
+                    <div class="container-fluid">
+                        <div class="tab-buttons">
+                            <button class="tab-btn {% if view_type == 'financial' %}active{% endif %}"
+                                    onclick="location.href='?year={{ year }}&month={{ month }}&view=financial'">
+                                <i class="fas fa-coins"></i> 財務詳細ビュー
+                            </button>
+                            <button class="tab-btn {% if view_type == 'operational' %}active{% endif %}"
+                                    onclick="location.href='?year={{ year }}&month={{ month }}&view=operational'">
+                                <i class="fas fa-tasks"></i> 運用詳細ビュー
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1120,6 +1140,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // コンソールにヒント表示
     console.log('💡 Ctrl+Shift+D でデバッグモードを切り替えできます');
     console.log('💡 改良版チャートは非表示になっていますが、しっかり作り込まれています');
+
+    // 折りたたみアニメーション管理
+    const annualPerformanceTable = document.getElementById('annualPerformanceTable');
+    const collapseHeader = document.querySelector('[data-bs-target="#annualPerformanceTable"]');
+
+    if (annualPerformanceTable && collapseHeader) {
+        annualPerformanceTable.addEventListener('shown.bs.collapse', function () {
+            collapseHeader.setAttribute('aria-expanded', 'true');
+        });
+
+        annualPerformanceTable.addEventListener('hidden.bs.collapse', function () {
+            collapseHeader.setAttribute('aria-expanded', 'false');
+        });
+    }
 
     {% if view_type == 'executive' %}
     // ステータス分布チャート

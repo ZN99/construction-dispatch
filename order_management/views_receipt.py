@@ -23,9 +23,10 @@ class ReceiptDashboardView(TemplateView):
         start_date = datetime(year, month, 1).date()
         end_date = datetime(year, month, calendar.monthrange(year, month)[1]).date()
 
-        # 入金ベース：今月入金予定または実際に入金があった案件
-        # 範囲を広げて全案件を表示（テスト用）
+        # 入金ベース：今月入金予定の案件のみ
         base_query = Project.objects.filter(
+            payment_due_date__gte=start_date,
+            payment_due_date__lte=end_date,
             estimate_amount__gt=0
         ).exclude(
             contractor_name__isnull=True
@@ -33,7 +34,7 @@ class ReceiptDashboardView(TemplateView):
             contractor_name=''
         )
 
-        # 入金状況による絞り込み（簡易版）
+        # 入金状況による絞り込み
         if status_filter == 'received':
             # 入金済み（工事完了済み案件と仮定）
             base_query = base_query.filter(work_end_completed=True)
