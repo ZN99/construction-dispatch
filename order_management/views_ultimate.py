@@ -196,6 +196,9 @@ class UltimateDashboardView(TemplateView):
         # 年間業績データ取得
         annual_performance = self.get_annual_performance(year)
 
+        # 連続黒字月数を取得
+        consecutive_profit_months = annual_performance.get('consecutive_profit_months', 0)
+
         # ====================
         # 統合分析データ（新規）
         # ====================
@@ -281,6 +284,7 @@ class UltimateDashboardView(TemplateView):
             'fixed_costs_monthly': fixed_costs_monthly,
             'variable_costs_monthly': variable_costs_monthly,
             'total_monthly_costs': total_monthly_costs,
+            'consecutive_profit_months': consecutive_profit_months,
 
             # ビュータイプ選択肢
             'view_type_choices': [
@@ -433,6 +437,9 @@ class UltimateDashboardView(TemplateView):
         if ytd_data['revenue'] > 0:
             ytd_margin = (ytd_data['operating_profit'] / ytd_data['revenue']) * 100
 
+        # 連続黒字月数の計算
+        consecutive_profit_months = self.calculate_consecutive_profit_months(monthly_data, current_date)
+
         return {
             'current_date': current_date,
             'fiscal_year': year,
@@ -441,6 +448,7 @@ class UltimateDashboardView(TemplateView):
             'ytd_data': ytd_data,
             'ytd_margin': ytd_margin,
             'monthly_data': monthly_data,
+            'consecutive_profit_months': consecutive_profit_months,
         }
 
     def get_fiscal_month_index(self, date, fiscal_year):
@@ -452,3 +460,28 @@ class UltimateDashboardView(TemplateView):
             if date.year == fiscal_year + 1:
                 return date.month + 8
         return None
+
+    def calculate_consecutive_profit_months(self, monthly_data, current_date):
+        """連続黒字月数を計算"""
+        # 現在の月から逆順で確認していく
+        consecutive_months = 0
+
+        # 月次データを時系列順にソート（新しい月から古い月へ）
+        sorted_months = []
+        for key, data in monthly_data.items():
+            # 実績がある月のみを対象とし、未来の月は除外
+            if data['is_actual']:
+                sorted_months.append(data)
+
+        # 年月でソート（新しい順）
+        sorted_months.sort(key=lambda x: (x['year'], x['month']), reverse=True)
+
+        # 最新月から逆算して連続黒字月数を計算
+        for month_data in sorted_months:
+            if month_data['operating_profit'] > 0:
+                consecutive_months += 1
+            else:
+                # 赤字の月が見つかったら連続記録終了
+                break
+
+        return consecutive_months

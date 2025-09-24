@@ -3333,7 +3333,7 @@ $(document).ready(function() {
 
         // ステップ名とアイコンの設定
         switch (stepKey) {
-            case 'site_survey':
+            case 'survey':
                 stepName = '現場調査';
                 stepIcon = 'fas fa-search-location';
                 break;
@@ -3437,7 +3437,7 @@ $(document).ready(function() {
 
         // ステップ名とアイコンの設定
         switch (stepKey) {
-            case 'site_survey':
+            case 'survey':
                 stepName = '現場調査';
                 stepIcon = 'fas fa-search';
                 break;
@@ -4202,7 +4202,7 @@ $(document).ready(function() {
                 case 'select':
                     // スタッフ選択の場合は動的オプション生成
                     let options = field.options;
-                    if (field.name === 'staff_id' && stepData.key === 'site_survey') {
+                    if (field.name === 'staff_id' && stepData.key === 'survey') {
                         options = generateStaffOptions();
                     }
 
@@ -4219,7 +4219,7 @@ $(document).ready(function() {
                     html += `</select>`;
 
                     // スタッフ管理ボタンを追加
-                    if (field.name === 'staff_id' && stepData.key === 'site_survey') {
+                    if (field.name === 'staff_id' && stepData.key === 'survey') {
                         html += `
                             <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="openStaffManagementPanel()">
                                 <i class="fas fa-users-cog"></i> 担当者管理
@@ -4277,7 +4277,7 @@ $(document).ready(function() {
         });
 
         // 現場調査の特別なステータス判定ロジック
-        if (stepData.key === 'site_survey') {
+        if (stepData.key === 'survey') {
             const hasScheduled = values.scheduled_date;
             const hasActual = values.actual_date;
             const inputType = values.staff_input_type || 'existing';
@@ -4373,12 +4373,12 @@ $(document).ready(function() {
     });
 
     // 複合ステップの変更を監視
-    $(document).on('change', 'input[name^="site_survey_"], select[name^="site_survey_"]', function() {
-        const stepElement = $('.progress-step[data-step="site_survey"]');
+    $(document).on('change', 'input[name^="survey_"], select[name^="survey_"]', function() {
+        const stepElement = $('.progress-step[data-step="survey"]');
         if (stepElement.length === 0) return;
 
         // 現場調査ステップのデータを取得
-        const sitesurvey = availableSteps.find(step => step.key === 'site_survey');
+        const sitesurvey = availableSteps.find(step => step.key === 'survey');
         if (!sitesurvey) return;
 
         const status = getComplexStepStatus(sitesurvey, stepElement);
@@ -4557,7 +4557,7 @@ $(document).ready(function() {
     // 全てのスタッフ選択フィールドを更新
     function updateStaffSelects() {
         const newOptions = generateStaffOptions();
-        $('select[name="site_survey_staff_id"]').each(function() {
+        $('select[name="survey_staff_id"]').each(function() {
             const currentValue = $(this).val();
             $(this).empty();
             newOptions.forEach(option => {

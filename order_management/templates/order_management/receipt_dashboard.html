@@ -230,6 +230,7 @@
     }
 
     .date-cell {
+        text-align: left;
         font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
         color: #6c757d;
         font-size: 0.8rem;
@@ -1250,12 +1251,12 @@
                             <table class="table projects-table mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width: 35%">案件名</th>
-                                        <th style="width: 15%">工期</th>
-                                        <th style="width: 15%">見積額</th>
-                                        <th style="width: 15%">請求額</th>
-                                        <th style="width: 15%">入金予定日</th>
-                                        <th style="width: 15%">入金状況</th>
+                                        <th style="width: 35%; text-align: left;">案件名</th>
+                                        <th style="width: 15%; text-align: left;">工期</th>
+                                        <th style="width: 15%; text-align: right;">見積額（税抜）</th>
+                                        <th style="width: 15%; text-align: right;">請求額（税込）</th>
+                                        <th style="width: 15%; text-align: left;">入金予定日</th>
+                                        <th style="width: 15%; text-align: center;">入金状況</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1282,7 +1283,7 @@
                                             {% if project.payment_due_date %}{{ project.payment_due_date|date:"m/d" }}{% else %}<span class="text-muted">未設定</span>{% endif %}
                                         </td>
                                         <td>
-                                            {% if project.work_end_completed %}
+                                            {% if project.payment_status == 'executed' %}
                                                 <span class="status-badge status-received">入金済み</span>
                                             {% elif project.payment_due_date %}
                                                 {% now "Y-m-d" as today %}
@@ -1331,11 +1332,8 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="client-invoice-actions">
-                                    <button class="btn btn-success btn-sm me-2" onclick="generateClientInvoice('{{ data.client_name }}', {{ data.total_amount }}, [{% for project in data.projects %}{{ project.pk }}{% if not forloop.last %},{% endif %}{% endfor %}])" title="この受注先の請求書を作成">
+                                    <button class="btn btn-success btn-sm" onclick="generateClientInvoice('{{ data.client_name }}', {{ data.total_amount }}, [{% for project in data.projects %}{{ project.pk }}{% if not forloop.last %},{% endif %}{% endfor %}])" title="この受注先の請求書を作成">
                                         <i class="fas fa-file-invoice me-1"></i>請求書作成
-                                    </button>
-                                    <button class="btn btn-outline-primary btn-sm" onclick="previewClientInvoice('{{ data.client_name }}', [{% for project in data.projects %}{{ project.pk }}{% if not forloop.last %},{% endif %}{% endfor %}])" title="請求書をプレビュー">
-                                        <i class="fas fa-eye me-1"></i>プレビュー
                                     </button>
                                 </div>
                             </div>
@@ -1476,9 +1474,9 @@
                                             <tr>
                                                 <th style="width: 40%">案件名</th>
                                                 <th style="width: 15%">作業期間</th>
-                                                <th style="width: 15%">単価</th>
+                                                <th style="width: 15%">単価（税抜）</th>
                                                 <th style="width: 10%">数量</th>
-                                                <th style="width: 20%">金額</th>
+                                                <th style="width: 20%">金額（税抜）</th>
                                             </tr>
                                         </thead>
                                         <tbody id="invoiceItemsTable">

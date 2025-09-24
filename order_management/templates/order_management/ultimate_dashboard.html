@@ -666,7 +666,11 @@
                         <div class="kpi-value">¥2,480,000</div>
                         <div class="kpi-label">キャッシュフロー</div>
                         <div class="kpi-change positive">
-                            7ヶ月連続黒字
+                            {% if consecutive_profit_months > 0 %}
+                                {{ consecutive_profit_months }}ヶ月連続黒字
+                            {% else %}
+                                前月は赤字
+                            {% endif %}
                         </div>
                     </div>
                 </div>
