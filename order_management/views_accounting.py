@@ -27,8 +27,9 @@ class AccountingDashboardView(TemplateView):
 
         # === 入金データ（入金ベース） ===
         receipt_projects = Project.objects.filter(
-            Q(payment_due_date__range=[start_date, end_date]) |
-            Q(order_status='受注', billing_amount__gt=0)
+            payment_due_date__range=[start_date, end_date],
+            order_status='受注',
+            billing_amount__gt=0
         ).exclude(contractor_name__isnull=True).exclude(contractor_name='')
 
         receipt_total = 0
@@ -45,8 +46,8 @@ class AccountingDashboardView(TemplateView):
 
         # === 出金データ（出金ベース） ===
         payment_subcontracts = Subcontract.objects.filter(
-            Q(payment_date__range=[start_date, end_date]) |
-            Q(billed_amount__gt=0)
+            payment_date__range=[start_date, end_date],
+            billed_amount__gt=0
         ).select_related('project', 'contractor', 'internal_worker')
 
         payment_total = 0
@@ -93,19 +94,20 @@ class AccountingDashboardView(TemplateView):
                     'project': subcontract.project
                 })
 
-        # 残高計算のため一度古い順でソート
-        transactions_for_calc = sorted(transactions, key=lambda x: x['date'])
+        # 残高計算（古い順に処理）
+        transactions_sorted = sorted(transactions, key=lambda x: x['date'])
 
-        # 残高計算（古い順に累積）
-        balance = 0
-        for transaction in transactions_for_calc:
+        running_balance = 0
+        for transaction in transactions_sorted:
             if transaction['type'] == 'receipt':
                 if transaction['status'] == 'completed':
-                    balance += transaction['amount']
+                    running_balance += transaction['amount']
             else:  # payment
                 if transaction['status'] == 'paid':
-                    balance -= transaction['amount']
-            transaction['balance'] = balance
+                    running_balance -= transaction['amount']
+
+            # 各トランザクションに残高を直接保存
+            transaction['balance'] = running_balance
 
         # 表示用に新しい順でソート
         transactions.sort(key=lambda x: x['date'], reverse=True)
