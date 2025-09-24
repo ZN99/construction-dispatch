@@ -197,8 +197,8 @@ class AccountingDashboardView(TemplateView):
         )
 
         for project in revenue_projects:
-            # 売上計上日（work_end_dateまたはpayment_due_date）
-            revenue_date = project.work_end_date or project.payment_due_date
+            # 売上計上日（入金予定日ベースに変更）
+            revenue_date = project.payment_due_date
             if not revenue_date or not (fiscal_year_start <= revenue_date <= fiscal_year_end):
                 continue
 
