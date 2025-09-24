@@ -74,7 +74,7 @@ class AccountingDashboardView(TemplateView):
                     'client': project.contractor_name,
                     'type': 'receipt',
                     'amount': amount,
-                    'status': 'completed' if project.work_end_completed else 'pending',
+                    'status': 'completed' if project.payment_status == 'executed' else 'pending',
                     'project': project
                 })
 
@@ -93,12 +93,12 @@ class AccountingDashboardView(TemplateView):
                     'project': subcontract.project
                 })
 
-        # 日付順でソート（新しい順）
-        transactions.sort(key=lambda x: x['date'], reverse=True)
+        # 残高計算のため一度古い順でソート
+        transactions_for_calc = sorted(transactions, key=lambda x: x['date'])
 
-        # 残高計算（累積）
+        # 残高計算（古い順に累積）
         balance = 0
-        for transaction in transactions:
+        for transaction in transactions_for_calc:
             if transaction['type'] == 'receipt':
                 if transaction['status'] == 'completed':
                     balance += transaction['amount']
@@ -106,6 +106,9 @@ class AccountingDashboardView(TemplateView):
                 if transaction['status'] == 'paid':
                     balance -= transaction['amount']
             transaction['balance'] = balance
+
+        # 表示用に新しい順でソート
+        transactions.sort(key=lambda x: x['date'], reverse=True)
 
         # 統計情報
         stats = {
