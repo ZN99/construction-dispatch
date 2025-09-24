@@ -93,8 +93,8 @@ class AccountingDashboardView(TemplateView):
                     'project': subcontract.project
                 })
 
-        # 日付順でソート
-        transactions.sort(key=lambda x: x['date'])
+        # 日付順でソート（新しい順）
+        transactions.sort(key=lambda x: x['date'], reverse=True)
 
         # 残高計算（累積）
         balance = 0
