@@ -1260,38 +1260,35 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for project in data.projects %}
+                                    {% for transaction in data.transactions %}
                                     <tr class="project-row">
                                         <td>
-                                            <a href="{% url 'order_management:project_detail' project.pk %}" class="project-link" title="{{ project.site_name }}">
-                                                <i class="fas fa-external-link-alt me-1"></i>{{ project.site_name }}
+                                            {% if transaction.project %}
+                                            <a href="{% url 'order_management:project_detail' transaction.project.pk %}" class="project-link" title="{{ transaction.project.site_name }}">
+                                                <i class="fas fa-external-link-alt me-1"></i>{{ transaction.project.site_name }}
                                             </a>
-                                        </td>
-                                        <td class="date-cell">
-                                            {% if project.work_start_date %}{{ project.work_start_date|date:"m/d" }}{% else %}-{% endif %}
-                                            {% if project.work_end_date %}<br>{{ project.work_end_date|date:"m/d" }}{% endif %}
-                                        </td>
-                                        <td class="amount-cell">
-                                            {% if project.order_amount %}¥{{ project.order_amount|intcomma }}{% else %}-{% endif %}
-                                        </td>
-                                        <td class="amount-cell">
-                                            {% if project.billing_amount %}¥{{ project.billing_amount|intcomma }}{% else %}
-                                                {% if project.order_amount %}¥{{ project.order_amount|intcomma }}{% else %}-{% endif %}
+                                            {% else %}
+                                                <span class="text-muted">{{ transaction.description }}</span>
                                             {% endif %}
                                         </td>
                                         <td class="date-cell">
-                                            {% if project.payment_due_date %}{{ project.payment_due_date|date:"m/d" }}{% else %}<span class="text-muted">未設定</span>{% endif %}
+                                            {% if transaction.project and transaction.project.work_start_date %}{{ transaction.project.work_start_date|date:"m/d" }}{% else %}-{% endif %}
+                                            {% if transaction.project and transaction.project.work_end_date %}<br>{{ transaction.project.work_end_date|date:"m/d" }}{% endif %}
+                                        </td>
+                                        <td class="amount-cell">
+                                            {% if transaction.project and transaction.project.order_amount %}¥{{ transaction.project.order_amount|floatformat:0|intcomma }}{% else %}-{% endif %}
+                                        </td>
+                                        <td class="amount-cell">
+                                            ¥{{ transaction.amount|floatformat:0|intcomma }}
+                                        </td>
+                                        <td class="date-cell">
+                                            {% if transaction.transaction_date %}{{ transaction.transaction_date|date:"m/d" }}{% else %}<span class="text-muted">未設定</span>{% endif %}
                                         </td>
                                         <td>
-                                            {% if project.payment_status == 'executed' %}
+                                            {% if not transaction.is_planned %}
                                                 <span class="status-badge status-received">入金済み</span>
-                                            {% elif project.payment_due_date %}
-                                                {% now "Y-m-d" as today %}
-                                                {% if project.payment_due_date|date:"Y-m-d" < today %}
-                                                    <span class="status-badge status-overdue">遅延</span>
-                                                {% else %}
-                                                    <span class="status-badge status-pending">入金待ち</span>
-                                                {% endif %}
+                                            {% elif transaction.transaction_date < today %}
+                                                <span class="status-badge status-overdue">遅延</span>
                                             {% else %}
                                                 <span class="status-badge status-pending">入金待ち</span>
                                             {% endif %}
@@ -1332,7 +1329,7 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="client-invoice-actions">
-                                    <button class="btn btn-success btn-sm" onclick="generateClientInvoice('{{ data.client_name }}', {{ data.total_amount }}, [{% for project in data.projects %}{{ project.pk }}{% if not forloop.last %},{% endif %}{% endfor %}])" title="この受注先の請求書を作成">
+                                    <button class="btn btn-success btn-sm" onclick="generateClientInvoice('{{ data.client_name }}', {{ data.total_amount }}, [{% for transaction in data.transactions %}{% if transaction.project %}{{ transaction.project.pk }}{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}])" title="この受注先の請求書を作成">
                                         <i class="fas fa-file-invoice me-1"></i>請求書作成
                                     </button>
                                 </div>

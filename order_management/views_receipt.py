@@ -1,10 +1,11 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView
-from django.db.models import Q, Sum, Count, Case, When, DecimalField
+from django.db.models import Q, Sum, Count
 from django.utils import timezone
 from datetime import datetime, timedelta
-from .models import Project
+from .models import CashFlowTransaction
 import calendar
+from decimal import Decimal
 from .utils import safe_int
 
 
@@ -24,86 +25,79 @@ class ReceiptDashboardView(TemplateView):
         start_date = datetime(year, month, 1).date()
         end_date = datetime(year, month, calendar.monthrange(year, month)[1]).date()
 
-        # 入金ベース：今月入金予定の案件のみ
-        base_query = Project.objects.filter(
-            payment_due_date__gte=start_date,
-            payment_due_date__lte=end_date,
-            order_amount__gt=0
-        ).exclude(
-            client_name__isnull=True
-        ).exclude(
-            client_name=''
-        )
+        # 入金トランザクション（revenue_cash）のみ取得
+        base_query = CashFlowTransaction.objects.filter(
+            transaction_type='revenue_cash',
+            transaction_date__gte=start_date,
+            transaction_date__lte=end_date
+        ).select_related('project')
 
         # 入金状況による絞り込み
+        today = timezone.now().date()
         if status_filter == 'received':
-            # 入金済み（工事完了済み案件と仮定）
-            base_query = base_query.filter(work_end_completed=True)
+            # 入金済み（is_planned=False）
+            base_query = base_query.filter(is_planned=False)
         elif status_filter == 'pending':
-            # 入金待ち（未完了案件）
-            base_query = base_query.filter(work_end_completed=False)
+            # 入金待ち（is_planned=True、まだ未来）
+            base_query = base_query.filter(is_planned=True, transaction_date__gte=today)
         elif status_filter == 'overdue':
-            # 遅延（入金予定日を過ぎている案件）
-            today = timezone.now().date()
-            base_query = base_query.filter(
-                payment_due_date__lt=today,
-                work_end_completed=False
-            )
+            # 遅延（is_planned=True、過去日付）
+            base_query = base_query.filter(is_planned=True, transaction_date__lt=today)
 
-        receipt_projects = base_query.order_by('client_name', 'payment_due_date')
+        receipt_transactions = base_query.order_by('transaction_date', 'project__client_name')
 
-        # 発注元別の集計データ
+        # 顧客別の集計データ
         client_summary = {}
 
-        # 今月の入金統計（入金ベース）
+        # 今月の入金統計
         monthly_receipt_stats = {
-            'pending_amount': 0,    # 入金待ち
-            'received_amount': 0,   # 入金済み
-            'overdue_amount': 0,    # 遅延
-            'total_receipt': 0      # 今月の総入金予定額
+            'pending_amount': Decimal('0'),    # 入金待ち
+            'received_amount': Decimal('0'),   # 入金済み
+            'overdue_amount': Decimal('0'),    # 遅延
+            'total_receipt': Decimal('0')      # 今月の総入金予定額
         }
 
-        for project in receipt_projects:
-            client_name = project.client_name
+        for transaction in receipt_transactions:
+            # プロジェクトから顧客名を取得
+            client_name = transaction.project.client_name if transaction.project else '不明な顧客'
+
             if client_name not in client_summary:
                 client_summary[client_name] = {
                     'client_name': client_name,
-                    'projects': [],
-                    'total_amount': 0,
-                    'received_amount': 0,
-                    'pending_amount': 0,
-                    'overdue_amount': 0,
-                    'project_count': 0
+                    'transactions': [],
+                    'total_amount': Decimal('0'),
+                    'received_amount': Decimal('0'),
+                    'pending_amount': Decimal('0'),
+                    'overdue_amount': Decimal('0'),
+                    'transaction_count': 0
                 }
 
-            # 入金金額の決定
-            amount = project.billing_amount or project.order_amount or 0
+            amount = transaction.amount
 
-            client_summary[client_name]['projects'].append(project)
+            client_summary[client_name]['transactions'].append(transaction)
             client_summary[client_name]['total_amount'] += amount
-            client_summary[client_name]['project_count'] += 1
+            client_summary[client_name]['transaction_count'] += 1
 
             # 入金状況別の集計
-            today = timezone.now().date()
-            if project.work_end_completed:
-                # 工事完了済み = 入金済みと仮定
+            if not transaction.is_planned:
+                # 実績入金
                 client_summary[client_name]['received_amount'] += amount
                 monthly_receipt_stats['received_amount'] += amount
-            elif project.payment_due_date and project.payment_due_date < today:
-                # 入金予定日を過ぎている = 遅延
+            elif transaction.transaction_date < today:
+                # 予定だったが過ぎている = 遅延
                 client_summary[client_name]['overdue_amount'] += amount
                 monthly_receipt_stats['overdue_amount'] += amount
             else:
-                # その他 = 入金待ち
+                # 今後の入金予定
                 client_summary[client_name]['pending_amount'] += amount
                 monthly_receipt_stats['pending_amount'] += amount
 
             monthly_receipt_stats['total_receipt'] += amount
 
-        # 統計情報（入金ベース）
+        # 統計情報
         stats = {
             'total_clients': len(client_summary),
-            'total_projects': receipt_projects.count(),
+            'total_transactions': receipt_transactions.count(),
             'total_receipt': monthly_receipt_stats['total_receipt'],
             'pending_amount': monthly_receipt_stats['pending_amount'],
             'received_amount': monthly_receipt_stats['received_amount'],
@@ -118,6 +112,12 @@ class ReceiptDashboardView(TemplateView):
             ('overdue', '遅延'),
         ]
 
+        # 前月・次月のナビゲーション
+        prev_month = month - 1 if month > 1 else 12
+        prev_year = year if month > 1 else year - 1
+        next_month = month + 1 if month < 12 else 1
+        next_year = year if month < 12 else year + 1
+
         context.update({
             'year': year,
             'month': month,
@@ -125,10 +125,15 @@ class ReceiptDashboardView(TemplateView):
             'status_filter': status_filter,
             'receipt_status_choices': receipt_status_choices,
             'client_summary': client_summary,
-            'receipt_projects': receipt_projects,
+            'receipt_transactions': receipt_transactions,
             'stats': stats,
             'start_date': start_date,
             'end_date': end_date,
+            'prev_year': prev_year,
+            'prev_month': prev_month,
+            'next_year': next_year,
+            'next_month': next_month,
+            'today': today,
         })
 
         return context

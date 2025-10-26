@@ -904,46 +904,44 @@
                                     </td>
                                 </tr>
 
-                                <!-- 外注詳細 -->
-                                {% for subcontract in data.subcontracts %}
+                                <!-- 取引詳細 -->
+                                {% for transaction in data.transactions %}
                                 <tr class="project-row">
                                     <td></td>
                                     <td>
-                                        <a href="{% url 'order_management:project_detail' subcontract.project.pk %}" class="project-link" title="{{ subcontract.site_name }}">
-                                            <i class="fas fa-external-link-alt me-1"></i>{{ subcontract.site_name }}
+                                        {% if transaction.project %}
+                                        <a href="{% url 'order_management:project_detail' transaction.project.pk %}" class="project-link" title="{{ transaction.project.site_name }}">
+                                            <i class="fas fa-external-link-alt me-1"></i>{{ transaction.project.site_name }}
                                         </a>
+                                        {% else %}
+                                            <span class="text-muted">{{ transaction.description }}</span>
+                                        {% endif %}
                                     </td>
                                     <td class="date-cell">
-                                        {% if subcontract.work_start_date %}{{ subcontract.work_start_date|date:"m/d" }}{% else %}-{% endif %}
-                                        {% if subcontract.work_end_date %}<br>{{ subcontract.work_end_date|date:"m/d" }}{% endif %}
+                                        {% if transaction.project and transaction.project.work_start_date %}{{ transaction.project.work_start_date|date:"m/d" }}{% else %}-{% endif %}
+                                        {% if transaction.project and transaction.project.work_end_date %}<br>{{ transaction.project.work_end_date|date:"m/d" }}{% endif %}
                                     </td>
                                     <td class="amount-cell">
-                                        {% if subcontract.contract_amount %}¥{{ subcontract.contract_amount|intcomma }}{% else %}-{% endif %}
+                                        -
                                     </td>
                                     <td class="amount-cell">
-                                        {% if subcontract.billed_amount %}¥{{ subcontract.billed_amount|intcomma }}{% else %}-{% endif %}
+                                        ¥{{ transaction.amount|floatformat:0|intcomma }}
                                     </td>
                                     <td class="date-cell">
-                                        {% if subcontract.payment_date %}{{ subcontract.payment_date|date:"m/d" }}{% else %}<span class="text-muted">未設定</span>{% endif %}
+                                        {% if transaction.transaction_date %}{{ transaction.transaction_date|date:"m/d" }}{% else %}<span class="text-muted">未設定</span>{% endif %}
                                     </td>
                                     <td class="date-cell">
-                                        {% if subcontract.payment_status == 'paid' and subcontract.payment_date %}{{ subcontract.payment_date|date:"m/d" }}{% else %}<span class="text-muted">-</span>{% endif %}
+                                        {% if not transaction.is_planned %}{{ transaction.transaction_date|date:"m/d" }}{% else %}<span class="text-muted">-</span>{% endif %}
                                     </td>
                                     <td>
-                                        <span class="status-badge status-{{ subcontract.payment_status }}">
-                                            {% if subcontract.payment_status == 'pending' %}未払い
-                                            {% elif subcontract.payment_status == 'processing' %}処理中
-                                            {% elif subcontract.payment_status == 'paid' %}支払済み
-                                            {% else %}{{ subcontract.payment_status }}
+                                        <span class="status-badge status-{% if not transaction.is_planned %}paid{% else %}pending{% endif %}">
+                                            {% if not transaction.is_planned %}支払済み
+                                            {% else %}未払い
                                             {% endif %}
                                         </span>
                                     </td>
                                     <td class="text-center">
-                                        {% if subcontract.worker_type == 'external' %}
-                                            <span class="badge bg-primary">外注</span>
-                                        {% else %}
-                                            <span class="badge bg-success">社内</span>
-                                        {% endif %}
+                                        <span class="badge bg-secondary">-</span>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -951,7 +949,7 @@
                                 <!-- 出金先合計 -->
                                 <tr class="contractor-summary">
                                     <td><strong><i class="fas fa-calculator"></i> {{ data.payee_name }} 合計</strong></td>
-                                    <td colspan="2"><strong>{{ data.project_count }}件</strong></td>
+                                    <td colspan="2"><strong>{{ data.transaction_count }}件</strong></td>
                                     <td class="amount-cell"><strong>-</strong></td>
                                     <td class="amount-cell"><strong>¥{{ data.total_amount|intcomma }}</strong></td>
                                     <td colspan="4">
