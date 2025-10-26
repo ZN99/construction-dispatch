@@ -26,10 +26,10 @@ def dashboard(request):
     total_projects = Project.objects.count()
 
     # 受注ヨミ別統計
-    status_stats = Project.objects.values('order_status').annotate(
+    status_stats = Project.objects.values('project_status').annotate(
         count=Count('id'),
-        total_amount=Sum('estimate_amount')
-    ).order_by('order_status')
+        total_amount=Sum('order_amount')
+    ).order_by('project_status')
 
     # 月別推移データ
     monthly_stats = []
@@ -44,9 +44,9 @@ def dashboard(request):
         monthly_stats.append({
             'month': month_start.strftime('%Y-%m'),
             'total': month_projects.count(),
-            'received': month_projects.filter(order_status='受注').count(),
-            'pending': month_projects.filter(order_status='検討中').count(),
-            'amount': month_projects.aggregate(Sum('estimate_amount'))['estimate_amount__sum'] or 0
+            'received': month_projects.filter(project_status='完工').count(),
+            'pending': month_projects.filter(project_status='ネタ').count(),
+            'amount': month_projects.aggregate(Sum('order_amount'))['order_amount__sum'] or 0
         })
 
     monthly_stats.reverse()
@@ -65,10 +65,10 @@ def dashboard(request):
 
     # 売上統計
     revenue_stats = {
-        'total_estimate': Project.objects.aggregate(Sum('estimate_amount'))['estimate_amount__sum'] or 0,
+        'total_estimate': Project.objects.aggregate(Sum('order_amount'))['order_amount__sum'] or 0,
         'total_billing': Project.objects.aggregate(Sum('billing_amount'))['billing_amount__sum'] or 0,
-        'received_amount': Project.objects.filter(order_status='受注').aggregate(Sum('billing_amount'))['billing_amount__sum'] or 0,
-        'pending_amount': Project.objects.filter(order_status='検討中').aggregate(Sum('estimate_amount'))['estimate_amount__sum'] or 0,
+        'received_amount': Project.objects.filter(project_status='完工').aggregate(Sum('billing_amount'))['billing_amount__sum'] or 0,
+        'pending_amount': Project.objects.filter(project_status='ネタ').aggregate(Sum('order_amount'))['order_amount__sum'] or 0,
     }
 
     # 今月の実績
@@ -83,7 +83,7 @@ def dashboard(request):
         'upcoming_projects': upcoming_projects[:5],  # 上位5件
         'revenue_stats': revenue_stats,
         'this_month_projects': this_month_projects.count(),
-        'this_month_received': this_month_projects.filter(order_status='受注').count(),
+        'this_month_received': this_month_projects.filter(project_status='完工').count(),
     }
 
     return render(request, 'order_management/dashboard.html', context)
@@ -98,9 +98,9 @@ def project_list(request):
     )
 
     # フィルタリング
-    order_status = request.GET.get('order_status')
-    if order_status:
-        projects = projects.filter(order_status=order_status)
+    project_status = request.GET.get('project_status')
+    if project_status:
+        projects = projects.filter(project_status=project_status)
 
     work_type = request.GET.get('work_type')
     if work_type:
@@ -116,13 +116,13 @@ def project_list(request):
         projects = projects.filter(
             Q(management_no__icontains=search_query) |
             Q(site_name__icontains=search_query) |
-            Q(contractor_name__icontains=search_query) |
+            Q(client_name__icontains=search_query) |
             Q(project_manager__icontains=search_query)
         )
 
     # 統計情報を計算（フィルター適用後の全体から）
     total_count = projects.count()
-    received_count = projects.filter(order_status='受注').count()
+    received_count = projects.filter(project_status='完工').count()
     in_progress_count = projects.filter(work_start_completed=True, work_end_completed=False).count()
     completed_count = projects.filter(work_end_completed=True).count()
 
@@ -134,8 +134,8 @@ def project_list(request):
     context = {
         'page_obj': page_obj,
         'projects': page_obj,
-        'order_status_choices': Project.ORDER_STATUS_CHOICES,
-        'order_status': order_status,
+        'project_status_choices': Project.PROJECT_STATUS_CHOICES,
+        'project_status': project_status,
         'work_type': work_type,
         'project_manager': project_manager,
         'search_query': search_query,
@@ -769,8 +769,8 @@ def project_api_list(request):
             'progress_steps__template'
         ).only(
             'id', 'management_no', 'site_name', 'site_address', 'work_type',
-            'order_status', 'contractor_name', 'project_manager',
-            'estimate_amount', 'billing_amount', 'work_start_date', 'work_end_date',
+            'project_status', 'client_name', 'project_manager',
+            'order_amount', 'billing_amount', 'work_start_date', 'work_end_date',
             'created_at', 'updated_at'
         )
 
@@ -780,7 +780,7 @@ def project_api_list(request):
             projects = projects.filter(
                 Q(management_no__icontains=search_value) |
                 Q(site_name__icontains=search_value) |
-                Q(contractor_name__icontains=search_value) |
+                Q(client_name__icontains=search_value) |
                 Q(project_manager__icontains=search_value)
             )
 
@@ -791,8 +791,8 @@ def project_api_list(request):
         if order_column:
             columns = [
                 'management_no', 'site_name', 'site_address', 'work_type',
-                'order_status', 'contractor_name', 'project_manager',
-                'estimate_amount', 'billing_amount', 'work_start_date'
+                'project_status', 'client_name', 'project_manager',
+                'order_amount', 'billing_amount', 'work_start_date'
             ]
 
             if int(order_column) < len(columns):
@@ -817,10 +817,10 @@ def project_api_list(request):
                 'site_name': project.site_name,
                 'site_address': project.site_address,
                 'work_type': project.work_type,
-                'order_status': project.order_status,
-                'contractor_name': project.contractor_name,
+                'project_status': project.project_status,
+                'client_name': project.client_name,
                 'project_manager': project.project_manager,
-                'estimate_amount': str(project.estimate_amount),
+                'order_amount': str(project.order_amount),
                 'billing_amount': str(project.billing_amount),
                 'amount_difference': str(project.amount_difference),
                 'work_start_date': project.work_start_date.strftime('%Y-%m-%d') if project.work_start_date else '',
@@ -1041,7 +1041,7 @@ def contractor_api(request, contractor_id=None):
 
 def ordering_dashboard(request):
     """発注ダッシュボード"""
-    projects = Project.objects.filter(order_status='受注').order_by('-created_at')
+    projects = Project.objects.filter(project_status='完工').order_by('-created_at')
 
     # ページネーション
     paginator = Paginator(projects, 10)
@@ -1058,7 +1058,7 @@ def ordering_dashboard(request):
 
 def receipt_dashboard(request):
     """受注ダッシュボード"""
-    projects = Project.objects.filter(order_status='受注').order_by('-created_at')
+    projects = Project.objects.filter(project_status='完工').order_by('-created_at')
 
     # ページネーション
     paginator = Paginator(projects, 10)
@@ -1100,8 +1100,8 @@ def generate_client_invoice_api(request):
             # 請求書を作成
             invoice = Invoice.objects.create(
                 invoice_number=invoice_number,
-                client_name=project.contractor_name,
-                client_address=project.site_address,
+                client_name=project.client_name,
+                client_address=project.client_address,
                 issue_date=today.date(),
                 due_date=today.date() + timedelta(days=30),
                 billing_period_start=project.work_start_date or today.date(),
@@ -1160,7 +1160,7 @@ def get_client_invoice_preview_api(request):
                 return JsonResponse({'error': 'クライアント名またはプロジェクトIDが指定されていません'}, status=400)
 
             # 指定されたプロジェクトを取得
-            projects = Project.objects.filter(id__in=project_ids, contractor_name=client_name)
+            projects = Project.objects.filter(id__in=project_ids, client_name=client_name)
 
             # 年月が指定されている場合は、入金予定日でフィルター
             if year and month:
@@ -1177,7 +1177,7 @@ def get_client_invoice_preview_api(request):
                 return JsonResponse({'error': '指定されたプロジェクトが見つかりません'}, status=404)
 
             # 合計金額を計算
-            total_subtotal = sum((p.estimate_amount or Decimal('0')) for p in projects)
+            total_subtotal = sum((p.order_amount or Decimal('0')) for p in projects)
             tax_rate = Decimal('10.00')
             tax_amount = (total_subtotal * tax_rate / Decimal('100')).quantize(Decimal('1'))
             total_amount = total_subtotal + tax_amount
@@ -1190,7 +1190,7 @@ def get_client_invoice_preview_api(request):
             # 項目リストを作成
             items = []
             for project in projects:
-                project_amount = project.estimate_amount or Decimal('0')
+                project_amount = project.order_amount or Decimal('0')
                 items.append({
                     'description': f"{project.work_type} - {project.site_name}",
                     'quantity': 1.0,
@@ -1243,17 +1243,17 @@ def generate_invoices_by_client_api(request):
             projects = Project.objects.filter(
                 payment_due_date__gte=start_date,
                 payment_due_date__lte=end_date,
-                estimate_amount__gt=0
+                order_amount__gt=0
             ).exclude(
-                contractor_name__isnull=True
+                client_name__isnull=True
             ).exclude(
-                contractor_name=''
+                client_name=''
             )
 
             # 受注先別にグループ化
             client_projects = {}
             for project in projects:
-                client_name = project.contractor_name
+                client_name = project.client_name
                 if client_name not in client_projects:
                     client_projects[client_name] = []
                 client_projects[client_name].append(project)
@@ -1262,7 +1262,7 @@ def generate_invoices_by_client_api(request):
             invoices_created = []
             for client_name, client_project_list in client_projects.items():
                 # 合計金額を計算
-                subtotal = sum((p.billing_amount or p.estimate_amount or Decimal('0')) for p in client_project_list)
+                subtotal = sum((p.billing_amount or p.order_amount or Decimal('0')) for p in client_project_list)
                 tax_rate = Decimal('10.00')
                 tax_amount = (subtotal * tax_rate / Decimal('100')).quantize(Decimal('1'))
                 total_amount = subtotal + tax_amount
@@ -1292,7 +1292,7 @@ def generate_invoices_by_client_api(request):
 
                 # 請求書明細を作成（当月の入金予定案件のみ）
                 for idx, project in enumerate(client_project_list, 1):
-                    project_amount = project.billing_amount or project.estimate_amount or Decimal('0')
+                    project_amount = project.billing_amount or project.order_amount or Decimal('0')
                     InvoiceItem.objects.create(
                         invoice=invoice,
                         project=project,
@@ -1346,8 +1346,8 @@ def get_invoice_preview_api(request, project_id):
             preview_data = {
                 'invoice_number': preview_invoice_number,
                 'issue_date': today.strftime('%Y年%m月%d日'),
-                'client_name': project.contractor_name,
-                'client_address': project.site_address,
+                'client_name': project.client_name,
+                'client_address': project.client_address,
                 'billing_period': f"{project.work_start_date.strftime('%Y年%m月%d日') if project.work_start_date else '未定'} ～ {project.work_end_date.strftime('%Y年%m月%d日') if project.work_end_date else '未定'}",
                 'items': [
                     {

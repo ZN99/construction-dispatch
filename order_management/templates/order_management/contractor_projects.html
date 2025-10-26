@@ -170,9 +170,9 @@
                                 <th>管理番号</th>
                                 <th>現場名</th>
                                 <th>住所</th>
-                                <th>種別</th>
+                                <th>施工種別</th>
                                 <th>受注状況</th>
-                                <th class="text-end">見積金額</th>
+                                <th class="text-end">受注金額</th>
                                 <th>見積発行日</th>
                                 <th class="text-center">アクション</th>
                             </tr>
@@ -194,16 +194,16 @@
                                 </td>
                                 <td>
                                     <span class="badge
-                                        {% if project.order_status == '受注' %}bg-success
-                                        {% elif project.order_status == 'NG' %}bg-danger
-                                        {% elif project.order_status == 'A' %}bg-warning text-dark
+                                        {% if project.project_status == '完工' %}bg-success
+                                        {% elif project.project_status == 'NG' %}bg-danger
+                                        {% elif project.project_status == '施工日待ち' %}bg-warning text-dark
                                         {% else %}bg-secondary
                                         {% endif %}">
-                                        {{ project.order_status }}
+                                        {{ project.project_status }}
                                     </span>
                                 </td>
                                 <td class="text-end">
-                                    <strong>¥{{ project.estimate_amount|floatformat:0|intcomma }}</strong>
+                                    <strong>¥{{ project.order_amount|floatformat:0|intcomma }}</strong>
                                 </td>
                                 <td>
                                     {% if project.estimate_issued_date %}

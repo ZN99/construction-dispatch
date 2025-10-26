@@ -1,29 +1,33 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import datetime
 from decimal import Decimal
 
 
 class Project(models.Model):
-    ORDER_STATUS_CHOICES = [
-        ('受注', '受注'),
-        ('NG', 'NG'),
-        ('A', 'A'),
-        ('検討中', '検討中')
+    # 案件進捗ステータスの選択肢（旧: 受注ヨミ）
+    PROJECT_STATUS_CHOICES = [
+        ('ネタ', 'ネタ'),  # 旧: 検討中
+        ('施工日待ち', '施工日待ち'),  # 旧: A
+        ('進行中', '進行中'),  # 新規追加
+        ('完工', '完工'),  # 旧: 受注
+        ('NG', 'NG'),  # 変更なし
     ]
 
     # 基本情報
     management_no = models.CharField(max_length=20, unique=True, verbose_name='管理No')
     site_name = models.CharField(max_length=200, verbose_name='現場名')
-    site_address = models.TextField(verbose_name='現場住所')
-    work_type = models.CharField(max_length=50, verbose_name='種別')
+    site_address = models.TextField(verbose_name='現場住所', blank=True)  # 任意に変更
+    work_type = models.CharField(max_length=50, verbose_name='施工種別')  # 旧: 種別
 
     # 受注・見積情報
-    order_status = models.CharField(
-        max_length=10,
-        choices=ORDER_STATUS_CHOICES,
-        default='検討中',
-        verbose_name='受注ヨミ'
+    project_status = models.CharField(  # 旧: order_status
+        max_length=20,  # max_lengthを20に拡張（「施工日待ち」対応）
+        choices=PROJECT_STATUS_CHOICES,
+        default='ネタ',  # 旧: 検討中
+        verbose_name='案件進捗'  # 旧: 受注ヨミ
     )
     estimate_issued_date = models.DateField(
         null=True, blank=True, verbose_name='見積書発行日'
@@ -31,16 +35,16 @@ class Project(models.Model):
     estimate_not_required = models.BooleanField(
         default=False, verbose_name='見積書不要'
     )
-    estimate_amount = models.DecimalField(
-        max_digits=10, decimal_places=0, default=0, verbose_name='見積金額(税込)'
+    order_amount = models.DecimalField(  # 旧: estimate_amount
+        max_digits=10, decimal_places=0, default=0, verbose_name='受注金額(税込)'  # 旧: 見積金額
     )
     parking_fee = models.DecimalField(
         max_digits=8, decimal_places=0, default=0, verbose_name='駐車場代(税込)'
     )
 
-    # 業者・担当情報
-    contractor_name = models.CharField(max_length=100, verbose_name='請負業者名')
-    contractor_address = models.TextField(verbose_name='請負業者住所')
+    # 元請・担当情報（旧: 業者・担当情報）
+    client_name = models.CharField(max_length=100, verbose_name='元請名')  # 旧: contractor_name (請負業者名)
+    client_address = models.TextField(verbose_name='元請住所', blank=True)  # 旧: contractor_address (請負業者住所)、任意に変更
     project_manager = models.CharField(max_length=50, verbose_name='案件担当')
 
     # スケジュール
@@ -101,7 +105,7 @@ class Project(models.Model):
         verbose_name='現地調査ステータス'
     )
 
-    # 支払管理
+    # 支払管理（業者への支払）
     payment_scheduled_date = models.DateField(
         null=True, blank=True,
         verbose_name='支払予定日',
@@ -133,6 +137,31 @@ class Project(models.Model):
         blank=True,
         verbose_name='支払メモ',
         help_text='支払に関する特記事項'
+    )
+
+    # 入金管理（元請からの入金） - Phase 1 追加
+    payment_received_date = models.DateField(
+        null=True, blank=True,
+        verbose_name='入金実行日',
+        help_text='元請から実際に入金があった日'
+    )
+    payment_received_amount = models.DecimalField(
+        max_digits=10, decimal_places=0,
+        null=True, blank=True,
+        verbose_name='入金金額',
+        help_text='実際の入金金額（請求額と異なる場合に使用）'
+    )
+
+    # 完工・請求管理 - Phase 1 追加
+    completion_date = models.DateField(
+        null=True, blank=True,
+        verbose_name='完工日',
+        help_text='工事が完工した日（発生主義売上の基準日）'
+    )
+    invoice_issue_datetime = models.DateTimeField(
+        null=True, blank=True,
+        verbose_name='請求書発行日時',
+        help_text='請求書を発行した日時'
     )
 
     # その他
@@ -175,14 +204,14 @@ class Project(models.Model):
 
         # 自動計算処理
         self.billing_amount = (
-            Decimal(str(self.estimate_amount)) +
+            Decimal(str(self.order_amount)) +
             Decimal(str(self.parking_fee)) +
             Decimal(str(self.expense_amount_1)) +
             Decimal(str(self.expense_amount_2))
         )
         self.amount_difference = (
             Decimal(str(self.billing_amount)) -
-            Decimal(str(self.estimate_amount))
+            Decimal(str(self.order_amount))
         )
 
         super().save(*args, **kwargs)
@@ -190,22 +219,24 @@ class Project(models.Model):
     def get_status_color(self):
         """ステータスに応じた背景色を返す"""
         color_map = {
-            '受注': 'bg-success',  # 緑
-            'NG': 'bg-secondary',  # グレー
-            'A': 'bg-danger',      # ピンク/赤
-            '検討中': 'bg-warning' # 黄色
+            '完工': 'bg-success',     # 緑（旧: 受注）
+            'NG': 'bg-secondary',     # グレー
+            '施工日待ち': 'bg-danger', # ピンク/赤（旧: A）
+            'ネタ': 'bg-warning',     # 黄色（旧: 検討中）
+            '進行中': 'bg-info'       # 青（新規）
         }
-        return color_map.get(self.order_status, '')
+        return color_map.get(self.project_status, '')
 
     def get_status_color_hex(self):
         """ステータスに応じた背景色（Hex）を返す"""
         color_map = {
-            '受注': '#28a745',     # 緑
-            'NG': '#6c757d',      # グレー
-            'A': '#dc3545',       # ピンク/赤
-            '検討中': '#ffc107'    # 黄色
+            '完工': '#28a745',       # 緑（旧: 受注）
+            'NG': '#6c757d',        # グレー
+            '施工日待ち': '#dc3545', # ピンク/赤（旧: A）
+            'ネタ': '#ffc107',      # 黄色（旧: 検討中）
+            '進行中': '#17a2b8'     # 青（新規）
         }
-        return color_map.get(self.order_status, '#ffffff')
+        return color_map.get(self.project_status, '#ffffff')
 
     def get_work_progress_percentage(self):
         """工事進捗率を計算して返す（実際の進捗ステップベース）"""
@@ -291,7 +322,7 @@ class Project(models.Model):
 
         # フォールバック：日付ベース
         if not self.work_start_date or not self.work_end_date:
-            if self.order_status == '受注':
+            if self.project_status == '完工':  # 旧: 受注
                 return '準備中'
             return '未定'
 
@@ -312,10 +343,10 @@ class Project(models.Model):
 
     def get_progress_status(self):
         """進捗状況の総合判定を返す"""
-        if self.order_status == 'NG':
+        if self.project_status == 'NG':
             return {'phase': 'NG', 'color': 'secondary', 'percentage': 0}
-        elif self.order_status == '検討中':
-            return {'phase': '検討中', 'color': 'warning', 'percentage': 0}
+        elif self.project_status == 'ネタ':  # 旧: 検討中
+            return {'phase': 'ネタ', 'color': 'warning', 'percentage': 0}
 
         # 受注案件の進捗判定
         phase = self.get_work_phase()
@@ -510,8 +541,8 @@ class Project(models.Model):
         # 売上 = 請求額実請求
         revenue = self.billing_amount or Decimal('0')
 
-        # 売上原価の計算（例：見積金額の70%と仮定、実際の業務に合わせて調整）
-        cost_of_sales = (self.estimate_amount or Decimal('0')) * Decimal('0.7')
+        # 売上原価の計算（例：受注金額の70%と仮定、実際の業務に合わせて調整）
+        cost_of_sales = (self.order_amount or Decimal('0')) * Decimal('0.7')
 
         # 売上総利益 = 売上 - 売上原価
         gross_profit = revenue - cost_of_sales
@@ -575,6 +606,84 @@ class Project(models.Model):
             }
         except ImportError:
             return None
+
+    # ==================== Phase 1: キャッシュフロー管理メソッド ====================
+
+    def get_accrual_revenue(self):
+        """発生主義売上を取得（完工ベース）"""
+        if self.project_status == '完工' and self.completion_date:
+            return self.billing_amount or Decimal('0')
+        return Decimal('0')
+
+    def get_cash_revenue(self):
+        """現金主義売上を取得（入金ベース）"""
+        if self.payment_received_date and self.payment_received_amount:
+            return self.payment_received_amount
+        elif self.payment_received_date:
+            return self.billing_amount or Decimal('0')
+        return Decimal('0')
+
+    def get_accrual_expenses(self):
+        """発生主義支出を取得（発注ベース）"""
+        try:
+            from subcontract_management.models import Subcontract
+            subcontracts = Subcontract.objects.filter(project=self)
+            total = sum(sc.contract_amount or Decimal('0') for sc in subcontracts)
+            return total
+        except ImportError:
+            return Decimal('0')
+
+    def get_cash_expenses(self):
+        """現金主義支出を取得（支払ベース）"""
+        try:
+            from subcontract_management.models import Subcontract
+            subcontracts = Subcontract.objects.filter(
+                project=self,
+                payment_date__isnull=False
+            )
+            total = sum(sc.contract_amount or Decimal('0') for sc in subcontracts)
+            return total
+        except ImportError:
+            return Decimal('0')
+
+    def get_revenue_status(self):
+        """売上の状況を返す（発生 vs 入金）"""
+        accrual = self.get_accrual_revenue()
+        cash = self.get_cash_revenue()
+
+        return {
+            'accrual': accrual,
+            'cash': cash,
+            'receivable': accrual - cash,  # 売掛金
+            'is_collected': cash >= accrual,  # 入金完了フラグ
+            'collection_rate': (cash / accrual * 100) if accrual > 0 else Decimal('0')
+        }
+
+    def get_expense_status(self):
+        """支出の状況を返す（発生 vs 出金）"""
+        accrual = self.get_accrual_expenses()
+        cash = self.get_cash_expenses()
+
+        return {
+            'accrual': accrual,
+            'cash': cash,
+            'payable': accrual - cash,  # 買掛金
+            'is_paid': cash >= accrual,  # 支払完了フラグ
+            'payment_rate': (cash / accrual * 100) if accrual > 0 else Decimal('0')
+        }
+
+    def get_cash_flow_summary(self):
+        """キャッシュフロー概要を返す"""
+        revenue_status = self.get_revenue_status()
+        expense_status = self.get_expense_status()
+
+        return {
+            'revenue': revenue_status,
+            'expense': expense_status,
+            'net_accrual': revenue_status['accrual'] - expense_status['accrual'],
+            'net_cash': revenue_status['cash'] - expense_status['cash'],
+            'working_capital': revenue_status['receivable'] - expense_status['payable']
+        }
 
 
 class ProgressStepTemplate(models.Model):
@@ -1092,3 +1201,603 @@ class InvoiceItem(models.Model):
         # 請求書の小計を更新
         self.invoice.subtotal = sum(item.amount for item in self.invoice.items.all())
         self.invoice.save()
+
+
+class CashFlowTransaction(models.Model):
+    """キャッシュフロー取引モデル - Phase 1"""
+    TRANSACTION_TYPE_CHOICES = [
+        ('revenue_accrual', '売上（発生）'),      # 完工ベース
+        ('revenue_cash', '売上（入金）'),         # 入金ベース
+        ('expense_accrual', '支出（発生）'),      # 発注ベース
+        ('expense_cash', '支出（出金）'),         # 支払ベース
+    ]
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='cash_transactions',
+        verbose_name='関連案件'
+    )
+    transaction_type = models.CharField(
+        max_length=20,
+        choices=TRANSACTION_TYPE_CHOICES,
+        verbose_name='取引種別'
+    )
+    transaction_date = models.DateField(verbose_name='取引日')
+    amount = models.DecimalField(
+        max_digits=12, decimal_places=0,
+        verbose_name='金額'
+    )
+    description = models.CharField(max_length=200, blank=True, verbose_name='説明')
+    is_planned = models.BooleanField(default=False, verbose_name='予定/実績')
+
+    # 外注先への支払の場合
+    related_subcontract = models.ForeignKey(
+        'subcontract_management.Subcontract',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name='関連外注'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='作成日時')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新日時')
+
+    class Meta:
+        verbose_name = 'キャッシュフロー取引'
+        verbose_name_plural = 'キャッシュフロー取引一覧'
+        ordering = ['-transaction_date', '-created_at']
+        indexes = [
+            models.Index(fields=['transaction_date', 'transaction_type']),
+            models.Index(fields=['project', 'transaction_type']),
+        ]
+
+    def __str__(self):
+        status = '予定' if self.is_planned else '実績'
+        return f"{self.project.management_no} - {self.get_transaction_type_display()} - {status} - ¥{self.amount:,}"
+
+    def get_transaction_category(self):
+        """取引カテゴリを返す（収入/支出）"""
+        if self.transaction_type in ['revenue_accrual', 'revenue_cash']:
+            return 'revenue'
+        else:
+            return 'expense'
+
+    def get_accounting_basis(self):
+        """会計基準を返す（発生主義/現金主義）"""
+        if self.transaction_type in ['revenue_accrual', 'expense_accrual']:
+            return 'accrual'
+        else:
+            return 'cash'
+
+
+class ForecastScenario(models.Model):
+    """売上予測シナリオ - Phase 2"""
+
+    SCENARIO_TYPE_CHOICES = [
+        ('worst', '最悪シナリオ'),
+        ('normal', '通常シナリオ'),
+        ('best', '最良シナリオ'),
+        ('custom', 'カスタム'),
+    ]
+
+    # 基本情報
+    name = models.CharField(max_length=100, verbose_name='シナリオ名')
+    description = models.TextField(blank=True, verbose_name='説明')
+    scenario_type = models.CharField(
+        max_length=20,
+        choices=SCENARIO_TYPE_CHOICES,
+        default='custom',
+        verbose_name='シナリオタイプ'
+    )
+    created_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='作成者'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='作成日時')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新日時')
+
+    # 成約率設定（%で保存、0-100）
+    conversion_rate_neta = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('30.00'),
+        verbose_name='ネタ成約率（%）',
+        help_text='ネタ→完工への成約確率'
+    )
+    conversion_rate_waiting = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('80.00'),
+        verbose_name='施工日待ち成約率（%）',
+        help_text='施工日待ち→完工への成約確率'
+    )
+
+    # コスト設定
+    cost_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('75.00'),
+        verbose_name='原価率（%）',
+        help_text='売上に対する原価の割合'
+    )
+    fixed_cost_multiplier = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        default=Decimal('1.00'),
+        verbose_name='固定費係数',
+        help_text='現在の固定費に対する係数（1.0=現状維持）'
+    )
+    variable_cost_multiplier = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        default=Decimal('1.00'),
+        verbose_name='変動費係数',
+        help_text='過去平均変動費に対する係数'
+    )
+
+    # 予測設定
+    forecast_months = models.IntegerField(
+        default=12,
+        verbose_name='予測月数',
+        help_text='1-24ヶ月'
+    )
+    seasonality_enabled = models.BooleanField(
+        default=True,
+        verbose_name='季節性考慮',
+        help_text='過去の季節性パターンを考慮'
+    )
+
+    # 予測結果（JSON格納）
+    forecast_results = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='予測結果',
+        help_text='計算された予測データ'
+    )
+
+    # ステータス
+    is_active = models.BooleanField(default=True, verbose_name='アクティブ')
+    is_default = models.BooleanField(default=False, verbose_name='デフォルトシナリオ')
+
+    class Meta:
+        verbose_name = '売上予測シナリオ'
+        verbose_name_plural = '売上予測シナリオ一覧'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['scenario_type', 'is_active']),
+            models.Index(fields=['created_by', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.get_scenario_type_display()})"
+
+    def save(self, *args, **kwargs):
+        # デフォルトシナリオは1つのみ
+        if self.is_default:
+            ForecastScenario.objects.filter(is_default=True).update(is_default=False)
+        super().save(*args, **kwargs)
+
+    def get_conversion_rates(self):
+        """成約率を辞書で返す"""
+        return {
+            'ネタ': self.conversion_rate_neta / Decimal('100'),
+            '施工日待ち': self.conversion_rate_waiting / Decimal('100'),
+        }
+
+    def calculate_forecast(self):
+        """予測を計算して forecast_results に保存"""
+        from .forecast_utils import generate_full_forecast
+        self.forecast_results = generate_full_forecast(self)
+        self.save(update_fields=['forecast_results', 'updated_at'])
+
+    def get_summary(self):
+        """予測サマリーを返す"""
+        if not self.forecast_results:
+            return None
+
+        return {
+            'total_revenue': self.forecast_results.get('total_revenue', 0),
+            'total_profit': self.forecast_results.get('total_profit', 0),
+            'profit_margin': self.forecast_results.get('profit_margin', 0),
+            'months': len(self.forecast_results.get('monthly_data', []))
+        }
+
+
+# =============================================================================
+# Phase 3: 進捗管理・レポート機能
+# =============================================================================
+
+class ProjectProgress(models.Model):
+    """プロジェクト進捗記録 - Phase 3"""
+
+    STATUS_CHOICES = [
+        ('on_track', '順調'),
+        ('at_risk', '注意'),
+        ('delayed', '遅延'),
+        ('completed', '完了'),
+    ]
+
+    RISK_LEVEL_CHOICES = [
+        ('low', '低'),
+        ('medium', '中'),
+        ('high', '高'),
+    ]
+
+    # 基本情報
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='progress_records',
+        verbose_name='プロジェクト'
+    )
+    recorded_date = models.DateField(
+        default=timezone.now,
+        verbose_name='記録日'
+    )
+    recorded_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='記録者'
+    )
+
+    # 進捗情報
+    progress_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('100.00'))],
+        verbose_name='進捗率（%）',
+        help_text='0-100%'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='on_track',
+        verbose_name='ステータス'
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name='備考'
+    )
+
+    # マイルストーン
+    milestone_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='マイルストーン名'
+    )
+    milestone_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='マイルストーン予定日'
+    )
+    milestone_completed = models.BooleanField(
+        default=False,
+        verbose_name='マイルストーン完了'
+    )
+
+    # リスク・課題
+    has_risk = models.BooleanField(
+        default=False,
+        verbose_name='リスクあり'
+    )
+    risk_description = models.TextField(
+        blank=True,
+        verbose_name='リスク内容'
+    )
+    risk_level = models.CharField(
+        max_length=20,
+        choices=RISK_LEVEL_CHOICES,
+        blank=True,
+        verbose_name='リスクレベル'
+    )
+
+    # システム情報
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='作成日時')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新日時')
+
+    class Meta:
+        verbose_name = 'プロジェクト進捗'
+        verbose_name_plural = 'プロジェクト進捗'
+        ordering = ['-recorded_date', '-created_at']
+        indexes = [
+            models.Index(fields=['project', '-recorded_date']),
+            models.Index(fields=['status']),
+            models.Index(fields=['recorded_date']),
+        ]
+
+    def __str__(self):
+        return f"{self.project.name} - {self.recorded_date} ({self.progress_rate}%)"
+
+    def get_schedule_variance_days(self):
+        """スケジュール差異（日数）を計算"""
+        if not self.project.start_date or not self.project.expected_completion_date:
+            return None
+
+        total_days = (self.project.expected_completion_date - self.project.start_date).days
+        if total_days <= 0:
+            return None
+
+        expected_progress = Decimal('100.00')
+        today = timezone.now().date()
+        if today < self.project.expected_completion_date:
+            elapsed_days = (today - self.project.start_date).days
+            expected_progress = (Decimal(str(elapsed_days)) / Decimal(str(total_days))) * Decimal('100.00')
+
+        progress_variance = self.progress_rate - expected_progress
+        variance_days = int((progress_variance / Decimal('100.00')) * Decimal(str(total_days)))
+
+        return variance_days
+
+    def is_on_schedule(self):
+        """予定通りか判定"""
+        variance = self.get_schedule_variance_days()
+        if variance is None:
+            return True
+        return variance >= -7  # 1週間以内の遅れは許容
+
+
+class Report(models.Model):
+    """レポート - Phase 3"""
+
+    REPORT_TYPE_CHOICES = [
+        ('monthly', '月次経営レポート'),
+        ('project', 'プロジェクト別レポート'),
+        ('cashflow', 'キャッシュフローレポート'),
+        ('forecast', '予測レポート'),
+        ('progress', '進捗レポート'),
+    ]
+
+    # 基本情報
+    title = models.CharField(
+        max_length=200,
+        verbose_name='レポートタイトル'
+    )
+    report_type = models.CharField(
+        max_length=20,
+        choices=REPORT_TYPE_CHOICES,
+        verbose_name='レポートタイプ'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='説明'
+    )
+
+    # 生成情報
+    generated_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='生成日時'
+    )
+    generated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='生成者'
+    )
+
+    # 対象期間
+    period_start = models.DateField(
+        verbose_name='対象期間開始'
+    )
+    period_end = models.DateField(
+        verbose_name='対象期間終了'
+    )
+
+    # レポートデータ
+    report_data = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='レポートデータ'
+    )
+
+    # PDF保存
+    pdf_file = models.FileField(
+        upload_to='reports/%Y/%m/',
+        null=True,
+        blank=True,
+        verbose_name='PDFファイル'
+    )
+
+    # ステータス
+    is_published = models.BooleanField(
+        default=False,
+        verbose_name='公開済み'
+    )
+
+    # システム情報
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='作成日時')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新日時')
+
+    class Meta:
+        verbose_name = 'レポート'
+        verbose_name_plural = 'レポート'
+        ordering = ['-generated_date']
+        indexes = [
+            models.Index(fields=['report_type', '-generated_date']),
+            models.Index(fields=['period_start', 'period_end']),
+        ]
+
+    def __str__(self):
+        return f"{self.title} ({self.get_report_type_display()})"
+
+    def generate_pdf(self):
+        """PDFを生成"""
+        from .pdf_utils import generate_pdf_report
+        pdf_path = generate_pdf_report(self.report_data, self.report_type, self.title)
+        self.pdf_file.name = pdf_path
+        self.save(update_fields=['pdf_file', 'updated_at'])
+        return pdf_path
+
+
+class SeasonalityIndex(models.Model):
+    """季節性指数設定 - Phase 3 (季節性詳細調整用)"""
+
+    # 紐付け
+    forecast_scenario = models.OneToOneField(
+        ForecastScenario,
+        on_delete=models.CASCADE,
+        related_name='seasonality_index',
+        verbose_name='予測シナリオ'
+    )
+
+    # 月別指数（1.0 = 平均月）
+    january_index = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('1.00'),
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('3.00'))],
+        verbose_name='1月指数'
+    )
+    february_index = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('1.00'),
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('3.00'))],
+        verbose_name='2月指数'
+    )
+    march_index = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('1.00'),
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('3.00'))],
+        verbose_name='3月指数'
+    )
+    april_index = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('1.00'),
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('3.00'))],
+        verbose_name='4月指数'
+    )
+    may_index = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('1.00'),
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('3.00'))],
+        verbose_name='5月指数'
+    )
+    june_index = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('1.00'),
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('3.00'))],
+        verbose_name='6月指数'
+    )
+    july_index = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('1.00'),
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('3.00'))],
+        verbose_name='7月指数'
+    )
+    august_index = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('1.00'),
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('3.00'))],
+        verbose_name='8月指数'
+    )
+    september_index = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('1.00'),
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('3.00'))],
+        verbose_name='9月指数'
+    )
+    october_index = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('1.00'),
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('3.00'))],
+        verbose_name='10月指数'
+    )
+    november_index = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('1.00'),
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('3.00'))],
+        verbose_name='11月指数'
+    )
+    december_index = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('1.00'),
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('3.00'))],
+        verbose_name='12月指数'
+    )
+
+    # 自動計算フラグ
+    use_auto_calculation = models.BooleanField(
+        default=True,
+        verbose_name='自動計算を使用',
+        help_text='ONの場合は過去データから自動計算、OFFの場合は手動設定値を使用'
+    )
+
+    # システム情報
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='作成日時')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新日時')
+
+    class Meta:
+        verbose_name = '季節性指数'
+        verbose_name_plural = '季節性指数'
+
+    def __str__(self):
+        return f"{self.forecast_scenario.name} - 季節性指数"
+
+    def get_index_for_month(self, month):
+        """指定月の季節性指数を取得"""
+        month_fields = {
+            1: 'january_index',
+            2: 'february_index',
+            3: 'march_index',
+            4: 'april_index',
+            5: 'may_index',
+            6: 'june_index',
+            7: 'july_index',
+            8: 'august_index',
+            9: 'september_index',
+            10: 'october_index',
+            11: 'november_index',
+            12: 'december_index',
+        }
+        field_name = month_fields.get(month)
+        if field_name:
+            return getattr(self, field_name)
+        return Decimal('1.00')
+
+    def set_index_for_month(self, month, value):
+        """指定月の季節性指数を設定"""
+        month_fields = {
+            1: 'january_index',
+            2: 'february_index',
+            3: 'march_index',
+            4: 'april_index',
+            5: 'may_index',
+            6: 'june_index',
+            7: 'july_index',
+            8: 'august_index',
+            9: 'september_index',
+            10: 'october_index',
+            11: 'november_index',
+            12: 'december_index',
+        }
+        field_name = month_fields.get(month)
+        if field_name:
+            setattr(self, field_name, value)
+
+    def calculate_from_historical_data(self):
+        """過去データから自動計算"""
+        from .forecast_utils import analyze_historical_performance
+
+        historical_data = analyze_historical_performance()
+        seasonal_factors = historical_data.get('seasonal_factors', {})
+
+        for month in range(1, 13):
+            index = seasonal_factors.get(month, Decimal('1.00'))
+            self.set_index_for_month(month, index)
+
+        self.use_auto_calculation = True
+        self.save()

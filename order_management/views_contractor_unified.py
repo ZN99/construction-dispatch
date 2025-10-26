@@ -55,9 +55,9 @@ class UnifiedContractorManagementView(LoginRequiredMixin, TemplateView):
 
         contractor_list = []
         for contractor in contractors:
-            project_count = Project.objects.filter(contractor_name=contractor.name).count()
-            total_revenue = Project.objects.filter(contractor_name=contractor.name).aggregate(
-                total=Sum('estimate_amount')
+            project_count = Project.objects.filter(client_name=contractor.name).count()
+            total_revenue = Project.objects.filter(client_name=contractor.name).aggregate(
+                total=Sum('order_amount')
             )['total'] or Decimal('0')
 
             contractor_list.append({
@@ -80,7 +80,7 @@ class UnifiedContractorManagementView(LoginRequiredMixin, TemplateView):
 
         contractor_list = []
         for contractor in contractors:
-            project_count = Project.objects.filter(contractor_name=contractor.name).count()
+            project_count = Project.objects.filter(client_name=contractor.name).count()
 
             contractor_list.append({
                 'id': contractor.id,
@@ -101,7 +101,7 @@ class UnifiedContractorManagementView(LoginRequiredMixin, TemplateView):
 
         supplier_list = []
         for supplier in suppliers:
-            usage_count = Project.objects.filter(contractor_name=supplier.name).count()
+            usage_count = Project.objects.filter(client_name=supplier.name).count()
 
             supplier_list.append({
                 'id': supplier.id,
@@ -157,5 +157,5 @@ class UnifiedContractorManagementView(LoginRequiredMixin, TemplateView):
             'this_month_new': this_month_new,
             'most_popular_specialty': most_popular_specialty,
             'total_projects_managed': Project.objects.count(),
-            'active_project_count': Project.objects.filter(order_status='受注').count(),
+            'active_project_count': Project.objects.filter(project_status='完工').count(),
         }

@@ -1,4 +1,5 @@
 {% extends "order_management/base.html" %}
+{% load humanize %}
 
 {% block title %}ダッシュボード - 建築派遣管理システム{% endblock %}
 
@@ -67,7 +68,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4>¥{{ revenue_stats.received_amount|floatformat:0 }}</h4>
+                        <h4>¥{{ revenue_stats.received_amount|floatformat:0|intcomma }}</h4>
                         <p class="mb-0">受注確定額</p>
                     </div>
                     <div class="align-self-center">
@@ -83,7 +84,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4>¥{{ revenue_stats.pending_amount|floatformat:0 }}</h4>
+                        <h4>¥{{ revenue_stats.pending_amount|floatformat:0|intcomma }}</h4>
                         <p class="mb-0">検討中案件額</p>
                     </div>
                     <div class="align-self-center">
@@ -112,11 +113,11 @@
 </div>
 
 <div class="row mb-4">
-    <!-- 受注ヨミ別統計 -->
+    <!-- 案件進捗別統計 -->
     <div class="col-lg-6 mb-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-pie-chart"></i> 受注ヨミ別統計</h5>
+                <h5 class="mb-0"><i class="fas fa-pie-chart"></i> 案件進捗別統計</h5>
             </div>
             <div class="card-body">
                 <div class="chart-container">
@@ -127,11 +128,11 @@
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <div>
                             <span class="status-indicator" style="background-color:
-                                {% if stat.order_status == '受注' %}#28a745
-                                {% elif stat.order_status == 'NG' %}#6c757d
-                                {% elif stat.order_status == 'A' %}#dc3545
+                                {% if stat.project_status == '完工' %}#28a745
+                                {% elif stat.project_status == 'NG' %}#6c757d
+                                {% elif stat.project_status == '施工日待ち' %}#dc3545
                                 {% else %}#ffc107{% endif %};"></span>
-                            {{ stat.order_status }}
+                            {{ stat.project_status }}
                         </div>
                         <div>
                             <strong>{{ stat.count }}件</strong>
@@ -172,7 +173,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-3 p-2 border-start border-4 border-success">
                         <div>
                             <strong>{{ project.site_name }}</strong>
-                            <br><small class="text-muted">{{ project.contractor_name }}</small>
+                            <br><small class="text-muted">{{ project.client_name }}</small>
                         </div>
                         <div class="text-end">
                             <div class="badge bg-success">進行中</div>
@@ -199,7 +200,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-3 p-2 border-start border-4 border-warning">
                         <div>
                             <strong>{{ project.site_name }}</strong>
-                            <br><small class="text-muted">{{ project.contractor_name }}</small>
+                            <br><small class="text-muted">{{ project.client_name }}</small>
                         </div>
                         <div class="text-end">
                             <div class="badge bg-warning text-dark">開始予定</div>
@@ -225,19 +226,19 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-3 text-center mb-3">
-                        <h4 class="text-primary">¥{{ revenue_stats.total_estimate|floatformat:0 }}</h4>
-                        <p class="mb-0">総見積金額</p>
+                        <h4 class="text-primary">¥{{ revenue_stats.total_estimate|floatformat:0|intcomma }}</h4>
+                        <p class="mb-0">総受注金額</p>
                     </div>
                     <div class="col-md-3 text-center mb-3">
-                        <h4 class="text-success">¥{{ revenue_stats.total_billing|floatformat:0 }}</h4>
+                        <h4 class="text-success">¥{{ revenue_stats.total_billing|floatformat:0|intcomma }}</h4>
                         <p class="mb-0">総請求金額</p>
                     </div>
                     <div class="col-md-3 text-center mb-3">
-                        <h4 class="text-success">¥{{ revenue_stats.received_amount|floatformat:0 }}</h4>
+                        <h4 class="text-success">¥{{ revenue_stats.received_amount|floatformat:0|intcomma }}</h4>
                         <p class="mb-0">受注確定額</p>
                     </div>
                     <div class="col-md-3 text-center mb-3">
-                        <h4 class="text-warning">¥{{ revenue_stats.pending_amount|floatformat:0 }}</h4>
+                        <h4 class="text-warning">¥{{ revenue_stats.pending_amount|floatformat:0|intcomma }}</h4>
                         <p class="mb-0">検討中金額</p>
                     </div>
                 </div>
@@ -250,17 +251,17 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// 受注ヨミ別統計チャート
+// 案件進捗別統計チャート
 const statusCtx = document.getElementById('statusChart').getContext('2d');
 const statusData = {
-    labels: [{% for stat in status_stats %}'{{ stat.order_status }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    labels: [{% for stat in status_stats %}'{{ stat.project_status }}'{% if not forloop.last %},{% endif %}{% endfor %}],
     datasets: [{
         data: [{% for stat in status_stats %}{{ stat.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
         backgroundColor: [
             {% for stat in status_stats %}
-            {% if stat.order_status == '受注' %}'#28a745'
-            {% elif stat.order_status == 'NG' %}'#6c757d'
-            {% elif stat.order_status == 'A' %}'#dc3545'
+            {% if stat.project_status == '完工' %}'#28a745'
+            {% elif stat.project_status == 'NG' %}'#6c757d'
+            {% elif stat.project_status == '施工日待ち' %}'#dc3545'
             {% else %}'#ffc107'{% endif %}{% if not forloop.last %},{% endif %}
             {% endfor %}
         ],

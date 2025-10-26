@@ -7,6 +7,7 @@ from dateutil.relativedelta import relativedelta
 from .models import Project
 from subcontract_management.models import Subcontract, Contractor, InternalWorker
 import calendar
+from .utils import safe_int
 
 
 def calculate_next_payment_date(contractor, base_date=None):
@@ -87,8 +88,8 @@ class PaymentDashboardView(TemplateView):
 
         # 現在の月を取得（デフォルト）
         now = timezone.now()
-        year = int(self.request.GET.get('year', now.year))
-        month = int(self.request.GET.get('month', now.month))
+        year = safe_int(self.request.GET.get('year', now.year))
+        month = safe_int(self.request.GET.get('month', now.month))
         status_filter = self.request.GET.get('status', 'all')
 
         # 追加フィルター

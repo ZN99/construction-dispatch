@@ -56,16 +56,16 @@ class OrderingDashboardView(LoginRequiredMixin, TemplateView):
         this_month_orders = Project.objects.filter(
             created_at__year=timezone.now().year,
             created_at__month=timezone.now().month,
-            order_status='受注'
+            project_status='完工'
         ).count()
 
         # 総発注金額（仮：今月の見積金額合計）
         total_order_amount = Project.objects.filter(
             created_at__year=timezone.now().year,
             created_at__month=timezone.now().month,
-            order_status='受注'
+            project_status='完工'
         ).aggregate(
-            total=Sum('estimate_amount')
+            total=Sum('order_amount')
         )['total'] or Decimal('0')
 
         return {
@@ -86,14 +86,14 @@ class OrderingDashboardView(LoginRequiredMixin, TemplateView):
         for contractor in contractors:
             # この業者に発注した案件数を計算
             project_count = Project.objects.filter(
-                contractor_name=contractor.name
+                client_name=contractor.name
             ).count()
 
             # 発注金額合計
             total_amount = Project.objects.filter(
-                contractor_name=contractor.name
+                client_name=contractor.name
             ).aggregate(
-                total=Sum('estimate_amount')
+                total=Sum('order_amount')
             )['total'] or Decimal('0')
 
             contractor_list.append({
@@ -120,7 +120,7 @@ class OrderingDashboardView(LoginRequiredMixin, TemplateView):
         for supplier in suppliers:
             # 資材屋の利用実績を計算（仮：専門分野で判断）
             related_projects = Project.objects.filter(
-                contractor_name=supplier.name
+                client_name=supplier.name
             ).count()
 
             supplier_list.append({
@@ -140,7 +140,7 @@ class OrderingDashboardView(LoginRequiredMixin, TemplateView):
         # プロジェクトの担当者から社内リソースを抽出
         internal_staff = Project.objects.values('project_manager').annotate(
             project_count=Count('id'),
-            total_amount=Sum('estimate_amount')
+            total_amount=Sum('order_amount')
         ).filter(
             project_manager__isnull=False,
             project_manager__gt=''
@@ -163,12 +163,12 @@ class OrderingDashboardView(LoginRequiredMixin, TemplateView):
             month_projects = Project.objects.filter(
                 created_at__year=year,
                 created_at__month=month,
-                order_status='受注'
+                project_status='完工'
             )
 
             project_count = month_projects.count()
             total_amount = month_projects.aggregate(
-                total=Sum('estimate_amount')
+                total=Sum('order_amount')
             )['total'] or Decimal('0')
 
             monthly_stats.append({

@@ -7,6 +7,7 @@ from .models import Project, FixedCost, VariableCost
 from subcontract_management.models import Subcontract, Contractor, InternalWorker
 import calendar
 from decimal import Decimal
+from .utils import safe_int
 
 
 class AccountingDashboardView(TemplateView):
@@ -17,8 +18,8 @@ class AccountingDashboardView(TemplateView):
 
         # 現在の月を取得（デフォルト）
         now = timezone.now()
-        year = int(self.request.GET.get('year', now.year))
-        month = int(self.request.GET.get('month', now.month))
+        year = safe_int(self.request.GET.get('year', now.year))
+        month = safe_int(self.request.GET.get('month', now.month))
         view_type = self.request.GET.get('view', 'summary')  # summary, ledger
 
         # 月の開始日と終了日
@@ -28,9 +29,9 @@ class AccountingDashboardView(TemplateView):
         # === 入金データ（入金ベース） ===
         receipt_projects = Project.objects.filter(
             payment_due_date__range=[start_date, end_date],
-            order_status='受注',
+            project_status='完工',
             billing_amount__gt=0
-        ).exclude(contractor_name__isnull=True).exclude(contractor_name='')
+        ).exclude(client_name__isnull=True).exclude(client_name='')
 
         receipt_total = 0
         receipt_received = 0
@@ -67,12 +68,12 @@ class AccountingDashboardView(TemplateView):
 
         # 入金トランザクション
         for project in receipt_projects:
-            amount = project.billing_amount or project.estimate_amount or 0
+            amount = project.billing_amount or project.order_amount or 0
             if amount > 0:
                 transactions.append({
                     'date': project.payment_due_date or project.contract_date or start_date,
                     'description': f'入金: {project.site_name}',
-                    'client': project.contractor_name,
+                    'client': project.client_name,
                     'type': 'receipt',
                     'amount': amount,
                     'status': 'completed' if project.payment_status == 'executed' else 'pending',
@@ -197,7 +198,7 @@ class AccountingDashboardView(TemplateView):
         # === 売上高・売上原価の計算 ===
         # 受注済みプロジェクトから売上を計算
         revenue_projects = Project.objects.filter(
-            order_status='受注',
+            project_status='完工',
             billing_amount__gt=0
         )
 

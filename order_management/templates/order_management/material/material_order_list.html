@@ -1,5 +1,6 @@
 {% extends 'order_management/base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block extra_css %}
 <style>
@@ -77,7 +78,7 @@
                             </div>
                             <div class="col-md-3 text-center">
                                 <div class="material-amount">
-                                    ¥{{ order.total_amount|floatformat:0 }}
+                                    ¥{{ order.total_amount|floatformat:0|intcomma }}
                                 </div>
                                 <small class="text-muted">
                                     発注日: {{ order.order_date }}
@@ -149,7 +150,7 @@
                             <small class="text-muted">総発注数</small>
                         </div>
                         <div class="col-6 mb-3">
-                            <div class="h4 text-success">¥{{ material_status.total_amount|floatformat:0 }}</div>
+                            <div class="h4 text-success">¥{{ material_status.total_amount|floatformat:0|intcomma }}</div>
                             <small class="text-muted">総金額</small>
                         </div>
                     </div>

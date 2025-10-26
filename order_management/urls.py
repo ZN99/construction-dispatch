@@ -16,6 +16,42 @@ from .views_cost import (
 )
 from .views_ultimate import UltimateDashboardView
 from . import views_material
+from .views_cashflow import (
+    CashFlowDashboardView,
+    AccrualVsCashComparisonView,
+    ReceivablesDetailView,
+    PayablesDetailView,
+    cashflow_monthly_api,
+    cashflow_daily_api,
+    cashflow_forecast_api,
+    receivables_api,
+    payables_api
+)
+from .views_forecast import (
+    ForecastDashboardView,
+    ScenarioListView,
+    ScenarioCreateView,
+    ScenarioUpdateView,
+    ScenarioDeleteView,
+    ScenarioCompareView,
+    scenario_calculate_api,
+    forecast_preview_api,
+    scenario_compare_api,
+    pipeline_analysis_api,
+    historical_analysis_api,
+    SeasonalityEditView,
+    seasonality_calculate_api
+)
+from .views_report import (
+    ReportDashboardView,
+    ReportListView,
+    ReportDetailView,
+    ReportDeleteView,
+    ReportGenerateView,
+    report_download_pdf,
+    report_regenerate_pdf,
+    report_preview_api
+)
 
 app_name = 'order_management'
 
@@ -58,6 +94,48 @@ urlpatterns = [
     path('api/invoice/preview/<int:project_id>/', views.get_invoice_preview_api, name='get_invoice_preview_api'),
     path('api/invoice/preview/client/', views.get_client_invoice_preview_api, name='client_invoice_preview_api'),
     path('api/generate-invoices-by-client/', views.generate_invoices_by_client_api, name='generate_invoices_by_client_api'),
+
+    # キャッシュフロー管理 - Phase 1
+    path('cashflow/', CashFlowDashboardView.as_view(), name='cashflow_dashboard'),
+    path('cashflow/comparison/', AccrualVsCashComparisonView.as_view(), name='cashflow_comparison'),
+    path('cashflow/receivables/', ReceivablesDetailView.as_view(), name='receivables_detail'),
+    path('cashflow/payables/', PayablesDetailView.as_view(), name='payables_detail'),
+
+    # キャッシュフローAPI - Phase 1
+    path('api/cashflow/monthly/', cashflow_monthly_api, name='cashflow_monthly_api'),
+    path('api/cashflow/daily/', cashflow_daily_api, name='cashflow_daily_api'),
+    path('api/cashflow/forecast/', cashflow_forecast_api, name='cashflow_forecast_api'),
+    path('api/cashflow/receivables/', receivables_api, name='cashflow_receivables_api'),
+    path('api/cashflow/payables/', payables_api, name='cashflow_payables_api'),
+
+    # 売上予測・シミュレーション - Phase 2
+    path('forecast/', ForecastDashboardView.as_view(), name='forecast_dashboard'),
+    path('forecast/scenarios/', ScenarioListView.as_view(), name='scenario_list'),
+    path('forecast/scenarios/create/', ScenarioCreateView.as_view(), name='scenario_create'),
+    path('forecast/scenarios/<int:pk>/edit/', ScenarioUpdateView.as_view(), name='scenario_update'),
+    path('forecast/scenarios/<int:pk>/delete/', ScenarioDeleteView.as_view(), name='scenario_delete'),
+    path('forecast/compare/', ScenarioCompareView.as_view(), name='scenario_compare'),
+
+    # 売上予測API - Phase 2
+    path('api/forecast/scenario/<int:scenario_id>/calculate/', scenario_calculate_api, name='scenario_calculate_api'),
+    path('api/forecast/preview/', forecast_preview_api, name='forecast_preview_api'),
+    path('api/forecast/compare/', scenario_compare_api, name='scenario_compare_api'),
+    path('api/forecast/pipeline/', pipeline_analysis_api, name='pipeline_analysis_api'),
+    path('api/forecast/historical/', historical_analysis_api, name='historical_analysis_api'),
+
+    # 季節性指数管理 - Phase 3
+    path('forecast/scenarios/<int:pk>/seasonality/', SeasonalityEditView.as_view(), name='seasonality_edit'),
+    path('api/forecast/scenario/<int:scenario_id>/seasonality/calculate/', seasonality_calculate_api, name='seasonality_calculate_api'),
+
+    # レポート管理 - Phase 3
+    path('reports/', ReportDashboardView.as_view(), name='report_dashboard'),
+    path('reports/list/', ReportListView.as_view(), name='report_list'),
+    path('reports/generate/', ReportGenerateView.as_view(), name='report_generate'),
+    path('reports/<int:pk>/', ReportDetailView.as_view(), name='report_detail'),
+    path('reports/<int:pk>/delete/', ReportDeleteView.as_view(), name='report_delete'),
+    path('reports/<int:pk>/download/', report_download_pdf, name='report_download_pdf'),
+    path('reports/<int:pk>/regenerate-pdf/', report_regenerate_pdf, name='report_regenerate_pdf'),
+    path('api/reports/preview/', report_preview_api, name='report_preview_api'),
 
     # コスト管理
     path('cost/', cost_dashboard, name='cost_dashboard'),

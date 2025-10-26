@@ -892,7 +892,7 @@ function generatePurchaseOrdersByContractor() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert(`成功：${data.order_count}件の発注書を生成しました。\n\n生成された発注書:\n${data.orders.map(order => `・${order.contractor_name}: ¥${order.amount.toLocaleString()}`).join('\n')}`);
+                alert(`成功：${data.order_count}件の発注書を生成しました。\n\n生成された発注書:\n${data.orders.map(order => `・${order.client_name}: ¥${order.amount.toLocaleString()}`).join('\n')}`);
                 location.reload();
             } else {
                 alert(`エラー: ${data.error}`);

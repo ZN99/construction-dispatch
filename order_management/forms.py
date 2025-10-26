@@ -9,7 +9,7 @@ class ProjectForm(forms.ModelForm):
         exclude = ['management_no', 'billing_amount', 'amount_difference', 'created_at', 'updated_at']
         widgets = {
             'site_address': forms.Textarea(attrs={'rows': 2}),
-            'contractor_address': forms.Textarea(attrs={'rows': 2}),
+            'client_address': forms.Textarea(attrs={'rows': 2}),  # 旧: contractor_address
             'notes': forms.Textarea(attrs={'rows': 4}),
             'estimate_issued_date': forms.DateInput(attrs={'type': 'date'}),
             'payment_due_date': forms.DateInput(attrs={'type': 'date'}),
@@ -25,8 +25,8 @@ class ProjectForm(forms.ModelForm):
 
         # 必須項目の設定
         required_fields = [
-            'site_name', 'site_address', 'work_type',
-            'contractor_name', 'contractor_address',
+            'site_name', 'work_type',
+            'client_name',  # 旧: contractor_name
             'project_manager'
         ]
         for field_name in required_fields:
@@ -128,8 +128,8 @@ class VariableCostForm(forms.ModelForm):
         if not self.instance.pk:
             self.fields['incurred_date'].initial = timezone.now().date()
 
-        # プロジェクト選択肢を受注済みのものに限定
-        self.fields['project'].queryset = Project.objects.filter(order_status='受注').order_by('-created_at')
+        # プロジェクト選択肢を完工済みのものに限定（旧: 受注）
+        self.fields['project'].queryset = Project.objects.filter(project_status='完工').order_by('-created_at')
         self.fields['project'].empty_label = "関連案件なし（一般経費）"
 
     def clean_amount(self):
@@ -169,7 +169,7 @@ class VariableCostFilterForm(forms.Form):
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
     )
     project = forms.ModelChoiceField(
-        queryset=Project.objects.filter(order_status='受注'),
+        queryset=Project.objects.filter(project_status='完工'),  # 旧: order_status='受注'
         required=False,
         empty_label="全ての案件",
         widget=forms.Select(attrs={'class': 'form-select'})

@@ -73,13 +73,13 @@ class ContractorDashboardView(LoginRequiredMixin, TemplateView):
         contractors = Contractor.objects.filter(is_receiving=True).order_by('name')
 
         for contractor in contractors:
-            # この業者の全プロジェクトを取得（contractor_nameフィールドで検索）
-            projects = Project.objects.filter(contractor_name=contractor.name)
+            # この業者の全プロジェクトを取得（client_nameフィールドで検索）
+            projects = Project.objects.filter(client_name=contractor.name)
 
             # 集計
             total_projects = projects.count()
             total_revenue = projects.aggregate(
-                total=Coalesce(Sum('estimate_amount'), Decimal('0'))
+                total=Coalesce(Sum('order_amount'), Decimal('0'))
             )['total']
 
             # 原価計算（仮: 売上の60-80%をランダムに設定）
@@ -207,13 +207,13 @@ class ContractorDashboardView(LoginRequiredMixin, TemplateView):
 
             # その月のプロジェクトを集計
             month_projects = Project.objects.filter(
-                contractor_name=contractor.name,
+                client_name=contractor.name,
                 created_at__year=year,
                 created_at__month=month
             )
 
             revenue = month_projects.aggregate(
-                total=Coalesce(Sum('estimate_amount'), Decimal('0'))
+                total=Coalesce(Sum('order_amount'), Decimal('0'))
             )['total']
 
             # 仮の原価率
@@ -287,7 +287,7 @@ class ContractorDashboardView(LoginRequiredMixin, TemplateView):
             )
 
             revenue = month_projects.aggregate(
-                total=Coalesce(Sum('estimate_amount'), Decimal('0'))
+                total=Coalesce(Sum('order_amount'), Decimal('0'))
             )['total']
 
             # 仮の集計値
@@ -340,7 +340,7 @@ class ContractorProjectsView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         contractor_id = self.kwargs['contractor_id']
         contractor = get_object_or_404(Contractor, pk=contractor_id)
-        return Project.objects.filter(contractor_name=contractor.name).order_by('-created_at')
+        return Project.objects.filter(client_name=contractor.name).order_by('-created_at')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -353,9 +353,9 @@ class ContractorProjectsView(LoginRequiredMixin, ListView):
         context['stats'] = {
             'total_projects': projects.count(),
             'total_revenue': projects.aggregate(
-                total=Coalesce(Sum('estimate_amount'), Decimal('0'))
+                total=Coalesce(Sum('order_amount'), Decimal('0'))
             )['total'],
-            'active_projects': projects.filter(order_status='受注').count(),
+            'active_projects': projects.filter(project_status='完工').count(),
             'completed_projects': projects.filter(work_end_completed=True).count(),
         }
 
@@ -375,7 +375,7 @@ class ContractorProjectsView(LoginRequiredMixin, ListView):
                 'month': month_date.strftime('%Y/%m'),
                 'count': month_projects.count(),
                 'revenue': month_projects.aggregate(
-                    total=Coalesce(Sum('estimate_amount'), Decimal('0'))
+                    total=Coalesce(Sum('order_amount'), Decimal('0'))
                 )['total']
             })
 

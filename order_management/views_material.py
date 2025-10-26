@@ -39,11 +39,11 @@ def material_order_create(request, project_id):
         else:
             # 新しい業者を作成
             contractor_name = request.POST.get('contractor_name')
-            contractor_address = request.POST.get('contractor_address', '')
+            client_address = request.POST.get('client_address', '')
             if contractor_name:
                 contractor = Contractor.objects.create(
                     name=contractor_name,
-                    address=contractor_address,
+                    address=client_address,
                     is_supplier=True
                 )
 

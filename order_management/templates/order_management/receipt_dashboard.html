@@ -1272,11 +1272,11 @@
                                             {% if project.work_end_date %}<br>{{ project.work_end_date|date:"m/d" }}{% endif %}
                                         </td>
                                         <td class="amount-cell">
-                                            {% if project.estimate_amount %}¥{{ project.estimate_amount|intcomma }}{% else %}-{% endif %}
+                                            {% if project.order_amount %}¥{{ project.order_amount|intcomma }}{% else %}-{% endif %}
                                         </td>
                                         <td class="amount-cell">
                                             {% if project.billing_amount %}¥{{ project.billing_amount|intcomma }}{% else %}
-                                                {% if project.estimate_amount %}¥{{ project.estimate_amount|intcomma }}{% else %}-{% endif %}
+                                                {% if project.order_amount %}¥{{ project.order_amount|intcomma }}{% else %}-{% endif %}
                                             {% endif %}
                                         </td>
                                         <td class="date-cell">

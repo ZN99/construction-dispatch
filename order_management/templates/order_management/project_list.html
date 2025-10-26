@@ -224,16 +224,16 @@
         <div class="card-body">
             <form method="get" class="row g-3">
                 <div class="col-md-3">
-                    <label class="form-label"><i class="fas fa-tag me-1"></i>受注ヨミ</label>
-                    <select name="order_status" class="form-select border-0 shadow-sm">
+                    <label class="form-label"><i class="fas fa-tag me-1"></i>案件進捗</label>
+                    <select name="project_status" class="form-select border-0 shadow-sm">
                         <option value="">すべて</option>
-                        {% for value, label in order_status_choices %}
-                        <option value="{{ value }}" {% if value == order_status %}selected{% endif %}>{{ label }}</option>
+                        {% for value, label in project_status_choices %}
+                        <option value="{{ value }}" {% if value == project_status %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label"><i class="fas fa-cogs me-1"></i>種別</label>
+                    <label class="form-label"><i class="fas fa-cogs me-1"></i>施工種別</label>
                     <input type="text" name="work_type" class="form-control border-0 shadow-sm" value="{{ work_type|default_if_none:'' }}" placeholder="種別を入力">
                 </div>
                 <div class="col-md-3">
@@ -249,7 +249,7 @@
                         </button>
                     </div>
                 </div>
-                {% if search_query or order_status or work_type or project_manager %}
+                {% if search_query or project_status or work_type or project_manager %}
                 <div class="col-12">
                     <a href="{% url 'order_management:project_list' %}" class="btn btn-outline-secondary btn-sm">
                         <i class="fas fa-times me-1"></i>フィルターをクリア
@@ -271,15 +271,15 @@
                         <th>管理No</th>
                         <th>現場名</th>
                         <th>現場住所</th>
-                        <th>種別</th>
-                        <th>受注ヨミ</th>
+                        <th>施工種別</th>
+                        <th>案件進捗</th>
                         <th>進捗状況</th>
                         <th>発注連携</th>
                         <th>見積書発行日</th>
                         <th>売上内訳</th>
                         <th>駐車場代</th>
-                        <th>請負業者名</th>
-                        <th>請負業者住所</th>
+                        <th>元請名</th>
+                        <th>元請住所</th>
                         <th>案件担当</th>
                         <th>入金予定日</th>
                         <th>工事開始日</th>
@@ -307,8 +307,8 @@
                         <td>{{ project.site_address|truncatechars:30 }}</td>
                         <td>{{ project.work_type }}</td>
                         <td>
-                            <span class="badge {% if project.order_status == '受注' %}bg-info{% elif project.order_status == 'NG' %}bg-secondary{% elif project.order_status == 'A' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
-                                {{ project.order_status }}
+                            <span class="badge {% if project.project_status == '完工' %}bg-info{% elif project.project_status == 'NG' %}bg-secondary{% elif project.project_status == '施工日待ち' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                {{ project.project_status }}
                             </span>
                         </td>
                         <td class="progress-cell">
@@ -379,8 +379,8 @@
                             {% endwith %}
                         </td>
                         <td class="text-end">¥{{ project.parking_fee|floatformat:0|intcomma|default:"0" }}</td>
-                        <td>{{ project.contractor_name }}</td>
-                        <td>{{ project.contractor_address|truncatechars:30 }}</td>
+                        <td>{{ project.client_name }}</td>
+                        <td>{{ project.client_address|truncatechars:30 }}</td>
                         <td>{{ project.project_manager }}</td>
                         <td>{{ project.payment_due_date|date:"Y-m-d"|default:"-" }}</td>
                         <td>{{ project.work_start_date|date:"Y-m-d"|default:"-" }}</td>
@@ -430,7 +430,7 @@
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&order_status={{ order_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">前へ</a>
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">前へ</a>
                 </li>
                 {% endif %}
 
@@ -438,13 +438,13 @@
                     {% if page_obj.number == num %}
                     <li class="page-item active"><span class="page-link">{{ num }}</span></li>
                     {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item"><a class="page-link" href="?page={{ num }}&order_status={{ order_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">{{ num }}</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">{{ num }}</a></li>
                     {% endif %}
                 {% endfor %}
 
                 {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&order_status={{ order_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">次へ</a>
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">次へ</a>
                 </li>
                 {% endif %}
             </ul>
@@ -460,7 +460,7 @@
         {% for project in projects %}
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
             <div class="card summary-card h-100" onclick="window.location='{% url 'order_management:project_detail' project.pk %}';" style="border-left: 4px solid {{ project.get_status_color_hex }};">
-                <div class="card-header {% if project.order_status == '受注' %}bg-info{% elif project.order_status == 'NG' %}bg-secondary{% elif project.order_status == 'A' %}bg-danger{% else %}bg-warning{% endif %} text-white">
+                <div class="card-header {% if project.project_status == '完工' %}bg-info{% elif project.project_status == 'NG' %}bg-secondary{% elif project.project_status == '施工日待ち' %}bg-danger{% else %}bg-warning{% endif %} text-white">
                     <h6 class="mb-0 text-truncate" title="{{ project.site_name }}">{{ project.site_name }}</h6>
                 </div>
                 <div class="card-body">
@@ -469,9 +469,9 @@
                         <strong>{{ project.work_type|default:"-" }}</strong>
                     </div>
                     <div class="mb-2">
-                        <small class="text-muted">受注ヨミ:</small>
-                        <span class="badge {% if project.order_status == '受注' %}bg-success{% elif project.order_status == 'NG' %}bg-secondary{% elif project.order_status == 'A' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
-                            {{ project.order_status }}
+                        <small class="text-muted">案件進捗:</small>
+                        <span class="badge {% if project.project_status == '完工' %}bg-success{% elif project.project_status == 'NG' %}bg-secondary{% elif project.project_status == '施工日待ち' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                            {{ project.project_status }}
                         </span>
                     </div>
                     <div class="mb-2">
@@ -548,13 +548,13 @@
                         <small class="text-muted">{{ project.management_no }}</small>
                     </div>
                     <div class="col-md-1-5">
-                        <small class="text-muted d-block">種別</small>
+                        <small class="text-muted d-block">施工種別</small>
                         <strong>{{ project.work_type|default:"-" }}</strong>
                     </div>
                     <div class="col-md-1-5">
-                        <small class="text-muted d-block">受注ヨミ</small>
-                        <span class="badge {% if project.order_status == '受注' %}bg-success{% elif project.order_status == 'NG' %}bg-secondary{% elif project.order_status == 'A' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
-                            {{ project.order_status }}
+                        <small class="text-muted d-block">案件進捗</small>
+                        <span class="badge {% if project.project_status == '完工' %}bg-success{% elif project.project_status == 'NG' %}bg-secondary{% elif project.project_status == '施工日待ち' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                            {{ project.project_status }}
                         </span>
                     </div>
                     <div class="col-md-2">
@@ -624,7 +624,7 @@
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&order_status={{ order_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">前へ</a>
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">前へ</a>
             </li>
             {% endif %}
 
@@ -632,13 +632,13 @@
                 {% if page_obj.number == num %}
                 <li class="page-item active"><span class="page-link">{{ num }}</span></li>
                 {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                <li class="page-item"><a class="page-link" href="?page={{ num }}&order_status={{ order_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">{{ num }}</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ num }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">{{ num }}</a></li>
                 {% endif %}
             {% endfor %}
 
             {% if page_obj.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}&order_status={{ order_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">次へ</a>
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">次へ</a>
             </li>
             {% endif %}
         </ul>
@@ -716,7 +716,7 @@ $(document).ready(function() {
             // モバイル向けの列優先順位設定
             { responsivePriority: 1, targets: 0 }, // 管理No
             { responsivePriority: 2, targets: 1 }, // 現場名
-            { responsivePriority: 3, targets: 4 }, // 受注ヨミ
+            { responsivePriority: 3, targets: 4 }, // 案件進捗
             { responsivePriority: 4, targets: 5 }, // 進捗状況
             { responsivePriority: 5, targets: -1 }, // 操作
             { responsivePriority: 10000, targets: '_all' } // その他の列

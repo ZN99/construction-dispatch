@@ -8,6 +8,8 @@ from decimal import Decimal
 
 from .models import Project, FixedCost, VariableCost
 from subcontract_management.models import Subcontract, Contractor, InternalWorker
+from .cashflow_utils import get_monthly_comparison, get_receivables_summary, get_payables_summary
+from .utils import safe_int
 
 
 class UltimateDashboardView(TemplateView):
@@ -20,8 +22,8 @@ class UltimateDashboardView(TemplateView):
         # 現在の日時と会計情報
         now = timezone.now()
         today = now.date()
-        year = int(self.request.GET.get('year', now.year))
-        month = int(self.request.GET.get('month', now.month))
+        year = safe_int(self.request.GET.get('year', now.year))
+        month = safe_int(self.request.GET.get('month', now.month))
         view_type = self.request.GET.get('view', 'financial')  # financial, operational
 
         # 月の開始日と終了日
@@ -39,17 +41,17 @@ class UltimateDashboardView(TemplateView):
         ).count()
 
         # 受注ヨミ別統計
-        status_stats = Project.objects.values('order_status').annotate(
+        status_stats = Project.objects.values('project_status').annotate(
             count=Count('id'),
-            total_amount=Sum('estimate_amount')
-        ).order_by('order_status')
+            total_amount=Sum('order_amount')
+        ).order_by('project_status')
 
         # ステータス別カウント
         status_counts = {
-            '受注': Project.objects.filter(order_status='受注').count(),
-            'NG': Project.objects.filter(order_status='NG').count(),
-            'A': Project.objects.filter(order_status='A').count(),
-            '検討中': Project.objects.filter(order_status='検討中').count(),
+            '完工': Project.objects.filter(project_status='完工').count(),
+            'NG': Project.objects.filter(project_status='NG').count(),
+            '施工日待ち': Project.objects.filter(project_status='施工日待ち').count(),
+            'ネタ': Project.objects.filter(project_status='ネタ').count(),
         }
 
         # 今月の案件統計
@@ -58,7 +60,7 @@ class UltimateDashboardView(TemplateView):
             created_at__month=month
         )
         new_projects_this_month = this_month_projects.count()
-        new_orders_this_month = this_month_projects.filter(order_status='受注').count()
+        new_orders_this_month = this_month_projects.filter(project_status='完工').count()
 
         # 進行中案件（工事中）
         ongoing_projects = Project.objects.filter(
@@ -87,8 +89,8 @@ class UltimateDashboardView(TemplateView):
                 'month': month_start.strftime('%Y-%m'),
                 'month_name': calendar.month_name[month_start.month],
                 'total': month_projects.count(),
-                'received': month_projects.filter(order_status='受注').count(),
-                'amount': month_projects.aggregate(Sum('estimate_amount'))['estimate_amount__sum'] or 0
+                'received': month_projects.filter(project_status='完工').count(),
+                'amount': month_projects.aggregate(Sum('order_amount'))['order_amount__sum'] or 0
             })
 
         monthly_trends.reverse()
@@ -110,15 +112,15 @@ class UltimateDashboardView(TemplateView):
         # 入金データ（入金ベース）
         receipt_projects = Project.objects.filter(
             Q(payment_due_date__range=[start_date, end_date]) |
-            Q(order_status='受注', billing_amount__gt=0)
-        ).exclude(contractor_name__isnull=True).exclude(contractor_name='')
+            Q(project_status='完工', billing_amount__gt=0)
+        ).exclude(client_name__isnull=True).exclude(client_name='')
 
         receipt_total = 0
         receipt_received = 0
         receipt_pending = 0
 
         for project in receipt_projects:
-            amount = project.billing_amount or project.estimate_amount or 0
+            amount = project.billing_amount or project.order_amount or 0
             receipt_total += amount
             if project.work_end_completed:
                 receipt_received += amount
@@ -152,12 +154,12 @@ class UltimateDashboardView(TemplateView):
 
         # 入金トランザクション
         for project in receipt_projects:
-            amount = project.billing_amount or project.estimate_amount or 0
+            amount = project.billing_amount or project.order_amount or 0
             if amount > 0:
                 transactions.append({
                     'date': project.payment_due_date or project.contract_date or start_date,
                     'description': f'入金: {project.site_name}',
-                    'client': project.contractor_name,
+                    'client': project.client_name,
                     'type': 'receipt',
                     'amount': amount,
                     'status': 'completed' if project.work_end_completed else 'pending',
@@ -205,8 +207,8 @@ class UltimateDashboardView(TemplateView):
 
         # プロジェクト収益性分析
         profitable_projects = []
-        for project in Project.objects.filter(order_status='受注')[:10]:
-            revenue = project.billing_amount or project.estimate_amount or 0
+        for project in Project.objects.filter(project_status='完工')[:10]:
+            revenue = project.billing_amount or project.order_amount or 0
             costs = Subcontract.objects.filter(project=project).aggregate(
                 total=Sum('billed_amount')
             )['total'] or 0
@@ -226,8 +228,8 @@ class UltimateDashboardView(TemplateView):
 
         # パイプライン価値（受注見込み案件の総額）
         pipeline_value = Project.objects.filter(
-            order_status__in=['A', '検討中']
-        ).aggregate(total=Sum('estimate_amount'))['total'] or 0
+            project_status__in=['施工日待ち', 'ネタ']
+        ).aggregate(total=Sum('order_amount'))['total'] or 0
 
         # コスト管理統計
         fixed_costs_monthly = FixedCost.objects.filter(is_active=True).aggregate(
@@ -239,6 +241,17 @@ class UltimateDashboardView(TemplateView):
         ).aggregate(total=Sum('amount'))['total'] or 0
 
         total_monthly_costs = fixed_costs_monthly + variable_costs_monthly
+
+        # ====================
+        # キャッシュフロー管理統計（Phase 1）
+        # ====================
+
+        # 月次キャッシュフロー比較（発生 vs 現金）
+        cashflow_comparison = get_monthly_comparison(year, month)
+
+        # 売掛金・買掛金サマリー
+        receivables = get_receivables_summary()
+        payables = get_payables_summary()
 
         # ====================
         # コンテキストデータ統合
@@ -285,6 +298,13 @@ class UltimateDashboardView(TemplateView):
             'variable_costs_monthly': variable_costs_monthly,
             'total_monthly_costs': total_monthly_costs,
             'consecutive_profit_months': consecutive_profit_months,
+
+            # キャッシュフロー管理データ（Phase 1）
+            'cashflow_comparison': cashflow_comparison,
+            'receivables_total': receivables['total_receivable'],
+            'receivables_count': receivables['count'],
+            'payables_total': payables['total_payable'],
+            'payables_count': payables['count'],
 
             # ビュータイプ選択肢
             'view_type_choices': [
@@ -352,7 +372,7 @@ class UltimateDashboardView(TemplateView):
 
         # 売上高・売上原価の計算
         revenue_projects = Project.objects.filter(
-            order_status='受注',
+            project_status='完工',
             billing_amount__gt=0
         )
 

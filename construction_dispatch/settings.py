@@ -117,6 +117,15 @@ TIME_ZONE = "Asia/Tokyo"
 
 USE_I18N = True
 
+USE_L10N = True  # ローカライゼーションを有効化
+
+USE_THOUSAND_SEPARATOR = True  # 3桁区切りを有効化
+
+# 数値フォーマット設定（日本語のカンマ区切り）
+NUMBER_GROUPING = 3  # 3桁ごとにグルーピング
+THOUSAND_SEPARATOR = ','  # 区切り文字をカンマに設定
+DECIMAL_SEPARATOR = '.'  # 小数点
+
 USE_TZ = True
 
 

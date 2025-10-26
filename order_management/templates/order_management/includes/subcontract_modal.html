@@ -72,7 +72,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3" id="existingContractorDiv">
-                                        <label class="form-label">業者名 <span class="text-danger">*</span></label>
+                                        <label class="form-label">元請名 <span class="text-danger">*</span></label>
                                         <select class="form-select" name="contractor_id" id="contractorSelect">
                                             <option value="">選択してください</option>
                                             <!-- データベースから読み込み -->
@@ -80,8 +80,8 @@
                                         <small class="text-muted">住所・連絡先は自動入力されます</small>
                                     </div>
                                     <div class="mb-3 d-none" id="newContractorDiv">
-                                        <label class="form-label">業者名 <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" name="contractor_name" placeholder="株式会社○○">
+                                        <label class="form-label">元請名 <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="client_name" placeholder="株式会社○○">
                                     </div>
                                 </div>
                             </div>
@@ -473,7 +473,7 @@ $(document).ready(function() {
             const resourceType = $('input[name="resource_type"]:checked').val();
             if (resourceType === 'external') {
                 const contractorId = $('#contractorSelect').val();
-                const contractorName = $('input[name="contractor_name"]').val();
+                const contractorName = $('input[name="client_name"]').val();
                 if (!contractorId && !contractorName) {
                     alert('業者を選択してください');
                     return false;

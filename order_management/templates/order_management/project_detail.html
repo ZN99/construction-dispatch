@@ -252,8 +252,8 @@
     <div class="col-md-8">
         <div class="d-flex align-items-center">
             <h2><i class="fas fa-building"></i> {{ project.site_name }}</h2>
-            <span class="badge {% if project.order_status == '受注' %}bg-success{% elif project.order_status == 'NG' %}bg-secondary{% elif project.order_status == 'A' %}bg-danger{% else %}bg-warning text-dark{% endif %} fs-6 ms-3">
-                {{ project.order_status }}
+            <span class="badge {% if project.project_status == '完工' %}bg-success{% elif project.project_status == 'NG' %}bg-secondary{% elif project.project_status == '施工日待ち' %}bg-danger{% else %}bg-warning text-dark{% endif %} fs-6 ms-3">
+                {{ project.project_status }}
             </span>
         </div>
         <p class="text-muted mb-0">{{ project.management_no }} | {{ project.work_type }}</p>
@@ -512,10 +512,10 @@
                             <tr>
                                 <th>発注先</th>
                                 <th>作業内容</th>
-                                <th>契約額</th>
-                                <th>被請求額</th>
-                                <th>支払状況</th>
-                                <th>操作</th>
+                                <th class="text-end">契約額</th>
+                                <th class="text-end">被請求額</th>
+                                <th class="text-center">支払状況</th>
+                                <th class="text-center">操作</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -525,12 +525,12 @@
                                 <td>{{ subcontract.work_description|default:"-"|truncatechars:20 }}</td>
                                 <td class="text-end">¥{{ subcontract.contract_amount|floatformat:0|intcomma }}</td>
                                 <td class="text-end">¥{{ subcontract.billed_amount|floatformat:0|intcomma }}</td>
-                                <td>
+                                <td class="text-center">
                                     <span class="badge bg-{{ subcontract.get_payment_status_color }}">
                                         {{ subcontract.get_payment_status_display }}
                                     </span>
                                 </td>
-                                <td>
+                                <td class="text-center">
                                     <a href="{% url 'subcontract_management:subcontract_update' subcontract.pk %}" class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-edit"></i>
                                     </a>
@@ -583,7 +583,7 @@
                     <div id="externalWorkerSection">
                         <!-- 工事業者情報 -->
                     <div class="mb-3">
-                        <label class="form-label">工事業者名 <span class="text-danger">*</span></label>
+                        <label class="form-label">工事元請名 <span class="text-danger">*</span></label>
                         <div class="mb-2">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="contractor_input_type" id="existingContractor" value="existing" checked>
@@ -613,13 +613,13 @@
 
                         <!-- 新規業者入力 -->
                         <div id="newContractorDiv" style="display: none;">
-                            <input type="text" name="contractor_name" class="form-control" placeholder="例: 田中工務店">
+                            <input type="text" name="client_name" class="form-control" placeholder="例: 田中工務店">
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">工事業者住所</label>
-                        <input type="text" name="contractor_address" class="form-control" id="contractorAddress" placeholder="例: 東京都渋谷区1-2-3">
+                        <label class="form-label">工事元請住所</label>
+                        <input type="text" name="client_address" class="form-control" id="contractorAddress" placeholder="例: 東京都渋谷区1-2-3">
                     </div>
 
                     <!-- 金額情報 -->
@@ -1311,7 +1311,7 @@
                                     <strong class="fs-4">{{ financial_info.gross_profit_rate|floatformat:1 }}%</strong>
                                     <div class="progress mt-1" style="height: 8px;">
                                         <div class="progress-bar {% if financial_info.gross_profit_rate >= 30 %}bg-success{% elif financial_info.gross_profit_rate >= 15 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar"
-                                             style="width: {{ financial_info.gross_profit_rate|floatformat:0 }}%" aria-valuemin="0" aria-valuemax="100"></div>
+                                             style="width: {{ financial_info.gross_profit_rate|floatformat:0|intcomma }}%" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
                                 </td>
                             </tr>
@@ -1369,10 +1369,10 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <dl class="row">
-                                    <dt class="col-sm-5">受注ヨミ:</dt>
+                                    <dt class="col-sm-5">案件進捗:</dt>
                                     <dd class="col-sm-7">
-                                        <span class="badge {% if project.order_status == '受注' %}bg-success{% elif project.order_status == 'NG' %}bg-secondary{% elif project.order_status == 'A' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
-                                            {{ project.order_status }}
+                                        <span class="badge {% if project.project_status == '完工' %}bg-success{% elif project.project_status == 'NG' %}bg-secondary{% elif project.project_status == '施工日待ち' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                            {{ project.project_status }}
                                         </span>
                                     </dd>
                                     <dt class="col-sm-5">見積書発行日:</dt>
@@ -1381,8 +1381,8 @@
                             </div>
                             <div class="col-md-6">
                                 <dl class="row">
-                                    <dt class="col-sm-5">見積金額(税込):</dt>
-                                    <dd class="col-sm-7 text-primary fw-bold">¥{{ project.estimate_amount|floatformat:0|intcomma }}</dd>
+                                    <dt class="col-sm-5">受注金額(税込):</dt>
+                                    <dd class="col-sm-7 text-primary fw-bold">¥{{ project.order_amount|floatformat:0|intcomma }}</dd>
                                     <dt class="col-sm-5">駐車場代(税込):</dt>
                                     <dd class="col-sm-7">¥{{ project.parking_fee|floatformat:0|intcomma }}</dd>
                                 </dl>
@@ -1400,16 +1400,16 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <dl class="row">
-                                    <dt class="col-sm-4">請負業者名:</dt>
-                                    <dd class="col-sm-8">{{ project.contractor_name }}</dd>
+                                    <dt class="col-sm-4">元請名:</dt>
+                                    <dd class="col-sm-8">{{ project.client_name }}</dd>
                                     <dt class="col-sm-4">案件担当:</dt>
                                     <dd class="col-sm-8">{{ project.project_manager }}</dd>
                                 </dl>
                             </div>
                             <div class="col-md-6">
                                 <dl class="row">
-                                    <dt class="col-sm-4">請負業者住所:</dt>
-                                    <dd class="col-sm-8">{{ project.contractor_address }}</dd>
+                                    <dt class="col-sm-4">元請住所:</dt>
+                                    <dd class="col-sm-8">{{ project.client_address }}</dd>
                                 </dl>
                             </div>
                         </div>
@@ -1634,7 +1634,7 @@ $(document).ready(function() {
 
             // 外注先フィールドを必須に
             $('#contractorSelect').attr('required', true);
-            $('input[name="contractor_name"]').attr('required', false);
+            $('input[name="client_name"]').attr('required', false);
 
             // 社内フィールドを非必須に
             $('input[name="internal_worker_name"]').attr('required', false);
@@ -1663,7 +1663,7 @@ $(document).ready(function() {
 
             // 外注先フィールドを非必須に
             $('#contractorSelect').attr('required', false);
-            $('input[name="contractor_name"]').attr('required', false);
+            $('input[name="client_name"]').attr('required', false);
         }
         updateCostBreakdown();
         updateProfitPreview();
@@ -1703,12 +1703,12 @@ $(document).ready(function() {
             $('#existingContractorDiv').show();
             $('#newContractorDiv').hide();
             $('#contractorSelect').attr('required', true);
-            $('input[name="contractor_name"]').attr('required', false);
+            $('input[name="client_name"]').attr('required', false);
         } else {
             $('#existingContractorDiv').hide();
             $('#newContractorDiv').show();
             $('#contractorSelect').attr('required', false);
-            $('input[name="contractor_name"]').attr('required', true);
+            $('input[name="client_name"]').attr('required', true);
         }
     });
 

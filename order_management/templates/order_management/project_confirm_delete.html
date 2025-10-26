@@ -1,4 +1,5 @@
 {% extends "order_management/base.html" %}
+{% load humanize %}
 
 {% block title %}案件削除確認 - 建築派遣管理システム{% endblock %}
 
@@ -15,10 +16,10 @@
                 <div class="alert alert-warning">
                     <h5>{{ project.management_no }} - {{ project.site_name }}</h5>
                     <ul class="mb-0">
-                        <li>請負業者: {{ project.contractor_name }}</li>
+                        <li>請負業者: {{ project.client_name }}</li>
                         <li>案件担当: {{ project.project_manager }}</li>
-                        <li>見積金額: ¥{{ project.estimate_amount|floatformat:0 }}</li>
-                        <li>受注ヨミ: {{ project.order_status }}</li>
+                        <li>受注金額: ¥{{ project.order_amount|floatformat:0|intcomma }}</li>
+                        <li>案件進捗: {{ project.project_status }}</li>
                     </ul>
                 </div>
 

@@ -1,5 +1,6 @@
 {% extends 'order_management/base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block extra_css %}
 <style>
@@ -170,11 +171,11 @@
                                     <small class="text-muted">{{ item.unit }}</small>
                                 </div>
                                 <div class="col-md-2 text-center">
-                                    <div class="h6 mb-0">¥{{ item.unit_price|floatformat:0 }}</div>
+                                    <div class="h6 mb-0">¥{{ item.unit_price|floatformat:0|intcomma }}</div>
                                     <small class="text-muted">単価</small>
                                 </div>
                                 <div class="col-md-2 text-center">
-                                    <div class="h6 mb-0 text-warning">¥{{ item.total_price|floatformat:0 }}</div>
+                                    <div class="h6 mb-0 text-warning">¥{{ item.total_price|floatformat:0|intcomma }}</div>
                                     <small class="text-muted">小計</small>
                                 </div>
                                 <div class="col-md-2 text-end">
@@ -203,7 +204,7 @@
                 </div>
                 <div class="card-body">
                     <div class="total-amount">
-                        合計金額<br>¥{{ order.total_amount|floatformat:0 }}
+                        合計金額<br>¥{{ order.total_amount|floatformat:0|intcomma }}
                     </div>
 
                     <div class="mt-3">
@@ -215,7 +216,7 @@
                             <span>平均単価</span>
                             <span class="fw-bold">
                                 {% if order.items.count > 0 %}
-                                ¥{{ order.total_amount|div:order.items.count|floatformat:0 }}
+                                ¥{{ order.total_amount|div:order.items.count|floatformat:0|intcomma }}
                                 {% else %}
                                 -
                                 {% endif %}
@@ -304,7 +305,7 @@
 <script>
 function updateStatus(newStatus) {
     if (confirm('ステータスを変更しますか？')) {
-        fetch(`{% url 'order_management:material_order_status_update' project.id order.id %}`, {
+        fetch(`{% url 'order_management:material_project_status_update' project.id order.id %}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

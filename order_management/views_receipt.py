@@ -5,6 +5,7 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from .models import Project
 import calendar
+from .utils import safe_int
 
 
 class ReceiptDashboardView(TemplateView):
@@ -15,8 +16,8 @@ class ReceiptDashboardView(TemplateView):
 
         # 現在の月を取得（デフォルト）
         now = timezone.now()
-        year = int(self.request.GET.get('year', now.year))
-        month = int(self.request.GET.get('month', now.month))
+        year = safe_int(self.request.GET.get('year', now.year))
+        month = safe_int(self.request.GET.get('month', now.month))
         status_filter = self.request.GET.get('status', 'all')
 
         # 月の開始日と終了日
@@ -27,11 +28,11 @@ class ReceiptDashboardView(TemplateView):
         base_query = Project.objects.filter(
             payment_due_date__gte=start_date,
             payment_due_date__lte=end_date,
-            estimate_amount__gt=0
+            order_amount__gt=0
         ).exclude(
-            contractor_name__isnull=True
+            client_name__isnull=True
         ).exclude(
-            contractor_name=''
+            client_name=''
         )
 
         # 入金状況による絞り込み
@@ -49,7 +50,7 @@ class ReceiptDashboardView(TemplateView):
                 work_end_completed=False
             )
 
-        receipt_projects = base_query.order_by('contractor_name', 'payment_due_date')
+        receipt_projects = base_query.order_by('client_name', 'payment_due_date')
 
         # 発注元別の集計データ
         client_summary = {}
@@ -63,7 +64,7 @@ class ReceiptDashboardView(TemplateView):
         }
 
         for project in receipt_projects:
-            client_name = project.contractor_name
+            client_name = project.client_name
             if client_name not in client_summary:
                 client_summary[client_name] = {
                     'client_name': client_name,
@@ -76,7 +77,7 @@ class ReceiptDashboardView(TemplateView):
                 }
 
             # 入金金額の決定
-            amount = project.billing_amount or project.estimate_amount or 0
+            amount = project.billing_amount or project.order_amount or 0
 
             client_summary[client_name]['projects'].append(project)
             client_summary[client_name]['total_amount'] += amount
