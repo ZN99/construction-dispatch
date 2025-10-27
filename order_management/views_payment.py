@@ -3,14 +3,23 @@ from django.views.generic import TemplateView
 from django.db.models import Q, Sum, Count
 from django.utils import timezone
 from datetime import datetime, timedelta
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from .models import CashFlowTransaction
+from .user_roles import has_any_role, UserRole
 import calendar
 from decimal import Decimal
 from .utils import safe_int
 
 
-class PaymentDashboardView(TemplateView):
+class PaymentDashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'order_management/payment_dashboard.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        # 経理・役員のみアクセス可能
+        if not has_any_role(request.user, [UserRole.ACCOUNTING, UserRole.EXECUTIVE]):
+            raise PermissionDenied("出金管理画面へのアクセス権限がありません。")
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -1801,3 +1801,43 @@ class SeasonalityIndex(models.Model):
 
         self.use_auto_calculation = True
         self.save()
+
+
+
+class UserProfile(models.Model):
+    """ユーザープロファイル - ロール管理"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="userprofile")
+    roles = models.JSONField(default=list, verbose_name="ロール")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
+
+    class Meta:
+        verbose_name = "ユーザープロファイル"
+        verbose_name_plural = "ユーザープロファイル一覧"
+
+    def __str__(self):
+        roles_str = ", ".join(self.roles) if self.roles else "ロールなし"
+        return f"{self.user.username} - {roles_str}"
+
+    def has_role(self, role):
+        """指定されたロールを持っているかチェック"""
+        return role in self.roles
+
+    def add_role(self, role):
+        """ロールを追加"""
+        if role not in self.roles:
+            self.roles.append(role)
+            self.save()
+
+    def remove_role(self, role):
+        """ロールを削除"""
+        if role in self.roles:
+            self.roles.remove(role)
+            self.save()
+
+    def get_roles_display(self):
+        """ロールの表示名を取得"""
+        from .user_roles import UserRole
+        role_dict = dict(UserRole.CHOICES)
+        return [role_dict.get(role, role) for role in self.roles]
+

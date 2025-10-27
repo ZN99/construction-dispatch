@@ -1,6 +1,7 @@
 {% extends 'order_management/base.html' %}
 {% load static %}
 {% load humanize %}
+{% load role_tags %}
 
 {% block title %}統合ダッシュボード - {{ month_name }} {{ year }}{% endblock %}
 
@@ -651,6 +652,7 @@
                     </div>
                 </div>
 
+                {% if user|can_view_profit %}
                 <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="kpi-card animate-in" style="animation-delay: 0.3s">
                         <div class="kpi-value">¥895,000</div>
@@ -660,6 +662,7 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
 
                 <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="kpi-card animate-in" style="animation-delay: 0.4s">
@@ -694,9 +697,15 @@
         <div class="container-fluid">
                 <div class="row broken-charts-row" id="brokenChartsRow" style="display: none;">
                     <!-- 左カラム: プロジェクト収益性 -->
+                    {% if user|can_view_profit %}
                     <div class="col-lg-6">
                         <div class="profitability-chart">
                             <h4><i class="fas fa-chart-bar"></i> プロジェクト収益性 TOP5 <small class="text-muted">(修正版)</small></h4>
+                    {% else %}
+                    <div class="col-lg-12">
+                        <div class="profitability-chart">
+                            <h4><i class="fas fa-chart-bar"></i> プロジェクト収益性情報は役員のみ閲覧可能です</h4>
+                    {% endif %}
 
                             <!-- 成長ストーリー版データ -->
                             <div class="profit-bar">

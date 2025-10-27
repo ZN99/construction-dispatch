@@ -1,20 +1,30 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
 from django.db.models import Q
 from django.utils import timezone
 from datetime import datetime, timedelta
 from .models import FixedCost, VariableCost, Project
 from .forms import FixedCostForm, VariableCostForm, FixedCostFilterForm, VariableCostFilterForm
+from .user_roles import has_role, UserRole, executive_required
 
 
-class FixedCostListView(ListView):
+class FixedCostListView(LoginRequiredMixin, ListView):
     """固定費一覧表示"""
     model = FixedCost
     template_name = 'order_management/cost/fixed_cost_list.html'
     context_object_name = 'fixed_costs'
     paginate_by = 20
+
+    def dispatch(self, request, *args, **kwargs):
+        # 役員のみアクセス可能
+        if not has_role(request.user, UserRole.EXECUTIVE):
+            raise PermissionDenied("固定費情報へのアクセス権限がありません。")
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         queryset = FixedCost.objects.all().order_by('-created_at')
@@ -47,12 +57,18 @@ class FixedCostListView(ListView):
         return context
 
 
-class FixedCostCreateView(CreateView):
+class FixedCostCreateView(LoginRequiredMixin, CreateView):
     """固定費新規作成"""
     model = FixedCost
     form_class = FixedCostForm
     template_name = 'order_management/cost/fixed_cost_form.html'
     success_url = reverse_lazy('order_management:fixed_cost_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        # 役員のみアクセス可能
+        if not has_role(request.user, UserRole.EXECUTIVE):
+            raise PermissionDenied("固定費情報へのアクセス権限がありません。")
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         messages.success(self.request, f'固定費「{form.instance.name}」を登録しました。')
@@ -65,12 +81,18 @@ class FixedCostCreateView(CreateView):
         return context
 
 
-class FixedCostUpdateView(UpdateView):
+class FixedCostUpdateView(LoginRequiredMixin, UpdateView):
     """固定費編集"""
     model = FixedCost
     form_class = FixedCostForm
     template_name = 'order_management/cost/fixed_cost_form.html'
     success_url = reverse_lazy('order_management:fixed_cost_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        # 役員のみアクセス可能
+        if not has_role(request.user, UserRole.EXECUTIVE):
+            raise PermissionDenied("固定費情報へのアクセス権限がありません。")
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         messages.success(self.request, f'固定費「{form.instance.name}」を更新しました。')
@@ -83,11 +105,17 @@ class FixedCostUpdateView(UpdateView):
         return context
 
 
-class FixedCostDeleteView(DeleteView):
+class FixedCostDeleteView(LoginRequiredMixin, DeleteView):
     """固定費削除"""
     model = FixedCost
     template_name = 'order_management/cost/fixed_cost_confirm_delete.html'
     success_url = reverse_lazy('order_management:fixed_cost_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        # 役員のみアクセス可能
+        if not has_role(request.user, UserRole.EXECUTIVE):
+            raise PermissionDenied("固定費情報へのアクセス権限がありません。")
+        return super().dispatch(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         obj = self.get_object()
@@ -95,12 +123,18 @@ class FixedCostDeleteView(DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-class VariableCostListView(ListView):
+class VariableCostListView(LoginRequiredMixin, ListView):
     """変動費一覧表示"""
     model = VariableCost
     template_name = 'order_management/cost/variable_cost_list.html'
     context_object_name = 'variable_costs'
     paginate_by = 20
+
+    def dispatch(self, request, *args, **kwargs):
+        # 役員のみアクセス可能
+        if not has_role(request.user, UserRole.EXECUTIVE):
+            raise PermissionDenied("変動費情報へのアクセス権限がありません。")
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         queryset = VariableCost.objects.select_related('project').order_by('-incurred_date')
@@ -158,12 +192,18 @@ class VariableCostListView(ListView):
         return context
 
 
-class VariableCostCreateView(CreateView):
+class VariableCostCreateView(LoginRequiredMixin, CreateView):
     """変動費新規作成"""
     model = VariableCost
     form_class = VariableCostForm
     template_name = 'order_management/cost/variable_cost_form.html'
     success_url = reverse_lazy('order_management:variable_cost_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        # 役員のみアクセス可能
+        if not has_role(request.user, UserRole.EXECUTIVE):
+            raise PermissionDenied("変動費情報へのアクセス権限がありません。")
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         messages.success(self.request, f'変動費「{form.instance.name}」を登録しました。')
@@ -176,12 +216,18 @@ class VariableCostCreateView(CreateView):
         return context
 
 
-class VariableCostUpdateView(UpdateView):
+class VariableCostUpdateView(LoginRequiredMixin, UpdateView):
     """変動費編集"""
     model = VariableCost
     form_class = VariableCostForm
     template_name = 'order_management/cost/variable_cost_form.html'
     success_url = reverse_lazy('order_management:variable_cost_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        # 役員のみアクセス可能
+        if not has_role(request.user, UserRole.EXECUTIVE):
+            raise PermissionDenied("変動費情報へのアクセス権限がありません。")
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         messages.success(self.request, f'変動費「{form.instance.name}」を更新しました。')
@@ -194,11 +240,17 @@ class VariableCostUpdateView(UpdateView):
         return context
 
 
-class VariableCostDeleteView(DeleteView):
+class VariableCostDeleteView(LoginRequiredMixin, DeleteView):
     """変動費削除"""
     model = VariableCost
     template_name = 'order_management/cost/variable_cost_confirm_delete.html'
     success_url = reverse_lazy('order_management:variable_cost_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        # 役員のみアクセス可能
+        if not has_role(request.user, UserRole.EXECUTIVE):
+            raise PermissionDenied("変動費情報へのアクセス権限がありません。")
+        return super().dispatch(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         obj = self.get_object()
@@ -206,6 +258,7 @@ class VariableCostDeleteView(DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
+@executive_required
 def cost_dashboard(request):
     """コスト管理ダッシュボード"""
     now = timezone.now()

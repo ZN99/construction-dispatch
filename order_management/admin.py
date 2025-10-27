@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Project, CashFlowTransaction, ForecastScenario,
-    ProjectProgress, Report, SeasonalityIndex
+    ProjectProgress, Report, SeasonalityIndex, UserProfile
 )
 
 
@@ -402,3 +402,30 @@ class SeasonalityIndexAdmin(admin.ModelAdmin):
             count += 1
         self.message_user(request, f'{count}件の季節性指数を再計算しました。')
     recalculate_from_historical_data.short_description = '過去データから再計算'
+
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    """ユーザープロファイル管理"""
+    list_display = ["user", "get_roles_display", "created_at", "updated_at"]
+    list_filter = []
+    search_fields = ["user__username", "user__first_name", "user__last_name"]
+    
+    fieldsets = (
+        ("基本情報", {
+            "fields": ("user", "roles")
+        }),
+        ("タイムスタンプ", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",)
+        }),
+    )
+    
+    readonly_fields = ["created_at", "updated_at"]
+    
+    def get_roles_display(self, obj):
+        """ロールの表示"""
+        return ", ".join(obj.get_roles_display()) if obj.roles else "ロールなし"
+    get_roles_display.short_description = "ロール"
+
