@@ -1,7 +1,8 @@
 from django.contrib import admin
 from .models import (
     Project, CashFlowTransaction, ForecastScenario,
-    ProjectProgress, Report, SeasonalityIndex, UserProfile
+    ProjectProgress, Report, SeasonalityIndex, UserProfile,
+    Comment, Notification
 )
 
 
@@ -428,4 +429,55 @@ class UserProfileAdmin(admin.ModelAdmin):
         """ロールの表示"""
         return ", ".join(obj.get_roles_display()) if obj.roles else "ロールなし"
     get_roles_display.short_description = "ロール"
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    """コメント管理"""
+    list_display = ["project", "author", "get_content_preview", "is_important", "created_at"]
+    list_filter = ["is_important", "created_at", "author"]
+    search_fields = ["project__site_name", "project__management_no", "content", "author__username"]
+    date_hierarchy = "created_at"
+    readonly_fields = ["created_at", "updated_at"]
+
+    fieldsets = (
+        ("基本情報", {
+            "fields": ("project", "author", "content", "is_important")
+        }),
+        ("メンション", {
+            "fields": ("mentioned_users",)
+        }),
+        ("タイムスタンプ", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",)
+        }),
+    )
+
+    def get_content_preview(self, obj):
+        """コメント内容のプレビュー"""
+        return obj.content[:50] + "..." if len(obj.content) > 50 else obj.content
+    get_content_preview.short_description = "コメント"
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    """通知管理"""
+    list_display = ["recipient", "notification_type", "title", "is_read", "created_at"]
+    list_filter = ["notification_type", "is_read", "created_at"]
+    search_fields = ["recipient__username", "title", "message"]
+    date_hierarchy = "created_at"
+    readonly_fields = ["created_at"]
+
+    fieldsets = (
+        ("基本情報", {
+            "fields": ("recipient", "notification_type", "title", "message", "link", "is_read")
+        }),
+        ("関連情報", {
+            "fields": ("related_comment", "related_project")
+        }),
+        ("タイムスタンプ", {
+            "fields": ("created_at",),
+            "classes": ("collapse",)
+        }),
+    )
 

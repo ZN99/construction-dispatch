@@ -1841,3 +1841,56 @@ class UserProfile(models.Model):
         role_dict = dict(UserRole.CHOICES)
         return [role_dict.get(role, role) for role in self.roles]
 
+
+class Comment(models.Model):
+    """案件コメント・チャット機能"""
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='comments', verbose_name="案件")
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments', verbose_name="投稿者")
+    content = models.TextField(verbose_name="コメント内容")
+    mentioned_users = models.ManyToManyField(User, related_name='mentioned_in_comments', blank=True, verbose_name="メンションユーザー")
+    is_important = models.BooleanField(default=False, verbose_name="重要フラグ")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="投稿日時")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
+
+    class Meta:
+        verbose_name = "コメント"
+        verbose_name_plural = "コメント一覧"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.project.site_name} - {self.author.username} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+    def extract_mentions(self):
+        """コメント内容から@メンションを抽出"""
+        import re
+        mention_pattern = r'@(\w+)'
+        usernames = re.findall(mention_pattern, self.content)
+        return User.objects.filter(username__in=usernames)
+
+
+class Notification(models.Model):
+    """通知モデル"""
+    NOTIFICATION_TYPES = [
+        ('mention', 'メンション'),
+        ('comment', 'コメント'),
+        ('project_update', '案件更新'),
+    ]
+
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', verbose_name="受信者")
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES, verbose_name="通知タイプ")
+    title = models.CharField(max_length=200, verbose_name="タイトル")
+    message = models.TextField(verbose_name="メッセージ")
+    link = models.CharField(max_length=500, blank=True, verbose_name="リンク")
+    is_read = models.BooleanField(default=False, verbose_name="既読フラグ")
+    related_comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications', verbose_name="関連コメント")
+    related_project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications', verbose_name="関連案件")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
+
+    class Meta:
+        verbose_name = "通知"
+        verbose_name_plural = "通知一覧"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.recipient.username} - {self.get_notification_type_display()} - {self.title}"
+
