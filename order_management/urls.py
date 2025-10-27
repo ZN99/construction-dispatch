@@ -53,6 +53,12 @@ from .views_report import (
     report_regenerate_pdf,
     report_preview_api
 )
+from .views_calendar import (
+    ConstructionCalendarView,
+    PerformanceMonthlyView,
+    calendar_events_api,
+    performance_monthly_api
+)
 
 app_name = 'order_management'
 
@@ -162,4 +168,10 @@ urlpatterns = [
     path('api/notifications/', views_comment.get_notifications, name='api_get_notifications'),
     path('api/notifications/<int:notification_id>/read/', views_comment.mark_notification_read, name='api_mark_notification_read'),
     path('api/notifications/read-all/', views_comment.mark_all_notifications_read, name='api_mark_all_notifications_read'),
+
+    # カレンダー・業績管理 - Phase 7
+    path('calendar/', ConstructionCalendarView.as_view(), name='construction_calendar'),
+    path('api/calendar/events/', calendar_events_api, name='calendar_events_api'),
+    path('performance/monthly/', PerformanceMonthlyView.as_view(), name='performance_monthly'),
+    path('api/performance/monthly/', performance_monthly_api, name='performance_monthly_api'),
 ]

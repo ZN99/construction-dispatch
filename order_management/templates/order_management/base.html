@@ -181,7 +181,22 @@
                         </ul>
                     </li>
 
-                    <!-- 6. システム管理 -->
+                    <!-- 6. カレンダー・業績 -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="calendarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-calendar"></i> カレンダー・業績
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="calendarDropdown">
+                            <li><a class="dropdown-item" href="{% url 'order_management:construction_calendar' %}">
+                                <i class="fas fa-calendar-alt"></i> 施工カレンダー
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'order_management:performance_monthly' %}">
+                                <i class="fas fa-chart-line"></i> 月次業績
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- 7. システム管理 -->
                     <li class="nav-item">
                         <a class="nav-link" href="/admin/">
                             <i class="fas fa-cog"></i> システム管理
