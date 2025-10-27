@@ -4688,4 +4688,259 @@ $(document).ready(function() {
         </div>
     </div>
 </div>
+
+<!-- 案件チャット・コメントセクション -->
+<div class="container mt-5 mb-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-comments me-2"></i>案件コメント・チャット
+            </h5>
+        </div>
+        <div class="card-body">
+            <!-- コメント一覧 -->
+            <div id="comments-container" class="mb-4" style="max-height: 500px; overflow-y: auto;">
+                <!-- コメントはJavaScriptで動的に読み込み -->
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p class="mt-2">コメントを読み込み中...</p>
+                </div>
+            </div>
+
+            <!-- コメント投稿フォーム -->
+            <div class="comment-form">
+                <form id="comment-form" onsubmit="return false;">
+                    <div class="mb-3">
+                        <textarea
+                            id="comment-content"
+                            class="form-control"
+                            rows="3"
+                            placeholder="コメントを入力してください... (@ユーザー名 でメンションできます)"
+                            required
+                        ></textarea>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> @ユーザー名 でメンションすると、そのユーザーに通知が送られます
+                        </small>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input
+                            type="checkbox"
+                            class="form-check-input"
+                            id="comment-important"
+                        >
+                        <label class="form-check-label" for="comment-important">
+                            <i class="fas fa-exclamation-triangle text-warning"></i> 重要なコメントとしてマークする
+                        </label>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="postComment()">
+                        <i class="fas fa-paper-plane me-2"></i>コメントを投稿
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* チャットUIのスタイル */
+.comment-item {
+    border-left: 3px solid #dee2e6;
+    padding: 15px;
+    margin-bottom: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.comment-item:hover {
+    border-left-color: #0d6efd;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.comment-item.important {
+    border-left-color: #ffc107;
+    background: #fff3cd;
+}
+
+.comment-author {
+    font-weight: 600;
+    color: #0d6efd;
+    margin-right: 10px;
+}
+
+.comment-date {
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.comment-content {
+    margin-top: 10px;
+    line-height: 1.6;
+}
+
+.comment-important-badge {
+    background: #ffc107;
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    margin-left: 10px;
+}
+</style>
+
+<script>
+// コメント機能のJavaScript
+const projectId = {{ project.id }};
+
+// ページ読み込み時にコメントを取得
+document.addEventListener('DOMContentLoaded', function() {
+    loadComments();
+});
+
+// コメント一覧を読み込み
+function loadComments() {
+    fetch(`/orders/api/projects/${projectId}/comments/`)
+        .then(response => response.json())
+        .then(data => {
+            displayComments(data.comments);
+        })
+        .catch(error => {
+            console.error('コメント取得エラー:', error);
+            document.getElementById('comments-container').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> コメントの読み込みに失敗しました
+                </div>
+            `;
+        });
+}
+
+// コメントを表示
+function displayComments(comments) {
+    const container = document.getElementById('comments-container');
+
+    if (comments.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-comment-slash fa-3x mb-3"></i>
+                <p>まだコメントがありません</p>
+                <p class="small">最初のコメントを投稿してみましょう！</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    comments.forEach(comment => {
+        const importantClass = comment.is_important ? 'important' : '';
+        const importantBadge = comment.is_important ?
+            '<span class="comment-important-badge"><i class="fas fa-exclamation-triangle"></i> 重要</span>' : '';
+
+        html += `
+            <div class="comment-item ${importantClass}">
+                <div class="comment-header">
+                    <span class="comment-author">
+                        <i class="fas fa-user-circle"></i> ${escapeHtml(comment.author)}
+                    </span>
+                    <span class="comment-date">
+                        <i class="far fa-clock"></i> ${comment.created_at}
+                    </span>
+                    ${importantBadge}
+                </div>
+                <div class="comment-content">
+                    ${formatCommentContent(comment.content)}
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+
+    // 最新のコメントにスクロール
+    container.scrollTop = container.scrollHeight;
+}
+
+// コメント内容をフォーマット（@メンションをハイライト）
+function formatCommentContent(content) {
+    const escaped = escapeHtml(content);
+    return escaped.replace(/@(\w+)/g, '<strong class="text-primary">@$1</strong>');
+}
+
+// HTMLエスケープ
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// コメントを投稿
+function postComment() {
+    const content = document.getElementById('comment-content').value.trim();
+    const isImportant = document.getElementById('comment-important').checked;
+
+    if (!content) {
+        alert('コメント内容を入力してください');
+        return;
+    }
+
+    // CSRFトークンを取得
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch(`/orders/api/projects/${projectId}/comments/post/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            content: content,
+            is_important: isImportant
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // フォームをリセット
+            document.getElementById('comment-content').value = '';
+            document.getElementById('comment-important').checked = false;
+
+            // コメント一覧を再読み込み
+            loadComments();
+
+            // 成功メッセージ
+            showToast('コメントを投稿しました', 'success');
+        } else {
+            alert('エラー: ' + (data.error || 'コメントの投稿に失敗しました'));
+        }
+    })
+    .catch(error => {
+        console.error('コメント投稿エラー:', error);
+        alert('コメントの投稿に失敗しました');
+    });
+}
+
+// トースト通知を表示
+function showToast(message, type = 'info') {
+    // 簡易的なトースト表示
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} position-fixed top-0 end-0 m-3`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <i class="fas fa-check-circle"></i> ${message}
+    `;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// エンターキーでの送信（Shift+Enterで改行）
+document.getElementById('comment-content').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        postComment();
+    }
+});
+</script>
+
 {% endblock %}
