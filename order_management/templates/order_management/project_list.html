@@ -274,7 +274,7 @@
                         <th>施工種別</th>
                         <th>案件進捗</th>
                         <th>進捗状況</th>
-                        <th>発注連携</th>
+                        <th>手配状況</th>
                         <th>見積書発行日</th>
                         <th>売上内訳</th>
                         <th>駐車場代</th>
@@ -495,7 +495,7 @@
                         {% endwith %}
                     </div>
                     <div class="mb-2">
-                        <small class="text-muted">発注連携:</small>
+                        <small class="text-muted">手配状況:</small>
                         {% with subcontract_status=project.get_subcontract_status %}
                         <span class="badge bg-{{ subcontract_status.color }}">
                             <i class="fas {{ subcontract_status.icon }}"></i> {{ subcontract_status.status }}
@@ -572,7 +572,7 @@
                         {% endwith %}
                     </div>
                     <div class="col-md-1-5">
-                        <small class="text-muted d-block">発注連携</small>
+                        <small class="text-muted d-block">手配状況</small>
                         {% with subcontract_status=project.get_subcontract_status %}
                         <span class="badge bg-{{ subcontract_status.color }}">
                             <i class="fas {{ subcontract_status.icon }}"></i> {{ subcontract_status.status }}
