@@ -56,8 +56,10 @@ from .views_report import (
 from .views_calendar import (
     ConstructionCalendarView,
     PerformanceMonthlyView,
+    GanttChartView,
     calendar_events_api,
-    performance_monthly_api
+    performance_monthly_api,
+    gantt_data_api
 )
 
 app_name = 'order_management'
@@ -174,4 +176,6 @@ urlpatterns = [
     path('api/calendar/events/', calendar_events_api, name='calendar_events_api'),
     path('performance/monthly/', PerformanceMonthlyView.as_view(), name='performance_monthly'),
     path('api/performance/monthly/', performance_monthly_api, name='performance_monthly_api'),
+    path('gantt/', GanttChartView.as_view(), name='gantt_chart'),
+    path('api/gantt/data/', gantt_data_api, name='gantt_data_api'),
 ]
