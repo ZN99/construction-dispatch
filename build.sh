@@ -44,6 +44,9 @@ python create_material_data.py
 # echo "Creating payment data..."
 # python create_payment_data.py  # TODO: Fix estimate_amount field error
 
+echo "Creating comprehensive test data (files, comments, photos)..."
+python create_comprehensive_test_data.py
+
 # Note: create_survey_data.py creates data but doesn't persist - using create_survey_test_data.py instead
 
 echo "Build completed successfully!"
