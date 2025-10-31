@@ -49,9 +49,10 @@ class UltimateDashboardView(TemplateView):
         # ステータス別カウント
         status_counts = {
             '完工': Project.objects.filter(project_status='完工').count(),
-            'NG': Project.objects.filter(project_status='NG').count(),
+            '進行中': Project.objects.filter(project_status='進行中').count(),
             '施工日待ち': Project.objects.filter(project_status='施工日待ち').count(),
             'ネタ': Project.objects.filter(project_status='ネタ').count(),
+            'NG': Project.objects.filter(project_status='NG').count(),
         }
 
         # 今月の案件統計
