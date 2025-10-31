@@ -164,6 +164,68 @@ class Project(models.Model):
         help_text='請求書を発行した日時'
     )
 
+    # 元請会社連携 - Phase 8 追加
+    client_company = models.ForeignKey(
+        'ClientCompany',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='projects',
+        verbose_name='元請会社'
+    )
+
+    # 鍵受け渡し管理 - Phase 8 追加
+    key_handover_location = models.TextField(
+        blank=True,
+        verbose_name='鍵受け渡し場所',
+        help_text='案件ごとの鍵受け渡し場所'
+    )
+    key_handover_date = models.DateTimeField(
+        null=True, blank=True,
+        verbose_name='鍵受け渡し日時'
+    )
+    key_handover_notes = models.TextField(
+        blank=True,
+        verbose_name='鍵受け渡しメモ'
+    )
+
+    # 承認フロー - Phase 8 追加
+    requires_approval = models.BooleanField(
+        default=False,
+        verbose_name='承認必要',
+        help_text='金額や条件により承認が必要な案件'
+    )
+    approval_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('not_required', '承認不要'),
+            ('pending', '承認待ち'),
+            ('approved', '承認済み'),
+            ('rejected', '却下'),
+        ],
+        default='not_required',
+        verbose_name='承認ステータス'
+    )
+    approved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_projects',
+        verbose_name='承認者'
+    )
+    approved_at = models.DateTimeField(
+        null=True, blank=True,
+        verbose_name='承認日時'
+    )
+
+    # 優先度管理 - Phase 8 追加
+    priority_score = models.IntegerField(
+        default=0,
+        verbose_name='優先度スコア',
+        help_text='自動計算される優先度（高いほど優先）'
+    )
+
     # その他
     notes = models.TextField(blank=True, verbose_name='備考')
     additional_items = models.JSONField(default=dict, blank=True, verbose_name="追加項目")
@@ -1893,4 +1955,253 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.recipient.username} - {self.get_notification_type_display()} - {self.title}"
+
+
+class ClientCompany(models.Model):
+    """元請会社マスター - Phase 8"""
+    company_name = models.CharField(max_length=200, unique=True, verbose_name='会社名')
+    contact_person = models.CharField(max_length=100, blank=True, verbose_name='担当者名')
+    email = models.EmailField(blank=True, verbose_name='メールアドレス')
+    phone = models.CharField(max_length=20, blank=True, verbose_name='電話番号')
+    address = models.TextField(blank=True, verbose_name='住所')
+
+    # 鍵受け渡しデフォルト設定
+    default_key_handover_location = models.TextField(blank=True, verbose_name='鍵受け渡し場所（デフォルト）')
+    key_handover_notes = models.TextField(blank=True, verbose_name='鍵受け渡し特記事項')
+
+    # 完了報告シートテンプレート
+    completion_report_template = models.FileField(
+        upload_to='completion_templates/',
+        null=True,
+        blank=True,
+        verbose_name='完了報告シートテンプレート'
+    )
+    completion_report_notes = models.TextField(blank=True, verbose_name='完了報告特記事項')
+
+    # 承認設定
+    approval_threshold = models.DecimalField(
+        max_digits=10,
+        decimal_places=0,
+        default=1000000,
+        verbose_name='承認必要金額閾値',
+        help_text='この金額以上の案件は承認が必要'
+    )
+
+    # 運用ルール
+    special_notes = models.TextField(blank=True, verbose_name='特記事項・運用ルール')
+    is_active = models.BooleanField(default=True, verbose_name='有効')
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='登録日時')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新日時')
+
+    class Meta:
+        verbose_name = '元請会社'
+        verbose_name_plural = '元請会社一覧'
+        ordering = ['company_name']
+
+    def __str__(self):
+        return self.company_name
+
+    def get_total_projects(self):
+        """総案件数を取得"""
+        return self.projects.count()
+
+    def get_active_projects(self):
+        """進行中の案件数を取得"""
+        return self.projects.filter(
+            project_status__in=['施工日待ち', '進行中']
+        ).count()
+
+
+class ContractorReview(models.Model):
+    """職人評価 - Phase 8"""
+    contractor = models.ForeignKey(
+        'subcontract_management.Contractor',
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='職人'
+    )
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='contractor_reviews',
+        verbose_name='案件'
+    )
+
+    # 評価スコア（1-5）
+    overall_rating = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        verbose_name='総合評価'
+    )
+    quality_score = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        verbose_name='品質スコア'
+    )
+    speed_score = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        verbose_name='スピードスコア'
+    )
+    communication_score = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        verbose_name='コミュニケーションスコア'
+    )
+
+    review_comment = models.TextField(blank=True, verbose_name='コメント')
+    would_recommend = models.BooleanField(default=True, verbose_name='次回も依頼したい')
+
+    # メタ情報
+    reviewed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='評価者'
+    )
+    reviewed_at = models.DateTimeField(auto_now_add=True, verbose_name='評価日時')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新日時')
+
+    class Meta:
+        verbose_name = '職人評価'
+        verbose_name_plural = '職人評価一覧'
+        ordering = ['-reviewed_at']
+        unique_together = ['contractor', 'project']
+
+    def __str__(self):
+        return f"{self.contractor.name} - {self.project.management_no} ({self.overall_rating}点)"
+
+
+class ApprovalLog(models.Model):
+    """承認履歴 - Phase 8"""
+    APPROVAL_TYPE_CHOICES = [
+        ('estimate', '見積承認'),
+        ('contractor_assign', '職人アサイン承認'),
+        ('payment', '支払承認'),
+        ('project_start', '案件開始承認'),
+    ]
+
+    STATUS_CHOICES = [
+        ('pending', '承認待ち'),
+        ('approved', '承認済み'),
+        ('rejected', '却下'),
+        ('cancelled', 'キャンセル'),
+    ]
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='approval_logs',
+        verbose_name='案件'
+    )
+    approval_type = models.CharField(
+        max_length=20,
+        choices=APPROVAL_TYPE_CHOICES,
+        verbose_name='承認種別'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='ステータス'
+    )
+
+    # 申請情報
+    requester = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='approval_requests',
+        verbose_name='申請者'
+    )
+    request_reason = models.TextField(blank=True, verbose_name='申請理由')
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=0,
+        null=True,
+        blank=True,
+        verbose_name='金額'
+    )
+    requested_at = models.DateTimeField(auto_now_add=True, verbose_name='申請日時')
+
+    # 承認情報
+    approver = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approvals',
+        verbose_name='承認者'
+    )
+    approval_comment = models.TextField(blank=True, verbose_name='承認コメント')
+    rejection_reason = models.TextField(blank=True, verbose_name='却下理由')
+    approved_at = models.DateTimeField(null=True, blank=True, verbose_name='承認日時')
+
+    class Meta:
+        verbose_name = '承認履歴'
+        verbose_name_plural = '承認履歴一覧'
+        ordering = ['-requested_at']
+
+    def __str__(self):
+        return f"{self.project.management_no} - {self.get_approval_type_display()} ({self.get_status_display()})"
+
+
+class ChecklistTemplate(models.Model):
+    """チェックリストテンプレート - Phase 8"""
+    name = models.CharField(max_length=200, verbose_name='テンプレート名')
+    work_type = models.CharField(max_length=50, verbose_name='施工種別')
+    description = models.TextField(blank=True, verbose_name='説明')
+
+    # チェック項目（JSON配列）
+    # [{"name": "項目名", "description": "説明", "order": 1}]
+    items = models.JSONField(default=list, verbose_name='チェック項目')
+
+    is_active = models.BooleanField(default=True, verbose_name='有効')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='作成日時')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新日時')
+
+    class Meta:
+        verbose_name = 'チェックリストテンプレート'
+        verbose_name_plural = 'チェックリストテンプレート一覧'
+        ordering = ['work_type', 'name']
+
+    def __str__(self):
+        return f"{self.work_type} - {self.name}"
+
+
+class ProjectChecklist(models.Model):
+    """案件チェックリスト - Phase 8"""
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='checklists',
+        verbose_name='案件'
+    )
+    template = models.ForeignKey(
+        ChecklistTemplate,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='テンプレート'
+    )
+
+    # チェック項目の状態（JSON配列）
+    # [{"name": "項目名", "completed": true/false, "notes": "メモ", "completed_by": "user_id", "completed_at": "datetime"}]
+    items = models.JSONField(default=list, verbose_name='チェック項目')
+
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name='完了日時')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='作成日時')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新日時')
+
+    class Meta:
+        verbose_name = '案件チェックリスト'
+        verbose_name_plural = '案件チェックリスト一覧'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.project.management_no} - {self.template.name if self.template else 'カスタム'}"
+
+    def get_completion_rate(self):
+        """完了率を計算"""
+        if not self.items:
+            return 0
+        completed = sum(1 for item in self.items if item.get('completed', False))
+        return int((completed / len(self.items)) * 100) if self.items else 0
 

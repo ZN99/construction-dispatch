@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 from order_management.models import Project
 
@@ -93,6 +94,67 @@ class Contractor(models.Model):
         max_digits=8, decimal_places=0, null=True, blank=True, verbose_name='時給単価'
     )
     is_active = models.BooleanField(default=True, verbose_name='有効')
+
+    # スキル・評価管理 - Phase 8 追加
+    skill_categories = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='スキルカテゴリ',
+        help_text='例: ["電気工事", "空調工事", "給排水工事"]'
+    )
+    skill_level = models.CharField(
+        max_length=20,
+        choices=[
+            ('beginner', '初級'),
+            ('intermediate', '中級'),
+            ('advanced', '上級'),
+            ('expert', 'エキスパート'),
+        ],
+        default='intermediate',
+        verbose_name='スキルレベル'
+    )
+    service_areas = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='対応可能地域',
+        help_text='例: ["東京23区", "神奈川県全域"]'
+    )
+    trust_level = models.IntegerField(
+        default=3,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        verbose_name='信頼度',
+        help_text='1-5の5段階評価。4以上はCLが直接アサイン可能'
+    )
+    certifications = models.TextField(
+        blank=True,
+        verbose_name='保有資格',
+        help_text='改行区切りで複数入力可能'
+    )
+
+    # 実績管理 - Phase 8 追加
+    total_projects = models.IntegerField(
+        default=0,
+        verbose_name='総案件数'
+    )
+    success_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=100.00,
+        verbose_name='成功率(%)',
+        help_text='問題なく完了した案件の割合'
+    )
+    average_rating = models.DecimalField(
+        max_digits=3,
+        decimal_places=2,
+        default=0.00,
+        verbose_name='平均評価',
+        help_text='ContractorReviewからの平均評価（1-5）'
+    )
+    last_project_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='最終案件日'
+    )
 
     # 銀行口座情報
     bank_name = models.CharField(max_length=100, blank=True, verbose_name='銀行名')

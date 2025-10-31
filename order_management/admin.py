@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import (
     Project, CashFlowTransaction, ForecastScenario,
     ProjectProgress, Report, SeasonalityIndex, UserProfile,
-    Comment, Notification
+    Comment, Notification, ClientCompany, ContractorReview,
+    ApprovalLog, ChecklistTemplate, ProjectChecklist
 )
 
 
@@ -481,3 +482,166 @@ class NotificationAdmin(admin.ModelAdmin):
         }),
     )
 
+
+
+# =============================================================================
+# Phase 8: 業務フロー最適化
+# =============================================================================
+
+@admin.register(ClientCompany)
+class ClientCompanyAdmin(admin.ModelAdmin):
+    """元請会社管理"""
+    list_display = [
+        'company_name', 'contact_person', 'phone', 'email',
+        'approval_threshold', 'is_active', 'get_total_projects',
+        'created_at'
+    ]
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['company_name', 'contact_person', 'email', 'phone']
+
+    fieldsets = (
+        ('基本情報', {
+            'fields': ('company_name', 'contact_person', 'email', 'phone', 'address', 'is_active')
+        }),
+        ('鍵受け渡し設定', {
+            'fields': ('default_key_handover_location', 'key_handover_notes')
+        }),
+        ('完了報告シート', {
+            'fields': ('completion_report_template', 'completion_report_notes')
+        }),
+        ('承認設定', {
+            'fields': ('approval_threshold',)
+        }),
+        ('運用ルール', {
+            'fields': ('special_notes',)
+        }),
+        ('タイムスタンプ', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['created_at', 'updated_at']
+    list_editable = ['is_active']
+
+    def get_total_projects(self, obj):
+        return obj.get_total_projects()
+    get_total_projects.short_description = '総案件数'
+
+
+@admin.register(ContractorReview)
+class ContractorReviewAdmin(admin.ModelAdmin):
+    """職人評価管理"""
+    list_display = [
+        'contractor', 'project', 'overall_rating', 'quality_score',
+        'speed_score', 'communication_score', 'would_recommend',
+        'reviewed_by', 'reviewed_at'
+    ]
+    list_filter = ['overall_rating', 'would_recommend', 'reviewed_at']
+    search_fields = ['contractor__name', 'project__management_no', 'review_comment']
+    date_hierarchy = 'reviewed_at'
+
+    fieldsets = (
+        ('基本情報', {
+            'fields': ('contractor', 'project')
+        }),
+        ('評価', {
+            'fields': (
+                'overall_rating', 'quality_score', 'speed_score',
+                'communication_score', 'would_recommend'
+            )
+        }),
+        ('コメント', {
+            'fields': ('review_comment',)
+        }),
+        ('メタ情報', {
+            'fields': ('reviewed_by', 'reviewed_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['reviewed_at', 'updated_at']
+
+
+@admin.register(ApprovalLog)
+class ApprovalLogAdmin(admin.ModelAdmin):
+    """承認履歴管理"""
+    list_display = [
+        'project', 'approval_type', 'status', 'requester',
+        'approver', 'amount', 'requested_at', 'approved_at'
+    ]
+    list_filter = ['approval_type', 'status', 'requested_at']
+    search_fields = [
+        'project__management_no', 'project__site_name',
+        'requester__username', 'approver__username'
+    ]
+    date_hierarchy = 'requested_at'
+
+    fieldsets = (
+        ('案件情報', {
+            'fields': ('project', 'approval_type', 'status', 'amount')
+        }),
+        ('申請情報', {
+            'fields': ('requester', 'request_reason', 'requested_at')
+        }),
+        ('承認情報', {
+            'fields': ('approver', 'approval_comment', 'rejection_reason', 'approved_at')
+        }),
+    )
+
+    readonly_fields = ['requested_at', 'approved_at']
+
+
+@admin.register(ChecklistTemplate)
+class ChecklistTemplateAdmin(admin.ModelAdmin):
+    """チェックリストテンプレート管理"""
+    list_display = ['name', 'work_type', 'is_active', 'created_at', 'updated_at']
+    list_filter = ['work_type', 'is_active', 'created_at']
+    search_fields = ['name', 'work_type', 'description']
+
+    fieldsets = (
+        ('基本情報', {
+            'fields': ('name', 'work_type', 'description', 'is_active')
+        }),
+        ('チェック項目', {
+            'fields': ('items',)
+        }),
+        ('タイムスタンプ', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['created_at', 'updated_at']
+    list_editable = ['is_active']
+
+
+@admin.register(ProjectChecklist)
+class ProjectChecklistAdmin(admin.ModelAdmin):
+    """案件チェックリスト管理"""
+    list_display = ['project', 'template', 'get_completion_rate', 'completed_at', 'created_at']
+    list_filter = ['completed_at', 'created_at']
+    search_fields = ['project__management_no', 'project__site_name', 'template__name']
+    date_hierarchy = 'created_at'
+
+    fieldsets = (
+        ('基本情報', {
+            'fields': ('project', 'template')
+        }),
+        ('チェック項目', {
+            'fields': ('items',)
+        }),
+        ('完了情報', {
+            'fields': ('completed_at',)
+        }),
+        ('タイムスタンプ', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['created_at', 'updated_at']
+
+    def get_completion_rate(self, obj):
+        return f"{obj.get_completion_rate()}%"
+    get_completion_rate.short_description = '完了率'
