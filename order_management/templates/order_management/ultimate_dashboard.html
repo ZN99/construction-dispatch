@@ -623,31 +623,31 @@
                 <!-- プロジェクト統計 - V字回復ストーリー -->
                 <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="kpi-card animate-in">
-                        <div class="kpi-value">127</div>
+                        <div class="kpi-value">{{ total_projects|default:0 }}</div>
                         <div class="kpi-label">総プロジェクト数</div>
-                        <div class="kpi-change positive">
-                            +23 今月
+                        <div class="kpi-change {% if new_projects_this_month > 0 %}positive{% endif %}">
+                            {% if new_projects_this_month > 0 %}+{% endif %}{{ new_projects_this_month|default:0 }} 今月
                         </div>
                     </div>
                 </div>
 
                 <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="kpi-card animate-in" style="animation-delay: 0.1s">
-                        <div class="kpi-value">34</div>
+                        <div class="kpi-value">{{ active_projects|default:0 }}</div>
                         <div class="kpi-label">進行中案件</div>
-                        <div class="kpi-change positive">
-                            過去最高
+                        <div class="kpi-change">
+                            工事中
                         </div>
                     </div>
                 </div>
 
-                <!-- 財務統計 - 絶好調の数字 -->
+                <!-- 財務統計 -->
                 <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="kpi-card animate-in" style="animation-delay: 0.2s">
-                        <div class="kpi-value">¥5,234,000</div>
+                        <div class="kpi-value">¥{{ receipt_total|default:0|intcomma }}</div>
                         <div class="kpi-label">月間売上高</div>
-                        <div class="kpi-change positive">
-                            +142% 前年比
+                        <div class="kpi-change {% if receipt_received > 0 %}positive{% endif %}">
+                            うち入金済 ¥{{ receipt_received|default:0|intcomma }}
                         </div>
                     </div>
                 </div>
@@ -655,10 +655,10 @@
                 {% if user|can_view_profit %}
                 <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="kpi-card animate-in" style="animation-delay: 0.3s">
-                        <div class="kpi-value">¥895,000</div>
+                        <div class="kpi-value">¥{{ net_cashflow|default:0|intcomma }}</div>
                         <div class="kpi-label">月間純利益</div>
-                        <div class="kpi-change positive">
-                            17.1% 利益率
+                        <div class="kpi-change {% if net_cashflow > 0 %}positive{% else %}negative{% endif %}">
+                            {% widthratio net_cashflow 1 100 %}{% if receipt_total > 0 %}{% widthratio net_cashflow receipt_total 100 %}%{% endif %} 利益率
                         </div>
                     </div>
                 </div>
@@ -666,13 +666,13 @@
 
                 <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="kpi-card animate-in" style="animation-delay: 0.4s">
-                        <div class="kpi-value">¥2,480,000</div>
+                        <div class="kpi-value">¥{{ projected_cashflow|default:0|intcomma }}</div>
                         <div class="kpi-label">キャッシュフロー</div>
-                        <div class="kpi-change positive">
+                        <div class="kpi-change {% if consecutive_profit_months > 0 %}positive{% else %}negative{% endif %}">
                             {% if consecutive_profit_months > 0 %}
                                 {{ consecutive_profit_months }}ヶ月連続黒字
                             {% else %}
-                                前月は赤字
+                                要注意
                             {% endif %}
                         </div>
                     </div>
@@ -680,10 +680,10 @@
 
                 <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="kpi-card animate-in" style="animation-delay: 0.5s">
-                        <div class="kpi-value">¥8,920,000</div>
+                        <div class="kpi-value">¥{{ pipeline_value|default:0|intcomma }}</div>
                         <div class="kpi-label">受注見込パイプライン</div>
-                        <div class="kpi-change positive">
-                            向こう3ヶ月分
+                        <div class="kpi-change">
+                            見込案件合計
                         </div>
                     </div>
                 </div>
