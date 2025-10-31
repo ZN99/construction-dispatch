@@ -546,45 +546,49 @@ class Project(models.Model):
         return {'phase': phase, 'color': color, 'percentage': percentage}
 
     def get_progress_details(self):
-        """進捗の詳細情報を返す（動的ステップを含む）"""
-        active_steps = self.progress_steps.filter(is_active=True).order_by('order', 'template__order')
-        completed_steps = active_steps.filter(is_completed=True)
+        """進捗の詳細情報を返す（基本ステップベース）"""
+        # 基本ステップの完了状況を取得
+        steps = [
+            {
+                'name': '見積書発行',
+                'completed': self.estimate_issued_date is not None or self.estimate_not_required,
+                'completed_date': self.estimate_issued_date,
+                'icon': 'fa-file-invoice'
+            },
+            {
+                'name': '契約',
+                'completed': self.contract_date is not None,
+                'completed_date': self.contract_date,
+                'icon': 'fa-handshake'
+            },
+            {
+                'name': '工事開始',
+                'completed': self.work_start_date is not None and self.work_start_date <= timezone.now().date(),
+                'completed_date': self.work_start_date if self.work_start_date and self.work_start_date <= timezone.now().date() else None,
+                'icon': 'fa-hammer'
+            },
+            {
+                'name': '工事終了',
+                'completed': self.work_end_date is not None and self.work_end_date <= timezone.now().date(),
+                'completed_date': self.work_end_date if self.work_end_date and self.work_end_date <= timezone.now().date() else None,
+                'icon': 'fa-check-circle'
+            },
+            {
+                'name': '請求書発行',
+                'completed': self.invoice_issued,
+                'completed_date': None,  # 請求書発行日がない場合
+                'icon': 'fa-file-invoice-dollar'
+            }
+        ]
 
-        # 実際のステップ数を使用する
-        # additional_itemsのstep_orderはUIの表示順序を定義しているが、
-        # 実際のステップがすべて作成されているとは限らない
-        total_steps = active_steps.count()
-
-        # step_orderに現場調査があるが、実際のステップが作成されていない場合の対応
-        if self.additional_items and 'step_order' in self.additional_items:
-            step_order = self.additional_items.get('step_order', [])
-
-            # step_orderに現場調査が含まれているか確認
-            has_site_survey_in_order = any(s.get('step') == 'site_survey' for s in step_order)
-
-            # 実際のステップに現場調査が含まれているか確認
-            has_site_survey_step = active_steps.filter(template__name='現場調査').exists()
-
-            # step_orderに現場調査があるが、実際のステップにない場合
-            if has_site_survey_in_order and not has_site_survey_step:
-                # UIの整合性のため、仮想的に1ステップ追加
-                total_steps += 1
-
-        completed_steps_count = completed_steps.count()
+        completed_steps_count = sum(1 for step in steps if step['completed'])
+        total_steps = len(steps)
 
         return {
             'total_steps': total_steps,
             'completed_steps': completed_steps_count,
             'remaining_steps': total_steps - completed_steps_count,
-            'steps': [
-                {
-                    'name': step.template.name,
-                    'completed': step.is_completed,
-                    'completed_date': step.completed_date,
-                    'icon': step.template.icon
-                }
-                for step in active_steps
-            ]
+            'steps': steps
         }
 
     def get_days_until_deadline(self):
