@@ -75,6 +75,17 @@ from .views_approval import (
     ApprovalRequestView,
     approval_action
 )
+from .views_review import ContractorReviewCreateView
+from .views_checklist import (
+    ChecklistTemplateListView,
+    ChecklistTemplateCreateView,
+    ChecklistTemplateUpdateView,
+    ChecklistTemplateDeleteView,
+    ProjectChecklistCreateView,
+    ProjectChecklistDetailView,
+    project_checklist_update_item,
+    project_checklist_delete
+)
 
 app_name = 'order_management'
 
@@ -206,4 +217,19 @@ urlpatterns = [
     path('approvals/<int:pk>/', ApprovalDetailView.as_view(), name='approval_detail'),
     path('projects/<int:project_pk>/request-approval/', ApprovalRequestView.as_view(), name='approval_request'),
     path('approvals/<int:pk>/action/', approval_action, name='approval_action'),
+
+    # 職人評価 - Phase 8
+    path('projects/<int:project_pk>/contractors/<int:contractor_pk>/review/',
+         ContractorReviewCreateView.as_view(),
+         name='contractor_review_create'),
+
+    # チェックリスト管理 - Phase 8
+    path('checklists/templates/', ChecklistTemplateListView.as_view(), name='checklist_template_list'),
+    path('checklists/templates/create/', ChecklistTemplateCreateView.as_view(), name='checklist_template_create'),
+    path('checklists/templates/<int:pk>/edit/', ChecklistTemplateUpdateView.as_view(), name='checklist_template_update'),
+    path('checklists/templates/<int:pk>/delete/', ChecklistTemplateDeleteView.as_view(), name='checklist_template_delete'),
+    path('projects/<int:project_pk>/checklists/create/', ProjectChecklistCreateView.as_view(), name='project_checklist_create'),
+    path('projects/<int:project_pk>/checklists/<int:checklist_pk>/', ProjectChecklistDetailView.as_view(), name='project_checklist_detail'),
+    path('projects/<int:project_pk>/checklists/<int:checklist_pk>/update-item/', project_checklist_update_item, name='project_checklist_update_item'),
+    path('projects/<int:project_pk>/checklists/<int:checklist_pk>/delete/', project_checklist_delete, name='project_checklist_delete'),
 ]

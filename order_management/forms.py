@@ -1,6 +1,6 @@
 from django import forms
 from django.utils import timezone
-from .models import Project, FixedCost, VariableCost, ClientCompany, ApprovalLog
+from .models import Project, FixedCost, VariableCost, ClientCompany, ApprovalLog, ContractorReview, ChecklistTemplate, ProjectChecklist
 
 
 class ProjectForm(forms.ModelForm):
@@ -349,3 +349,102 @@ class ApprovalActionForm(forms.Form):
             raise forms.ValidationError('却下する場合は理由を入力してください。')
 
         return cleaned_data
+
+
+class ContractorReviewForm(forms.ModelForm):
+    """職人評価フォーム - Phase 8"""
+
+    class Meta:
+        model = ContractorReview
+        fields = [
+            'overall_rating', 'quality_score', 'speed_score',
+            'communication_score', 'review_comment', 'would_recommend'
+        ]
+        widgets = {
+            'overall_rating': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'max': '5',
+                'placeholder': '1〜5'
+            }),
+            'quality_score': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'max': '5',
+                'placeholder': '1〜5'
+            }),
+            'speed_score': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'max': '5',
+                'placeholder': '1〜5'
+            }),
+            'communication_score': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'max': '5',
+                'placeholder': '1〜5'
+            }),
+            'review_comment': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': '評価コメントを入力してください'
+            }),
+            'would_recommend': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in ['overall_rating', 'quality_score', 'speed_score', 'communication_score']:
+            self.fields[field_name].required = True
+
+
+class ChecklistTemplateForm(forms.ModelForm):
+    """チェックリストテンプレートフォーム - Phase 8"""
+
+    class Meta:
+        model = ChecklistTemplate
+        fields = ['name', 'work_type', 'description', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'テンプレート名を入力'
+            }),
+            'work_type': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '施工種別を入力（例：解体工事、電気工事）'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'テンプレートの説明を入力'
+            }),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['name'].required = True
+        self.fields['work_type'].required = True
+        if not self.instance.pk:
+            self.fields['is_active'].initial = True
+
+
+class ProjectChecklistSelectForm(forms.Form):
+    """案件チェックリスト選択フォーム - Phase 8"""
+    template = forms.ModelChoiceField(
+        queryset=ChecklistTemplate.objects.filter(is_active=True),
+        required=True,
+        empty_label="テンプレートを選択してください",
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='チェックリストテンプレート'
+    )
+
+    def __init__(self, *args, **kwargs):
+        work_type = kwargs.pop('work_type', None)
+        super().__init__(*args, **kwargs)
+        if work_type:
+            self.fields['template'].queryset = ChecklistTemplate.objects.filter(
+                is_active=True,
+                work_type=work_type
+            )
