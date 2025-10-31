@@ -1,6 +1,6 @@
 from django import forms
 from django.utils import timezone
-from .models import Project, FixedCost, VariableCost, ClientCompany, ApprovalLog, ContractorReview, ChecklistTemplate, ProjectChecklist
+from .models import Project, FixedCost, VariableCost, ClientCompany, ApprovalLog, ContractorReview, ChecklistTemplate, ProjectChecklist, ProjectFile
 
 
 class ProjectForm(forms.ModelForm):
@@ -22,6 +22,10 @@ class ProjectForm(forms.ModelForm):
             'work_start_date': forms.DateInput(attrs={'type': 'date'}),
             'work_end_date': forms.DateInput(attrs={'type': 'date'}),
             'contract_date': forms.DateInput(attrs={'type': 'date'}),
+            # Phase 5 widgets
+            'asap_requested': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'work_date_specified': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'invoice_status': forms.Select(attrs={'class': 'form-select'}),
             # Phase 8 widgets
             'client_company': forms.Select(attrs={'class': 'form-select', 'id': 'id_client_company'}),
             'key_handover_location': forms.Textarea(attrs={'rows': 2}),
@@ -39,7 +43,8 @@ class ProjectForm(forms.ModelForm):
         required_fields = [
             'site_name', 'work_type',
             'client_name',  # 旧: contractor_name
-            'project_manager'
+            'project_manager',
+            'payment_due_date'  # Phase 5: 必須化
         ]
         for field_name in required_fields:
             if field_name in self.fields:
@@ -448,3 +453,26 @@ class ProjectChecklistSelectForm(forms.Form):
                 is_active=True,
                 work_type=work_type
             )
+
+class ProjectFileUploadForm(forms.ModelForm):
+    """案件ファイルアップロードフォーム - Phase 5"""
+
+    class Meta:
+        model = ProjectFile
+        fields = ['file', 'description']
+        widgets = {
+            'file': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'ファイルの説明（任意）'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['file'].required = True
+        self.fields['description'].required = False

@@ -11,6 +11,9 @@ python manage.py collectstatic --noinput
 echo "Running migrations..."
 python manage.py migrate
 
+echo "Generating test data (50 projects)..."
+python manage.py create_dummy_data --count 50
+
 echo "Creating initial data..."
 python initial_data.py
 

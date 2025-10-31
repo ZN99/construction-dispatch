@@ -28,9 +28,9 @@ def create_survey_data():
 
     # 既存のプロジェクトを取得
     projects = Project.objects.filter(
-        contractor_name__isnull=False
+        client_name__isnull=False
     ).exclude(
-        contractor_name=''
+        client_name=''
     )[:20]  # 最初の20件に調査データを作成
 
     if not projects.exists():

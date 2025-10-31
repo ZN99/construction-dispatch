@@ -3,7 +3,7 @@ from .models import (
     Project, CashFlowTransaction, ForecastScenario,
     ProjectProgress, Report, SeasonalityIndex, UserProfile,
     Comment, Notification, ClientCompany, ContractorReview,
-    ApprovalLog, ChecklistTemplate, ProjectChecklist
+    ApprovalLog, ChecklistTemplate, ProjectChecklist, ProjectFile
 )
 
 
@@ -645,3 +645,31 @@ class ProjectChecklistAdmin(admin.ModelAdmin):
     def get_completion_rate(self, obj):
         return f"{obj.get_completion_rate()}%"
     get_completion_rate.short_description = '完了率'
+
+
+@admin.register(ProjectFile)
+class ProjectFileAdmin(admin.ModelAdmin):
+    """案件ファイル管理 - Phase 5"""
+    list_display = ['project', 'file_name', 'get_file_size', 'file_type', 'uploaded_by', 'uploaded_at']
+    list_filter = ['file_type', 'uploaded_at', 'uploaded_by']
+    search_fields = ['project__management_no', 'project__site_name', 'file_name', 'description']
+    date_hierarchy = 'uploaded_at'
+
+    fieldsets = (
+        ('基本情報', {
+            'fields': ('project', 'file', 'file_name', 'file_type')
+        }),
+        ('詳細', {
+            'fields': ('description', 'file_size')
+        }),
+        ('アップロード情報', {
+            'fields': ('uploaded_by', 'uploaded_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['file_size', 'uploaded_at']
+
+    def get_file_size(self, obj):
+        return obj.get_file_size_display()
+    get_file_size.short_description = 'ファイルサイズ'

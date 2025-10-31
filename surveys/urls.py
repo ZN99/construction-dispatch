@@ -25,7 +25,8 @@ urlpatterns = [
 
     # 現地調査スケジュール管理
     path('schedule/', views.SurveyScheduleView.as_view(), name='survey_schedule'),
-    path('form/<int:pk>/', SurveyFormRedirectView.as_view(), name='survey_form'),
+    path('form/<int:pk>/', views.SurveyFormView.as_view(), name='survey_form'),
+    path('form/<int:pk>/redirect/', SurveyFormRedirectView.as_view(), name='survey_form_redirect'),
 
     # 既存のURL（互換性のため維持）
     path('', views.SurveyListView.as_view(), name='survey_list_compat'),

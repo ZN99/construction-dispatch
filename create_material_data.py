@@ -26,9 +26,9 @@ def create_material_data():
 
     # 既存のプロジェクトを取得
     projects = Project.objects.filter(
-        contractor_name__isnull=False
+        client_name__isnull=False
     ).exclude(
-        contractor_name=''
+        client_name=''
     )[:25]  # 最初の25件に資材データを作成
 
     if not projects.exists():

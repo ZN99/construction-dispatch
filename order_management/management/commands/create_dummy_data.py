@@ -57,7 +57,7 @@ class Command(BaseCommand):
             admin = User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
             UserProfile.objects.get_or_create(
                 user=admin,
-                defaults={'role': 'executive', 'department': '経営管理部'}
+                defaults={'roles': ['executive', 'headquarters']}
             )
             self.stdout.write('✓ 役員ユーザー作成: admin/admin123')
 
@@ -74,7 +74,7 @@ class Command(BaseCommand):
                 )
                 UserProfile.objects.get_or_create(
                     user=user,
-                    defaults={'role': 'sales', 'department': '営業部'}
+                    defaults={'roles': ['headquarters']}
                 )
 
         # 職人発注担当
@@ -84,7 +84,7 @@ class Command(BaseCommand):
             )
             UserProfile.objects.get_or_create(
                 user=user,
-                defaults={'role': 'craftsman_order', 'department': '施工管理部'}
+                defaults={'roles': ['craftsman_order', 'headquarters']}
             )
 
         # 経理担当
@@ -94,7 +94,7 @@ class Command(BaseCommand):
             )
             UserProfile.objects.get_or_create(
                 user=user,
-                defaults={'role': 'accounting', 'department': '経理部'}
+                defaults={'roles': ['accounting', 'headquarters']}
             )
 
     def create_dummy_projects(self, count):
@@ -160,18 +160,11 @@ class Command(BaseCommand):
                 work_start_date = today - timedelta(days=random.randint(30, 180))
                 work_end_date = None
 
-            # 入金・出金日の設定
+            # 入金日の設定
             if status in ['進行中', '完工']:
                 payment_due_date = work_end_date + timedelta(days=random.randint(30, 60)) if work_end_date else None
-                payment_status = random.choice(['pending', 'partial', 'completed'])
-
-                disbursement_due_date = work_end_date + timedelta(days=random.randint(7, 30)) if work_end_date else None
-                disbursement_status = random.choice(['pending', 'partial', 'completed'])
             else:
-                payment_due_date = None
-                payment_status = 'pending'
-                disbursement_due_date = None
-                disbursement_status = 'pending'
+                payment_due_date = work_end_date + timedelta(days=random.randint(30, 60)) if work_end_date else today + timedelta(days=random.randint(30, 90))
 
             try:
                 project = Project.objects.create(
@@ -184,10 +177,6 @@ class Command(BaseCommand):
                     work_start_date=work_start_date,
                     work_end_date=work_end_date,
                     payment_due_date=payment_due_date,
-                    payment_status=payment_status,
-                    disbursement_due_date=disbursement_due_date,
-                    disbursement_status=disbursement_status,
-                    arrangement_status=random.choice(['pending', 'partial', 'completed']),
                     notes=f'ダミーデータ #{i+1}',
                     created_at=timezone.now() - timedelta(days=random.randint(0, 90))
                 )

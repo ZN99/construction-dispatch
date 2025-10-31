@@ -4598,6 +4598,15 @@ $(document).ready(function() {
         }, 100);
     });
 });
+
+// ファイル削除確認 - Phase 5
+function confirmFileDelete(fileId, fileName) {
+    if (confirm(`ファイル「${fileName}」を削除してもよろしいですか？\n\nこの操作は取り消せません。`)) {
+        const form = document.getElementById('fileDeleteForm');
+        form.action = `/orders/projects/${projectId}/files/${fileId}/delete/`;
+        form.submit();
+    }
+}
 </script>
 
 <!-- 担当者管理モーダル -->
@@ -4688,6 +4697,103 @@ $(document).ready(function() {
         </div>
     </div>
 </div>
+
+<!-- 案件ファイル管理セクション - Phase 5 -->
+<div class="container mt-5 mb-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-info text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-folder-open me-2"></i>ファイル管理
+                </h5>
+                <a href="{% url 'order_management:project_file_upload' project.pk %}" class="btn btn-light btn-sm">
+                    <i class="fas fa-cloud-upload-alt me-1"></i>ファイルアップロード
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if project.files.all %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="40%">ファイル名</th>
+                                <th width="15%">サイズ</th>
+                                <th width="20%">アップロード者</th>
+                                <th width="15%">アップロード日時</th>
+                                <th width="10%" class="text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for file in project.files.all %}
+                            <tr>
+                                <td>
+                                    {% if 'pdf' in file.file_type %}
+                                        <i class="fas fa-file-pdf text-danger me-2"></i>
+                                    {% elif 'word' in file.file_type or 'document' in file.file_type %}
+                                        <i class="fas fa-file-word text-primary me-2"></i>
+                                    {% elif 'excel' in file.file_type or 'spreadsheet' in file.file_type %}
+                                        <i class="fas fa-file-excel text-success me-2"></i>
+                                    {% elif 'image' in file.file_type or 'jpg' in file.file_type or 'png' in file.file_type %}
+                                        <i class="fas fa-file-image text-info me-2"></i>
+                                    {% else %}
+                                        <i class="fas fa-file text-secondary me-2"></i>
+                                    {% endif %}
+                                    <strong>{{ file.file_name }}</strong>
+                                    {% if file.description %}
+                                        <br><small class="text-muted ms-4">{{ file.description }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ file.get_file_size_display }}</span>
+                                </td>
+                                <td>
+                                    {% if file.uploaded_by %}
+                                        <i class="fas fa-user-circle me-1"></i>{{ file.uploaded_by.get_full_name|default:file.uploaded_by.username }}
+                                    {% else %}
+                                        <span class="text-muted">不明</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ file.uploaded_at|date:"Y/m/d H:i" }}</small>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'order_management:project_file_download' project.pk file.pk %}"
+                                           class="btn btn-outline-primary"
+                                           title="ダウンロード">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <button type="button"
+                                                class="btn btn-outline-danger"
+                                                onclick="confirmFileDelete({{ file.pk }}, '{{ file.file_name }}')"
+                                                title="削除">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-folder-open fa-3x mb-3"></i>
+                    <p class="mb-2">まだファイルがアップロードされていません</p>
+                    <a href="{% url 'order_management:project_file_upload' project.pk %}" class="btn btn-info">
+                        <i class="fas fa-cloud-upload-alt me-1"></i>最初のファイルをアップロード
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ファイル削除確認用のフォーム (非表示) - Phase 5 -->
+<form id="fileDeleteForm" method="post" style="display: none;">
+    {% csrf_token %}
+</form>
 
 <!-- 案件チャット・コメントセクション -->
 <div class="container mt-5 mb-5">
@@ -4941,6 +5047,15 @@ document.getElementById('comment-content').addEventListener('keydown', function(
         postComment();
     }
 });
+
+// ファイル削除確認 - Phase 5
+function confirmFileDelete(fileId, fileName) {
+    if (confirm(`ファイル「${fileName}」を削除してもよろしいですか？\n\nこの操作は取り消せません。`)) {
+        const form = document.getElementById('fileDeleteForm');
+        form.action = `/orders/projects/${projectId}/files/${fileId}/delete/`;
+        form.submit();
+    }
+}
 </script>
 
 {% endblock %}

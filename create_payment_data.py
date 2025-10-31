@@ -27,9 +27,9 @@ def create_payment_data():
 
     # 既存のプロジェクトを取得
     projects = Project.objects.filter(
-        contractor_name__isnull=False
+        client_name__isnull=False
     ).exclude(
-        contractor_name=''
+        client_name=''
     )[:30]  # 最初の30件に支払いデータを作成
 
     if not projects.exists():
@@ -76,11 +76,11 @@ def create_payment_data():
         try:
             # 既存の下請け契約を取得または作成
             contractor, _ = Contractor.objects.get_or_create(
-                name=project.contractor_name,
+                name=project.client_name,
                 defaults={
                     'contact_person': '担当者',
                     'phone': '03-0000-0000',
-                    'email': f"{project.contractor_name.replace('株式会社', '').replace(' ', '')}@example.com",
+                    'email': f"{project.client_name.replace('株式会社', '').replace(' ', '')}@example.com",
                     'specialties': project.work_type or '一般工事',
                     'is_active': True
                 }

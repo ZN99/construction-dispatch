@@ -49,8 +49,19 @@ class Project(models.Model):
 
     # スケジュール
     payment_due_date = models.DateField(
-        null=True, blank=True, verbose_name='入金予定日'
+        null=True, blank=False, verbose_name='入金予定日'  # Phase 5: 必須化
     )
+
+    # Phase 5: 施工日入力方法の改善
+    asap_requested = models.BooleanField(
+        default=False, verbose_name='最短希望',
+        help_text='できるだけ早く施工を希望'
+    )
+    work_date_specified = models.BooleanField(
+        default=False, verbose_name='施工日指定あり',
+        help_text='施工日を具体的に指定する'
+    )
+
     work_start_date = models.DateField(
         null=True, blank=True, verbose_name='工事開始日'
     )
@@ -69,6 +80,17 @@ class Project(models.Model):
 
     # 請求・経費管理
     invoice_issued = models.BooleanField(default=False, verbose_name='請求書発行')
+
+    # Phase 5: 請求書発行ステータス管理
+    invoice_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('not_issued', '未発行'),
+            ('issued', '発行済み'),
+        ],
+        default='not_issued',
+        verbose_name='請求書発行ステータス'
+    )
     expense_item_1 = models.CharField(
         max_length=100, blank=True, verbose_name='諸経費項目①'
     )
@@ -2261,3 +2283,60 @@ class ProjectChecklist(models.Model):
         completed = sum(1 for item in self.items if item.get('completed', False))
         return int((completed / len(self.items)) * 100) if self.items else 0
 
+
+
+class ProjectFile(models.Model):
+    """案件ファイル添付 - Phase 5"""
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='files',
+        verbose_name='案件'
+    )
+    file = models.FileField(
+        upload_to='project_files/%Y/%m/',
+        verbose_name='ファイル'
+    )
+    file_name = models.CharField(
+        max_length=255,
+        verbose_name='ファイル名'
+    )
+    file_size = models.IntegerField(
+        verbose_name='ファイルサイズ（バイト）'
+    )
+    file_type = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='ファイルタイプ'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='説明'
+    )
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='アップロード者'
+    )
+    uploaded_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='アップロード日時'
+    )
+
+    class Meta:
+        verbose_name = '案件ファイル'
+        verbose_name_plural = '案件ファイル一覧'
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f"{self.project.management_no} - {self.file_name}"
+
+    def get_file_size_display(self):
+        """ファイルサイズを人間が読める形式で表示"""
+        size = self.file_size
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
