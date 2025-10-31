@@ -62,17 +62,57 @@ class UltimateDashboardView(TemplateView):
         new_projects_this_month = this_month_projects.count()
         new_orders_this_month = this_month_projects.filter(project_status='完工').count()
 
-        # 進行中案件（工事中）
-        ongoing_projects = Project.objects.filter(
+        # Phase 8: 優先度フィルタリング
+        priority_filter = self.request.GET.get('priority')
+        approval_filter = self.request.GET.get('approval_status')
+
+        # 進行中案件（工事中）- Phase 8: 優先度順にソート
+        ongoing_query = Project.objects.filter(
             work_start_date__lte=today,
             work_end_date__gte=today
-        ).order_by('work_end_date')[:10]
+        )
 
-        # 近日開始予定案件
-        upcoming_projects = Project.objects.filter(
+        if priority_filter == 'high':
+            ongoing_query = ongoing_query.filter(priority_score__gte=50)
+        elif priority_filter == 'medium':
+            ongoing_query = ongoing_query.filter(priority_score__gte=20, priority_score__lt=50)
+        elif priority_filter == 'low':
+            ongoing_query = ongoing_query.filter(priority_score__lt=20)
+
+        if approval_filter:
+            ongoing_query = ongoing_query.filter(approval_status=approval_filter)
+
+        ongoing_projects = ongoing_query.order_by('-priority_score', 'work_end_date')[:10]
+
+        # 近日開始予定案件 - Phase 8: 優先度順にソート
+        upcoming_query = Project.objects.filter(
             work_start_date__gt=today,
             work_start_date__lte=today + timedelta(days=30)
-        ).order_by('work_start_date')[:10]
+        )
+
+        if priority_filter == 'high':
+            upcoming_query = upcoming_query.filter(priority_score__gte=50)
+        elif priority_filter == 'medium':
+            upcoming_query = upcoming_query.filter(priority_score__gte=20, priority_score__lt=50)
+        elif priority_filter == 'low':
+            upcoming_query = upcoming_query.filter(priority_score__lt=20)
+
+        if approval_filter:
+            upcoming_query = upcoming_query.filter(approval_status=approval_filter)
+
+        upcoming_projects = upcoming_query.order_by('-priority_score', 'work_start_date')[:10]
+
+        # Phase 8: 高優先度案件（priority_score >= 70）
+        high_priority_projects = Project.objects.filter(
+            priority_score__gte=70
+        ).exclude(
+            project_status='完工'
+        ).order_by('-priority_score')[:5]
+
+        # Phase 8: 承認待ち案件
+        pending_approval_projects = Project.objects.filter(
+            approval_status='pending'
+        ).order_by('-order_amount')[:5]
 
         # 月別推移データ（過去6ヶ月）
         monthly_trends = []
@@ -278,6 +318,12 @@ class UltimateDashboardView(TemplateView):
             'ongoing_projects': ongoing_projects,
             'upcoming_projects': upcoming_projects,
             'monthly_trends': monthly_trends,
+
+            # Phase 8: 優先度管理
+            'high_priority_projects': high_priority_projects,
+            'pending_approval_projects': pending_approval_projects,
+            'priority_filter': priority_filter or '',
+            'approval_filter': approval_filter or '',
 
             # 財務データ
             'receipt_total': receipt_total,
