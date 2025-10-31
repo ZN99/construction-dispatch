@@ -276,7 +276,63 @@ class Project(models.Model):
             Decimal(str(self.order_amount))
         )
 
+        # Phase 8: 元請会社連携処理
+        if self.client_company:
+            # 鍵受け渡し場所のデフォルト値設定
+            if not self.key_handover_location and self.client_company.default_key_handover_location:
+                self.key_handover_location = self.client_company.default_key_handover_location
+
+            # 承認必要チェック
+            if self.order_amount >= self.client_company.approval_threshold:
+                self.requires_approval = True
+                if self.approval_status == 'not_required':
+                    self.approval_status = 'pending'
+            else:
+                self.requires_approval = False
+                if self.approval_status == 'pending':
+                    self.approval_status = 'not_required'
+
+        # Phase 8: 優先度スコア計算
+        self.priority_score = self._calculate_priority_score()
+
         super().save(*args, **kwargs)
+
+    def _calculate_priority_score(self):
+        """優先度スコアを計算（高いほど優先）"""
+        score = 0
+
+        # 金額ベース（100万円ごとに10ポイント）
+        if self.order_amount:
+            score += int(self.order_amount / 1000000) * 10
+
+        # 工期の緊急度（開始日が近いほど高得点）
+        if self.work_start_date:
+            days_until_start = (self.work_start_date - timezone.now().date()).days
+            if days_until_start < 0:
+                # 既に開始日を過ぎている
+                score += 100
+            elif days_until_start <= 3:
+                score += 50
+            elif days_until_start <= 7:
+                score += 30
+            elif days_until_start <= 14:
+                score += 10
+
+        # ステータスによる重み付け
+        status_weights = {
+            '施工日待ち': 40,  # 緊急度高
+            '進行中': 30,
+            'ネタ': 10,
+            '完工': 0,
+            'NG': 0,
+        }
+        score += status_weights.get(self.project_status, 0)
+
+        # 承認待ちは優先度を上げる
+        if self.approval_status == 'pending':
+            score += 20
+
+        return score
 
     def get_status_color(self):
         """ステータスに応じた背景色を返す"""

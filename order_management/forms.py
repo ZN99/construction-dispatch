@@ -1,12 +1,18 @@
 from django import forms
 from django.utils import timezone
-from .models import Project, FixedCost, VariableCost
+from .models import Project, FixedCost, VariableCost, ClientCompany
 
 
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
-        exclude = ['management_no', 'billing_amount', 'amount_difference', 'created_at', 'updated_at']
+        exclude = [
+            'management_no', 'billing_amount', 'amount_difference',
+            'created_at', 'updated_at',
+            # Phase 8: 自動計算・システム管理フィールド
+            'priority_score', 'requires_approval', 'approval_status',
+            'approved_by', 'approved_at'
+        ]
         widgets = {
             'site_address': forms.Textarea(attrs={'rows': 2}),
             'client_address': forms.Textarea(attrs={'rows': 2}),  # 旧: contractor_address
@@ -16,12 +22,18 @@ class ProjectForm(forms.ModelForm):
             'work_start_date': forms.DateInput(attrs={'type': 'date'}),
             'work_end_date': forms.DateInput(attrs={'type': 'date'}),
             'contract_date': forms.DateInput(attrs={'type': 'date'}),
+            # Phase 8 widgets
+            'client_company': forms.Select(attrs={'class': 'form-select', 'id': 'id_client_company'}),
+            'key_handover_location': forms.Textarea(attrs={'rows': 2}),
+            'key_handover_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'key_handover_notes': forms.Textarea(attrs={'rows': 2}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
-            field.widget.attrs['class'] = 'form-control'
+            if not isinstance(field.widget, (forms.CheckboxInput, forms.Select)):
+                field.widget.attrs['class'] = 'form-control'
 
         # 必須項目の設定
         required_fields = [
@@ -32,6 +44,12 @@ class ProjectForm(forms.ModelForm):
         for field_name in required_fields:
             if field_name in self.fields:
                 self.fields[field_name].required = True
+
+        # Phase 8: 元請会社選択肢
+        if 'client_company' in self.fields:
+            self.fields['client_company'].queryset = ClientCompany.objects.filter(is_active=True).order_by('company_name')
+            self.fields['client_company'].empty_label = "選択してください（任意）"
+            self.fields['client_company'].required = False
 
         # 諸経費金額は必須でない
         if 'expense_amount_1' in self.fields:
@@ -173,4 +191,98 @@ class VariableCostFilterForm(forms.Form):
         required=False,
         empty_label="全ての案件",
         widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+
+class ClientCompanyForm(forms.ModelForm):
+    """元請会社登録・編集フォーム - Phase 8"""
+
+    class Meta:
+        model = ClientCompany
+        fields = [
+            'company_name', 'contact_person', 'email', 'phone', 'address',
+            'default_key_handover_location', 'key_handover_notes',
+            'completion_report_template', 'completion_report_notes',
+            'approval_threshold', 'special_notes', 'is_active'
+        ]
+        widgets = {
+            'company_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '会社名を入力'
+            }),
+            'contact_person': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '担当者名を入力'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'email@example.com'
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '03-1234-5678'
+            }),
+            'address': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': '住所を入力'
+            }),
+            'default_key_handover_location': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': '鍵受け渡し場所（デフォルト）'
+            }),
+            'key_handover_notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': '鍵受け渡しに関する特記事項'
+            }),
+            'completion_report_template': forms.FileInput(attrs={
+                'class': 'form-control'
+            }),
+            'completion_report_notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': '完了報告に関する特記事項'
+            }),
+            'approval_threshold': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '1000000',
+                'min': '0'
+            }),
+            'special_notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': '特記事項・運用ルールなど'
+            }),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # デフォルト値設定
+        if not self.instance.pk:
+            self.fields['is_active'].initial = True
+            self.fields['approval_threshold'].initial = 1000000
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email and '@' not in email:
+            raise forms.ValidationError('正しいメールアドレスを入力してください。')
+        return email
+
+
+class ClientCompanyFilterForm(forms.Form):
+    """元請会社フィルタフォーム - Phase 8"""
+    is_active = forms.ChoiceField(
+        choices=[('', '全て'), ('true', 'アクティブのみ'), ('false', '無効のみ')],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    search = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '会社名で検索'
+        })
     )

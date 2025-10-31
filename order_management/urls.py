@@ -61,6 +61,14 @@ from .views_calendar import (
     performance_monthly_api,
     gantt_data_api
 )
+from .views_client_company import (
+    ClientCompanyListView,
+    ClientCompanyDetailView,
+    ClientCompanyCreateView,
+    ClientCompanyUpdateView,
+    ClientCompanyDeleteView,
+    client_company_api
+)
 
 app_name = 'order_management'
 
@@ -178,4 +186,12 @@ urlpatterns = [
     path('api/performance/monthly/', performance_monthly_api, name='performance_monthly_api'),
     path('gantt/', GanttChartView.as_view(), name='gantt_chart'),
     path('api/gantt/data/', gantt_data_api, name='gantt_data_api'),
+
+    # 元請会社管理 - Phase 8
+    path('client-companies/', ClientCompanyListView.as_view(), name='client_company_list'),
+    path('client-companies/create/', ClientCompanyCreateView.as_view(), name='client_company_create'),
+    path('client-companies/<int:pk>/', ClientCompanyDetailView.as_view(), name='client_company_detail'),
+    path('client-companies/<int:pk>/edit/', ClientCompanyUpdateView.as_view(), name='client_company_update'),
+    path('client-companies/<int:pk>/delete/', ClientCompanyDeleteView.as_view(), name='client_company_delete'),
+    path('api/client-companies/<int:company_id>/', client_company_api, name='client_company_api'),
 ]
