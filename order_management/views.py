@@ -711,7 +711,49 @@ def project_update(request, pk):
 
     if request.method == 'POST':
         # AJAXリクエストの場合はJSONレスポンスを返す
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.POST.get('ajax_save'):
+            # ステップ編集の保存（ajax_save=trueの場合）
+            if request.POST.get('ajax_save'):
+                import json
+
+                # ステップ順序の保存
+                step_order_json = request.POST.get('step_order')
+                if step_order_json:
+                    try:
+                        step_order = json.loads(step_order_json)
+                        if not project.additional_items:
+                            project.additional_items = {}
+                        project.additional_items['step_order'] = step_order
+                    except json.JSONDecodeError:
+                        pass
+
+                # ステップ状態の保存
+                step_states_json = request.POST.get('step_states')
+                if step_states_json:
+                    try:
+                        step_states = json.loads(step_states_json)
+                        # 各ステップの完了状態を保存
+                        for state in step_states:
+                            step_key = state.get('step')
+                            is_completed = state.get('completed', False)
+                            # additional_items内のdynamic_stepsに状態を保存
+                            if not project.additional_items:
+                                project.additional_items = {}
+                            if 'dynamic_steps' not in project.additional_items:
+                                project.additional_items['dynamic_steps'] = {}
+                            if step_key not in project.additional_items['dynamic_steps']:
+                                project.additional_items['dynamic_steps'][step_key] = {}
+                            project.additional_items['dynamic_steps'][step_key]['completed'] = is_completed
+                    except json.JSONDecodeError:
+                        pass
+
+                project.save()
+                return JsonResponse({
+                    'success': True,
+                    'message': '変更を保存しました'
+                })
+
+            # 通常のAJAX更新（フォーム全体）
             form = ProjectForm(request.POST, instance=project)
             if form.is_valid():
                 project = form.save()
