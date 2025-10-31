@@ -43,6 +43,11 @@ from .views_forecast import (
     SeasonalityEditView,
     seasonality_calculate_api
 )
+from .views_user_management import (
+    UserManagementDashboardView,
+    UserRoleEditView,
+    UserRoleQuickEditView
+)
 from .views_report import (
     ReportDashboardView,
     ReportListView,
@@ -100,6 +105,11 @@ urlpatterns = [
     path('login/', HeadquartersLoginView.as_view(), name='login'),
     path('logout/', HeadquartersLogoutView.as_view(), name='logout'),
     path('permission-denied/', PermissionDeniedView.as_view(), name='permission_denied'),
+
+    # ユーザー・ロール管理
+    path('users/', UserManagementDashboardView.as_view(), name='user_management'),
+    path('users/<int:user_id>/role-edit/', UserRoleEditView.as_view(), name='user_role_edit'),
+    path('users/<int:pk>/role-quick-edit/', UserRoleQuickEditView.as_view(), name='user_role_quick_edit'),
 
     # ダッシュボード・案件管理
     path('', UltimateDashboardView.as_view(), name='dashboard'),

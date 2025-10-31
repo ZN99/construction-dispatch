@@ -47,6 +47,9 @@ python create_material_data.py
 echo "Creating comprehensive test data (files, comments, photos)..."
 python create_comprehensive_test_data.py
 
+echo "Creating user profiles and assigning roles..."
+python create_user_profiles.py
+
 # Note: create_survey_data.py creates data but doesn't persist - using create_survey_test_data.py instead
 
 echo "Build completed successfully!"
