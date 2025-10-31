@@ -14,9 +14,9 @@ python manage.py migrate --noinput
 
 # テストデータの生成（既にデータがある場合はスキップ）
 echo "🗄️ データベースの状態を確認中..."
-PROJECT_COUNT=$(python manage.py shell -c "from order_management.models import Project; print(Project.objects.count())" 2>/dev/null || echo "0")
+PROJECT_COUNT=$(python manage.py shell -c "from order_management.models import Project; print(Project.objects.count())" 2>/dev/null | tail -n 1 || echo "0")
 
-if [ "$PROJECT_COUNT" -eq "0" ]; then
+if [ "$PROJECT_COUNT" -eq "0" ] 2>/dev/null; then
     echo "📁 データベースが空です。包括的なテストデータを生成します..."
     python manage.py load_comprehensive_test_data --count 120
     echo "✅ テストデータ生成完了！"
