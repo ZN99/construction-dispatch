@@ -319,9 +319,6 @@ class Project(models.Model):
 
         super().save(*args, **kwargs)
 
-        # ステップ完了状況から進捗率を自動更新
-        self._update_progress_from_steps()
-
     def _calculate_priority_score(self):
         """優先度スコアを計算（高いほど優先）"""
         score = 0
@@ -381,74 +378,21 @@ class Project(models.Model):
         }
         return color_map.get(self.project_status, '#ffffff')
 
-    def calculate_progress_from_steps(self):
-        """ステップの完了状況から進捗率を計算"""
-        # 基本ステップとその完了状況
-        steps = {
-            'estimate': self.estimate_issued_date is not None or self.estimate_not_required,
-            'contract': self.contract_date is not None,
-            'work_start': self.work_start_date is not None and self.work_start_date <= timezone.now().date(),
-            'work_end': self.work_end_date is not None and self.work_end_date <= timezone.now().date(),
-            'invoice': self.invoice_issued,
-        }
+    def get_work_progress_percentage(self):
+        """工事進捗率を計算して返す（実際の進捗ステップベース）"""
+        # 実際の進捗ステップから計算
+        active_steps = self.progress_steps.filter(is_active=True)
+        if not active_steps.exists():
+            # 進捗ステップがない場合は日付ベースで計算
+            return self._get_date_based_progress()
 
-        completed_steps = sum(1 for completed in steps.values() if completed)
-        total_steps = len(steps)
+        total_steps = active_steps.count()
+        completed_steps = active_steps.filter(is_completed=True).count()
 
         if total_steps == 0:
-            return Decimal('0.00')
+            return 0
 
-        return Decimal(str((completed_steps / total_steps) * 100))
-
-    def _update_progress_from_steps(self):
-        """ステップ完了状況からProjectProgressを自動更新"""
-        from order_management.models import ProjectProgress
-
-        # 進捗率を計算
-        progress_rate = self.calculate_progress_from_steps()
-
-        # ステータスを判定
-        if progress_rate == 100:
-            status = 'completed'
-        elif progress_rate >= 80:
-            status = 'on_track'
-        elif progress_rate >= 50:
-            status = 'on_track'
-        else:
-            status = 'on_track'
-
-        # 備考を生成
-        notes = f'ステップ完了状況から自動更新 ({int(progress_rate)}%)'
-
-        # 最新のProjectProgressレコードを取得または作成
-        latest_progress = self.progress_records.order_by('-recorded_date').first()
-
-        if latest_progress and latest_progress.recorded_date == timezone.now().date():
-            # 今日のレコードがあれば更新
-            latest_progress.progress_rate = progress_rate
-            latest_progress.status = status
-            latest_progress.notes = notes
-            latest_progress.save()
-        else:
-            # 新しいレコードを作成
-            ProjectProgress.objects.create(
-                project=self,
-                recorded_date=timezone.now().date(),
-                progress_rate=progress_rate,
-                status=status,
-                notes=notes,
-                recorded_by=None  # システム自動更新
-            )
-
-    def get_work_progress_percentage(self):
-        """工事進捗率を計算して返す（ProjectProgressから取得）"""
-        # 最新の進捗レコードから取得
-        latest_progress = self.progress_records.order_by('-recorded_date').first()
-        if latest_progress:
-            return int(latest_progress.progress_rate)
-
-        # 進捗レコードがない場合はステップベースで計算
-        return int(self.calculate_progress_from_steps())
+        return int((completed_steps / total_steps) * 100)
 
     def _get_date_based_progress(self):
         """日付ベースの進捗計算（フォールバック）"""
@@ -472,23 +416,49 @@ class Project(models.Model):
             return min(100, max(0, int((elapsed_days / total_days) * 100)))
 
     def get_work_phase(self):
-        """現在の工事フェーズを返す（ProjectProgressから判定）"""
-        # 最新の進捗レコードから判定
-        latest_progress = self.progress_records.order_by('-recorded_date').first()
-        if latest_progress:
-            progress = int(latest_progress.progress_rate)
+        """現在の工事フェーズを返す（実際の進捗ステップベース）"""
+        # 実際の進捗ステップから判定
+        active_steps = self.progress_steps.filter(is_active=True)
+        if active_steps.exists():
+            progress = self.get_work_progress_percentage()
+            completed_steps_query = active_steps.filter(is_completed=True)
+            completed_steps_count = completed_steps_query.count()
 
-            # 進捗率に基づくシンプルなフェーズ判定
+            # 完了したステップの内容に基づく判定
             if progress == 0:
                 return '開始前'
             elif progress == 100:
                 return '完了'
-            elif progress < 30:
-                return '初期段階'
-            elif progress < 80:
-                return '施工中'
             else:
-                return '完了間近'
+                # 完了したステップの種類を確認
+                completed_step_names = list(completed_steps_query.values_list('template__name', flat=True))
+
+                # 請求書発行が完了している場合
+                if '請求書発行' in completed_step_names:
+                    return '完了間近'
+                # 工事終了が完了している場合
+                elif '工事終了' in completed_step_names:
+                    return '完了間近'
+                # 工事開始が完了している場合
+                elif '工事開始' in completed_step_names:
+                    if progress >= 60:
+                        return '施工中'
+                    else:
+                        return '着工'
+                # 契約が完了している場合
+                elif '契約' in completed_step_names:
+                    return '契約済み'
+                # 見積書発行のみ完了している場合
+                elif '見積書発行' in completed_step_names:
+                    return '見積済み'
+                # その他の場合
+                else:
+                    if progress < 30:
+                        return '初期段階'
+                    elif progress < 80:
+                        return '施工中'
+                    else:
+                        return '完了間近'
 
         # フォールバック：日付ベース
         if not self.work_start_date or not self.work_end_date:
@@ -546,49 +516,45 @@ class Project(models.Model):
         return {'phase': phase, 'color': color, 'percentage': percentage}
 
     def get_progress_details(self):
-        """進捗の詳細情報を返す（基本ステップベース）"""
-        # 基本ステップの完了状況を取得
-        steps = [
-            {
-                'name': '見積書発行',
-                'completed': self.estimate_issued_date is not None or self.estimate_not_required,
-                'completed_date': self.estimate_issued_date,
-                'icon': 'fa-file-invoice'
-            },
-            {
-                'name': '契約',
-                'completed': self.contract_date is not None,
-                'completed_date': self.contract_date,
-                'icon': 'fa-handshake'
-            },
-            {
-                'name': '工事開始',
-                'completed': self.work_start_date is not None and self.work_start_date <= timezone.now().date(),
-                'completed_date': self.work_start_date if self.work_start_date and self.work_start_date <= timezone.now().date() else None,
-                'icon': 'fa-hammer'
-            },
-            {
-                'name': '工事終了',
-                'completed': self.work_end_date is not None and self.work_end_date <= timezone.now().date(),
-                'completed_date': self.work_end_date if self.work_end_date and self.work_end_date <= timezone.now().date() else None,
-                'icon': 'fa-check-circle'
-            },
-            {
-                'name': '請求書発行',
-                'completed': self.invoice_issued,
-                'completed_date': None,  # 請求書発行日がない場合
-                'icon': 'fa-file-invoice-dollar'
-            }
-        ]
+        """進捗の詳細情報を返す（動的ステップを含む）"""
+        active_steps = self.progress_steps.filter(is_active=True).order_by('order', 'template__order')
+        completed_steps = active_steps.filter(is_completed=True)
 
-        completed_steps_count = sum(1 for step in steps if step['completed'])
-        total_steps = len(steps)
+        # 実際のステップ数を使用する
+        # additional_itemsのstep_orderはUIの表示順序を定義しているが、
+        # 実際のステップがすべて作成されているとは限らない
+        total_steps = active_steps.count()
+
+        # step_orderに現場調査があるが、実際のステップが作成されていない場合の対応
+        if self.additional_items and 'step_order' in self.additional_items:
+            step_order = self.additional_items.get('step_order', [])
+
+            # step_orderに現場調査が含まれているか確認
+            has_site_survey_in_order = any(s.get('step') == 'site_survey' for s in step_order)
+
+            # 実際のステップに現場調査が含まれているか確認
+            has_site_survey_step = active_steps.filter(template__name='現場調査').exists()
+
+            # step_orderに現場調査があるが、実際のステップにない場合
+            if has_site_survey_in_order and not has_site_survey_step:
+                # UIの整合性のため、仮想的に1ステップ追加
+                total_steps += 1
+
+        completed_steps_count = completed_steps.count()
 
         return {
             'total_steps': total_steps,
             'completed_steps': completed_steps_count,
             'remaining_steps': total_steps - completed_steps_count,
-            'steps': steps
+            'steps': [
+                {
+                    'name': step.template.name,
+                    'completed': step.is_completed,
+                    'completed_date': step.completed_date,
+                    'icon': step.template.icon
+                }
+                for step in active_steps
+            ]
         }
 
     def get_days_until_deadline(self):
@@ -860,7 +826,53 @@ class Project(models.Model):
         }
 
 
-# ProjectProgressStep and ProgressStepTemplate removed - using ProjectProgress instead
+class ProgressStepTemplate(models.Model):
+    """進捗ステップテンプレート"""
+    name = models.CharField(max_length=100, verbose_name='ステップ名')
+    icon = models.CharField(max_length=50, default='fas fa-circle', verbose_name='アイコン')
+    order = models.IntegerField(default=0, verbose_name='表示順')
+    is_default = models.BooleanField(default=False, verbose_name='デフォルト表示')
+    is_system = models.BooleanField(default=False, verbose_name='システム項目')
+    field_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('date', '日付'),
+            ('checkbox', 'チェックボックス'),
+            ('select', '選択肢'),
+            ('text', 'テキスト')
+        ],
+        default='date',
+        verbose_name='フィールドタイプ'
+    )
+    field_options = models.JSONField(blank=True, null=True, verbose_name='フィールドオプション')
+
+    class Meta:
+        verbose_name = '進捗ステップテンプレート'
+        verbose_name_plural = '進捗ステップテンプレート一覧'
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return self.name
+
+
+class ProjectProgressStep(models.Model):
+    """プロジェクト進捗ステップ"""
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='progress_steps')
+    template = models.ForeignKey(ProgressStepTemplate, on_delete=models.CASCADE)
+    order = models.IntegerField(default=0, verbose_name='表示順')
+    is_active = models.BooleanField(default=True, verbose_name='アクティブ')
+    is_completed = models.BooleanField(default=False, verbose_name='完了')
+    value = models.JSONField(blank=True, null=True, verbose_name='値')
+    completed_date = models.DateTimeField(null=True, blank=True, verbose_name='完了日時')
+
+    class Meta:
+        verbose_name = 'プロジェクト進捗ステップ'
+        verbose_name_plural = 'プロジェクト進捗ステップ一覧'
+        ordering = ['order', 'template__order']
+        unique_together = ['project', 'template']
+
+    def __str__(self):
+        return f"{self.project.management_no} - {self.template.name}"
 
 
 class Contractor(models.Model):
