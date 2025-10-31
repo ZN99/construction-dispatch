@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User
 from . import models
 from .models import (
     Project, CashFlowTransaction, ForecastScenario,
@@ -6,6 +8,7 @@ from .models import (
     Comment, Notification, CommentAttachment, ClientCompany, ContractorReview,
     ApprovalLog, ChecklistTemplate, ProjectChecklist, ProjectFile
 )
+from .user_roles import UserRole
 
 
 @admin.register(Project)
@@ -435,7 +438,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 class CommentAttachmentInline(admin.TabularInline):
     """コメント添付ファイルのインライン表示"""
-    model = models.CommentAttachment
+    model = CommentAttachment
     extra = 0
     readonly_fields = ["file_name", "file_size", "file_type", "uploaded_at"]
     fields = ["file", "file_name", "file_size", "uploaded_at"]
@@ -476,7 +479,7 @@ class CommentAdmin(admin.ModelAdmin):
     get_attachments_count.short_description = "添付"
 
 
-@admin.register(models.CommentAttachment)
+@admin.register(CommentAttachment)
 class CommentAttachmentAdmin(admin.ModelAdmin):
     """コメント添付ファイル管理"""
     list_display = ["comment", "file_name", "get_file_size_display", "file_type", "uploaded_at"]
@@ -699,3 +702,142 @@ class ProjectFileAdmin(admin.ModelAdmin):
     def get_file_size(self, obj):
         return obj.get_file_size_display()
     get_file_size.short_description = 'ファイルサイズ'
+
+
+# ================================================================================
+# ユーザー管理 - カスタムUser Admin with UserProfile
+# ================================================================================
+
+class UserProfileInline(admin.StackedInline):
+    """ユーザープロファイルをUser編集画面にインライン表示"""
+    model = UserProfile
+    can_delete = False
+    verbose_name = 'ユーザープロファイル'
+    verbose_name_plural = 'ユーザープロファイル'
+
+    fieldsets = (
+        ('アクセス権限 (ロール)', {
+            'fields': ('roles',),
+            'description': '''
+                <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #007bff; margin-bottom: 15px;">
+                    <h3 style="margin-top: 0;">📋 利用可能なロール</h3>
+                    <ul style="margin-bottom: 0;">
+                        <li><strong>営業</strong> - 案件受注、顧客対応</li>
+                        <li><strong>職人発注</strong> - 職人手配、工事管理</li>
+                        <li><strong>経理</strong> - 財務管理、入出金管理</li>
+                        <li><strong>役員</strong> - 経営管理（全権限）</li>
+                    </ul>
+                    <p style="margin-top: 10px; margin-bottom: 0;"><em>※ 複数のロールを割り当てることができます。例: ["営業", "経理"]</em></p>
+                </div>
+            '''
+        }),
+    )
+
+
+# Django標準のUserAdminを拡張
+class CustomUserAdmin(BaseUserAdmin):
+    """カスタムユーザー管理 - UserProfileとロールを統合"""
+    inlines = (UserProfileInline,)
+
+    # ユーザー一覧に表示する項目
+    list_display = (
+        'username',
+        'email',
+        'first_name',
+        'last_name',
+        'get_roles',
+        'is_staff',
+        'is_active',
+        'last_login',
+    )
+
+    list_filter = (
+        'is_staff',
+        'is_superuser',
+        'is_active',
+        'groups',
+    )
+
+    # ユーザー編集画面のフィールドセット
+    fieldsets = (
+        ('🔐 ログイン情報', {
+            'fields': ('username', 'password')
+        }),
+        ('👤 個人情報', {
+            'fields': ('first_name', 'last_name', 'email')
+        }),
+        ('🔑 権限', {
+            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
+            'classes': ('collapse',),
+            'description': '''
+                <div style="background-color: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; margin-bottom: 10px;">
+                    <strong>⚠️ 権限について</strong><br>
+                    • <strong>有効</strong>: ログイン可能にする<br>
+                    • <strong>スタッフ</strong>: Django管理画面にアクセス可能<br>
+                    • <strong>スーパーユーザー</strong>: すべての権限を持つ（注意して使用）<br>
+                    <br>
+                    <strong>通常のユーザーには「有効」と「スタッフ」のみをチェックしてください。</strong>
+                </div>
+            '''
+        }),
+        ('📅 重要な日付', {
+            'fields': ('last_login', 'date_joined'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    # 新規ユーザー作成時のフィールドセット
+    add_fieldsets = (
+        ('🆕 新規ユーザー作成', {
+            'classes': ('wide',),
+            'fields': ('username', 'password1', 'password2'),
+            'description': '''
+                <div style="background-color: #d4edda; padding: 15px; border-left: 4px solid #28a745; margin-bottom: 15px;">
+                    <h3 style="margin-top: 0;">📝 ユーザー作成の手順</h3>
+                    <ol>
+                        <li>ユーザー名とパスワードを入力して「保存」</li>
+                        <li>次の画面で個人情報とロールを設定</li>
+                        <li>「有効」と「スタッフ」にチェックを入れる</li>
+                        <li>下部の「ユーザープロファイル」セクションでロールを割り当て</li>
+                    </ol>
+                    <p style="margin-bottom: 0;"><strong>ヒント:</strong> 最初は最小限の権限で作成し、後から必要に応じて追加してください。</p>
+                </div>
+            '''
+        }),
+        ('👤 個人情報（オプション）', {
+            'classes': ('wide',),
+            'fields': ('first_name', 'last_name', 'email'),
+        }),
+        ('🔑 初期権限（オプション）', {
+            'classes': ('wide', 'collapse'),
+            'fields': ('is_active', 'is_staff'),
+            'description': '<p><strong>推奨:</strong> 「有効」と「スタッフ」の両方にチェック</p>'
+        }),
+    )
+
+    def get_roles(self, obj):
+        """ユーザーのロールを表示"""
+        try:
+            profile = obj.userprofile
+            if profile.roles:
+                return ", ".join(profile.roles)
+            return "ロールなし"
+        except UserProfile.DoesNotExist:
+            return "プロファイルなし"
+    get_roles.short_description = "🏷️ ロール"
+
+    def save_formset(self, request, form, formset, change):
+        """インラインのUserProfileを保存時に自動作成"""
+        instances = formset.save(commit=False)
+        for instance in instances:
+            instance.save()
+        formset.save_m2m()
+
+        # UserProfileが存在しない場合は自動作成
+        if form.instance:
+            UserProfile.objects.get_or_create(user=form.instance)
+
+
+# Django標準のUser管理を上書き
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
