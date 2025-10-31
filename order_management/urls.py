@@ -69,6 +69,12 @@ from .views_client_company import (
     ClientCompanyDeleteView,
     client_company_api
 )
+from .views_approval import (
+    ApprovalListView,
+    ApprovalDetailView,
+    ApprovalRequestView,
+    approval_action
+)
 
 app_name = 'order_management'
 
@@ -194,4 +200,10 @@ urlpatterns = [
     path('client-companies/<int:pk>/edit/', ClientCompanyUpdateView.as_view(), name='client_company_update'),
     path('client-companies/<int:pk>/delete/', ClientCompanyDeleteView.as_view(), name='client_company_delete'),
     path('api/client-companies/<int:company_id>/', client_company_api, name='client_company_api'),
+
+    # 承認フロー - Phase 8
+    path('approvals/', ApprovalListView.as_view(), name='approval_list'),
+    path('approvals/<int:pk>/', ApprovalDetailView.as_view(), name='approval_detail'),
+    path('projects/<int:project_pk>/request-approval/', ApprovalRequestView.as_view(), name='approval_request'),
+    path('approvals/<int:pk>/action/', approval_action, name='approval_action'),
 ]

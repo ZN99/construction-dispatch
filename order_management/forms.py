@@ -1,6 +1,6 @@
 from django import forms
 from django.utils import timezone
-from .models import Project, FixedCost, VariableCost, ClientCompany
+from .models import Project, FixedCost, VariableCost, ClientCompany, ApprovalLog
 
 
 class ProjectForm(forms.ModelForm):
@@ -286,3 +286,66 @@ class ClientCompanyFilterForm(forms.Form):
             'placeholder': '会社名で検索'
         })
     )
+
+
+class ApprovalRequestForm(forms.ModelForm):
+    """承認申請フォーム - Phase 8"""
+
+    class Meta:
+        model = ApprovalLog
+        fields = ['approval_type', 'request_reason', 'amount']
+        widgets = {
+            'approval_type': forms.Select(attrs={'class': 'form-select'}),
+            'request_reason': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': '承認が必要な理由を入力してください'
+            }),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '金額（円）',
+                'min': '0'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['request_reason'].required = True
+        self.fields['amount'].required = False
+
+
+class ApprovalActionForm(forms.Form):
+    """承認処理フォーム - Phase 8"""
+    action = forms.ChoiceField(
+        choices=[('approve', '承認'), ('reject', '却下')],
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        label='処理'
+    )
+    approval_comment = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': '承認コメント（任意）'
+        }),
+        label='承認コメント'
+    )
+    rejection_reason = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': '却下理由（却下の場合は必須）'
+        }),
+        label='却下理由'
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        action = cleaned_data.get('action')
+        rejection_reason = cleaned_data.get('rejection_reason')
+
+        if action == 'reject' and not rejection_reason:
+            raise forms.ValidationError('却下する場合は理由を入力してください。')
+
+        return cleaned_data
