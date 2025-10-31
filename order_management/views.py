@@ -110,6 +110,32 @@ def project_list(request):
     if project_manager:
         projects = projects.filter(project_manager__icontains=project_manager)
 
+    # Phase 11: 詳細スケジュールステータスフィルター
+    witness_status = request.GET.get('witness_status')
+    if witness_status:
+        projects = projects.filter(witness_status=witness_status)
+
+    survey_status = request.GET.get('survey_status')
+    if survey_status:
+        projects = projects.filter(survey_status=survey_status)
+
+    estimate_status = request.GET.get('estimate_status')
+    if estimate_status:
+        projects = projects.filter(estimate_status=estimate_status)
+
+    construction_status = request.GET.get('construction_status')
+    if construction_status:
+        projects = projects.filter(construction_status=construction_status)
+
+    # 担当者名フィルター（JSONField検索）
+    assignee_name = request.GET.get('assignee_name')
+    if assignee_name:
+        projects = projects.filter(
+            Q(witness_assignees__icontains=assignee_name) |
+            Q(survey_assignees__icontains=assignee_name) |
+            Q(construction_assignees__icontains=assignee_name)
+        )
+
     # 検索
     search_query = request.GET.get('search')
     if search_query:
@@ -131,6 +157,33 @@ def project_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # Phase 11: スケジュールステータス選択肢をコンテキストに追加
+    witness_status_choices = [
+        ('waiting', '立ち会い待ち'),
+        ('in_progress', '立ち会い中'),
+        ('completed', '完了'),
+    ]
+
+    survey_status_choices = [
+        ('not_required', '不要'),
+        ('not_scheduled', '未予約'),
+        ('scheduled', '予約済み'),
+        ('completed', '完了'),
+    ]
+
+    estimate_status_choices = [
+        ('not_issued', '未発行'),
+        ('issued', '見積もり書発行'),
+        ('under_review', '見積もり審査中'),
+        ('approved', '承認'),
+    ]
+
+    construction_status_choices = [
+        ('waiting', '着工日待ち'),
+        ('in_progress', '工事中'),
+        ('completed', '完工'),
+    ]
+
     context = {
         'page_obj': page_obj,
         'projects': page_obj,
@@ -143,6 +196,16 @@ def project_list(request):
         'received_count': received_count,
         'in_progress_count': in_progress_count,
         'completed_count': completed_count,
+        # Phase 11: スケジュールフィルター関連
+        'witness_status': witness_status,
+        'witness_status_choices': witness_status_choices,
+        'survey_status': survey_status,
+        'survey_status_choices': survey_status_choices,
+        'estimate_status': estimate_status,
+        'estimate_status_choices': estimate_status_choices,
+        'construction_status': construction_status,
+        'construction_status_choices': construction_status_choices,
+        'assignee_name': assignee_name,
     }
 
     return render(request, 'order_management/project_list.html', context)
@@ -338,10 +401,28 @@ def project_detail(request, pk):
     ordered_steps = []
     complex_step_fields = {}
 
+    # デフォルトプリセット（基本5ステップ）
+    DEFAULT_STEPS = [
+        {'step': 'attendance', 'order': 1},
+        {'step': 'survey', 'order': 2},
+        {'step': 'estimate', 'order': 3},
+        {'step': 'construction_start', 'order': 4},
+        {'step': 'completion', 'order': 5},
+    ]
+
     if project.additional_items:
         dynamic_steps = project.additional_items.get('dynamic_steps', {})
         step_order = project.additional_items.get('step_order', [])
         complex_step_fields = project.additional_items.get('complex_step_fields', {})
+
+        # step_orderが空の場合、デフォルトステップを設定
+        if not step_order:
+            step_order = DEFAULT_STEPS.copy()
+            # プロジェクトに保存
+            if not project.additional_items:
+                project.additional_items = {}
+            project.additional_items['step_order'] = step_order
+            project.save()
 
         # step_orderに従って整理済みステップデータを作成
         for step_item in step_order:
@@ -351,6 +432,21 @@ def project_detail(request, pk):
                 'order': step_item['order'],
                 'is_dynamic': step_key in dynamic_steps,
                 'data': dynamic_steps.get(step_key, {})
+            }
+            ordered_steps.append(step_data)
+    else:
+        # additional_itemsが存在しない場合、デフォルトステップを設定
+        step_order = DEFAULT_STEPS.copy()
+        project.additional_items = {'step_order': step_order}
+        project.save()
+
+        for step_item in step_order:
+            step_key = step_item['step']
+            step_data = {
+                'key': step_key,
+                'order': step_item['order'],
+                'is_dynamic': False,
+                'data': {}
             }
             ordered_steps.append(step_data)
 
@@ -432,14 +528,24 @@ def update_progress(request, pk):
         basic_fields = ['estimate_issued_date', 'contract_date', 'work_start_date', 'work_end_date', 'work_start_completed', 'work_end_completed', 'estimate_not_required', 'invoice_issued']
 
         # 複合ステップのフィールドデータを処理
-        complex_step_fields = {}
+        # 既存のcomplex_step_fieldsを取得（マージするため）
+        existing_complex_fields = {}
+        if project.additional_items and 'complex_step_fields' in project.additional_items:
+            existing_complex_fields = project.additional_items['complex_step_fields'].copy()
+
+        complex_step_fields = existing_complex_fields  # 既存データから始める
+
         for key, value in request.POST.items():
             if key.startswith('dynamic_field_'):
                 # dynamic_field_プレフィックスを削除してフィールド名を取得
                 field_name = key.replace('dynamic_field_', '')
                 if value.strip():  # 空でない値のみ保存
                     complex_step_fields[field_name] = value.strip()
-                    print(f"Saving complex field: {field_name} = {value.strip()}")  # デバッグ用
+                    print(f"Saving complex field: {field_name} = {value.strip()}")
+                else:
+                    # 空の値の場合、Noneを設定（削除ではなく）
+                    complex_step_fields[field_name] = None
+                    print(f"Clearing complex field: {field_name}")  # デバッグ用
 
         for key, value in request.POST.items():
             if key.endswith('_date') or key.endswith('_completed') or key.endswith('_value'):
@@ -772,7 +878,44 @@ def project_update(request, pk):
         # 通常のPOSTリクエストの場合
         form = ProjectForm(request.POST, instance=project)
         if form.is_valid():
-            project = form.save()
+            project = form.save(commit=False)
+
+            # Phase 11: 詳細スケジュール管理フィールドの保存
+            # 立ち会い
+            if request.POST.get('witness_date'):
+                from datetime import datetime
+                try:
+                    project.witness_date = datetime.strptime(request.POST.get('witness_date'), '%Y-%m-%d').date()
+                except (ValueError, TypeError):
+                    pass
+            project.witness_status = request.POST.get('witness_status', 'waiting')
+            project.witness_assignee_type = request.POST.get('witness_assignee_type', 'internal')
+            witness_assignees_str = request.POST.get('witness_assignees', '')
+            if witness_assignees_str:
+                project.witness_assignees = [name.strip() for name in witness_assignees_str.split(',') if name.strip()]
+
+            # 現地調査
+            if request.POST.get('survey_date'):
+                from datetime import datetime
+                try:
+                    project.survey_date = datetime.strptime(request.POST.get('survey_date'), '%Y-%m-%d').date()
+                except (ValueError, TypeError):
+                    pass
+            project.survey_status = request.POST.get('survey_status', 'not_required')
+            survey_assignees_str = request.POST.get('survey_assignees', '')
+            if survey_assignees_str:
+                project.survey_assignees = [name.strip() for name in survey_assignees_str.split(',') if name.strip()]
+
+            # 見積もり
+            project.estimate_status = request.POST.get('estimate_status', 'not_issued')
+
+            # 着工
+            project.construction_status = request.POST.get('construction_status', 'waiting')
+            construction_assignees_str = request.POST.get('construction_assignees', '')
+            if construction_assignees_str:
+                project.construction_assignees = [name.strip() for name in construction_assignees_str.split(',') if name.strip()]
+
+            project.save()
             messages.success(request, f'案件「{project.site_name}」を更新しました。')
             return redirect('order_management:project_detail', pk=project.pk)
     else:

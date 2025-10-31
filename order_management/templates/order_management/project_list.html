@@ -111,6 +111,14 @@
     .progress-bar {
         border-radius: 10px;
     }
+
+    /* 統一カラーコード: verified（濃い緑）- 完了チェックボックスON */
+    .bg-verified {
+        background-color: #155724 !important;
+    }
+    .badge.bg-verified {
+        color: white;
+    }
 </style>
 {% endblock %}
 
@@ -249,7 +257,53 @@
                         </button>
                     </div>
                 </div>
-                {% if search_query or project_status or work_type or project_manager %}
+
+                <!-- Phase 11: 詳細スケジュールフィルター -->
+                <div class="col-12 mt-3">
+                    <h6 class="text-muted mb-3"><i class="fas fa-calendar-check me-2"></i>詳細スケジュールフィルター</h6>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label"><i class="fas fa-handshake me-1"></i>立ち会い</label>
+                    <select name="witness_status" class="form-select border-0 shadow-sm">
+                        <option value="">すべて</option>
+                        {% for value, label in witness_status_choices %}
+                        <option value="{{ value }}" {% if value == witness_status %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label"><i class="fas fa-map-marked-alt me-1"></i>現地調査</label>
+                    <select name="survey_status" class="form-select border-0 shadow-sm">
+                        <option value="">すべて</option>
+                        {% for value, label in survey_status_choices %}
+                        <option value="{{ value }}" {% if value == survey_status %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label"><i class="fas fa-file-invoice me-1"></i>見積もり</label>
+                    <select name="estimate_status" class="form-select border-0 shadow-sm">
+                        <option value="">すべて</option>
+                        {% for value, label in estimate_status_choices %}
+                        <option value="{{ value }}" {% if value == estimate_status %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label"><i class="fas fa-hammer me-1"></i>工事</label>
+                    <select name="construction_status" class="form-select border-0 shadow-sm">
+                        <option value="">すべて</option>
+                        {% for value, label in construction_status_choices %}
+                        <option value="{{ value }}" {% if value == construction_status %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label"><i class="fas fa-user me-1"></i>担当者名</label>
+                    <input type="text" name="assignee_name" class="form-control border-0 shadow-sm" value="{{ assignee_name|default_if_none:'' }}" placeholder="担当者名で絞り込み">
+                </div>
+
+                {% if search_query or project_status or work_type or project_manager or witness_status or survey_status or estimate_status or construction_status or assignee_name %}
                 <div class="col-12">
                     <a href="{% url 'order_management:project_list' %}" class="btn btn-outline-secondary btn-sm">
                         <i class="fas fa-times me-1"></i>フィルターをクリア
@@ -307,37 +361,39 @@
                         <td>{{ project.site_address|truncatechars:30 }}</td>
                         <td>{{ project.work_type }}</td>
                         <td>
-                            <span class="badge {% if project.project_status == '完工' %}bg-info{% elif project.project_status == 'NG' %}bg-secondary{% elif project.project_status == '施工日待ち' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
-                                {{ project.project_status }}
+                            {% with stage=project.get_current_project_stage %}
+                            <span class="badge bg-{{ stage.color }}">
+                                {{ stage.stage }}
                             </span>
+                            {% endwith %}
                         </td>
                         <td class="progress-cell">
-                            {% with progress=project.get_progress_status details=project.get_progress_details %}
+                            {% with stage=project.get_current_project_stage details=project.get_progress_details %}
                             <div class="d-flex flex-column">
                                 <div class="d-flex justify-content-between align-items-center mb-1 progress-indicator">
-                                    <span class="badge bg-{{ progress.color }}">{{ progress.phase }}</span>
+                                    <span class="badge bg-{{ stage.color }}">{{ stage.stage }}</span>
                                     {% if details.total_steps > 0 %}
                                     <small class="text-muted fw-bold">{{ details.completed_steps }}/{{ details.total_steps }}</small>
-                                    {% elif progress.percentage >= 0 %}
-                                    <small class="text-muted fw-bold">{{ progress.percentage }}%</small>
+                                    {% elif details.total_steps == 0 and details.completed_steps == 0 %}
+                                    <small class="text-muted fw-bold">0%</small>
                                     {% endif %}
                                 </div>
                                 {% if details.total_steps > 0 %}
                                 <div class="progress progress-enhanced" style="height: 6px;">
-                                    <div class="progress-bar bg-{{ progress.color }}" role="progressbar"
-                                         style="width: {{ progress.percentage }}%"
-                                         aria-valuenow="{{ progress.percentage }}"
+                                    <div class="progress-bar bg-{{ stage.color }}" role="progressbar"
+                                         style="width: {% widthratio details.completed_steps details.total_steps 100 %}%"
+                                         aria-valuenow="{% widthratio details.completed_steps details.total_steps 100 %}"
                                          aria-valuemin="0" aria-valuemax="100">
                                     </div>
                                 </div>
                                 <small class="text-muted mt-1" title="完了済み: {{ details.completed_steps }}/{{ details.total_steps }}ステップ">
                                     <i class="fas fa-tasks"></i> {{ details.completed_steps }}/{{ details.total_steps }}
                                 </small>
-                                {% elif progress.percentage > 0 %}
+                                {% elif details.total_steps == 0 %}
                                 <div class="progress progress-enhanced" style="height: 6px;">
-                                    <div class="progress-bar bg-{{ progress.color }}" role="progressbar"
-                                         style="width: {{ progress.percentage }}%"
-                                         aria-valuenow="{{ progress.percentage }}"
+                                    <div class="progress-bar bg-{{ stage.color }}" role="progressbar"
+                                         style="width: 0%"
+                                         aria-valuenow="0"
                                          aria-valuemin="0" aria-valuemax="100">
                                     </div>
                                 </div>
@@ -430,7 +486,7 @@
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">前へ</a>
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}&witness_status={{ witness_status }}&survey_status={{ survey_status }}&estimate_status={{ estimate_status }}&construction_status={{ construction_status }}&assignee_name={{ assignee_name }}">前へ</a>
                 </li>
                 {% endif %}
 
@@ -438,13 +494,13 @@
                     {% if page_obj.number == num %}
                     <li class="page-item active"><span class="page-link">{{ num }}</span></li>
                     {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item"><a class="page-link" href="?page={{ num }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">{{ num }}</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}&witness_status={{ witness_status }}&survey_status={{ survey_status }}&estimate_status={{ estimate_status }}&construction_status={{ construction_status }}&assignee_name={{ assignee_name }}">{{ num }}</a></li>
                     {% endif %}
                 {% endfor %}
 
                 {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">次へ</a>
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}&witness_status={{ witness_status }}&survey_status={{ survey_status }}&estimate_status={{ estimate_status }}&construction_status={{ construction_status }}&assignee_name={{ assignee_name }}">次へ</a>
                 </li>
                 {% endif %}
             </ul>
@@ -460,7 +516,8 @@
         {% for project in projects %}
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
             <div class="card summary-card h-100" onclick="window.location='{% url 'order_management:project_detail' project.pk %}';" style="border-left: 4px solid {{ project.get_status_color_hex }};">
-                <div class="card-header {% if project.project_status == '完工' %}bg-info{% elif project.project_status == 'NG' %}bg-secondary{% elif project.project_status == '施工日待ち' %}bg-danger{% else %}bg-warning{% endif %} text-white">
+                {% with stage=project.get_current_project_stage %}
+                <div class="card-header bg-{{ stage.color }} text-white">
                     <h6 class="mb-0 text-truncate" title="{{ project.site_name }}">{{ project.site_name }}</h6>
                 </div>
                 <div class="card-body">
@@ -470,21 +527,22 @@
                     </div>
                     <div class="mb-2">
                         <small class="text-muted">案件進捗:</small>
-                        <span class="badge {% if project.project_status == '完工' %}bg-success{% elif project.project_status == 'NG' %}bg-secondary{% elif project.project_status == '施工日待ち' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
-                            {{ project.project_status }}
+                        <span class="badge bg-{{ stage.color }}">
+                            {{ stage.stage }}
                         </span>
                     </div>
+                {% endwith %}
                     <div class="mb-2">
                         <small class="text-muted">進捗:</small>
-                        {% with progress=project.get_progress_status details=project.get_progress_details %}
+                        {% with stage=project.get_current_project_stage details=project.get_progress_details %}
                         <div class="progress progress-enhanced" style="height: 20px;">
-                            <div class="progress-bar bg-{{ progress.color }}"
+                            <div class="progress-bar bg-{{ stage.color }}"
                                  role="progressbar"
-                                 style="width: {{ progress.percentage }}%"
-                                 aria-valuenow="{{ progress.percentage }}"
+                                 style="width: {% if details.total_steps > 0 %}{% widthratio details.completed_steps details.total_steps 100 %}{% else %}0{% endif %}%"
+                                 aria-valuenow="{% if details.total_steps > 0 %}{% widthratio details.completed_steps details.total_steps 100 %}{% else %}0{% endif %}"
                                  aria-valuemin="0"
                                  aria-valuemax="100">
-                                {% if details.total_steps > 0 %}{{ details.completed_steps }}/{{ details.total_steps }}{% else %}{{ progress.percentage }}%{% endif %}
+                                {% if details.total_steps > 0 %}{{ details.completed_steps }}/{{ details.total_steps }}{% else %}0%{% endif %}
                             </div>
                         </div>
                         {% if details.total_steps > 0 %}
@@ -553,17 +611,19 @@
                     </div>
                     <div class="col-md-1-5">
                         <small class="text-muted d-block">案件進捗</small>
-                        <span class="badge {% if project.project_status == '完工' %}bg-success{% elif project.project_status == 'NG' %}bg-secondary{% elif project.project_status == '施工日待ち' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
-                            {{ project.project_status }}
+                        {% with stage=project.get_current_project_stage %}
+                        <span class="badge bg-{{ stage.color }}">
+                            {{ stage.stage }}
                         </span>
+                        {% endwith %}
                     </div>
                     <div class="col-md-2">
                         <small class="text-muted d-block">進捗</small>
-                        {% with progress=project.get_progress_status details=project.get_progress_details %}
+                        {% with stage=project.get_current_project_stage details=project.get_progress_details %}
                         <div class="progress progress-enhanced" style="height: 15px;">
-                            <div class="progress-bar bg-{{ progress.color }}"
-                                 style="width: {{ progress.percentage }}%">
-                                {% if details.total_steps > 0 %}{{ details.completed_steps }}/{{ details.total_steps }}{% else %}{{ progress.percentage }}%{% endif %}
+                            <div class="progress-bar bg-{{ stage.color }}"
+                                 style="width: {% if details.total_steps > 0 %}{% widthratio details.completed_steps details.total_steps 100 %}{% else %}0{% endif %}%">
+                                {% if details.total_steps > 0 %}{{ details.completed_steps }}/{{ details.total_steps }}{% else %}0%{% endif %}
                             </div>
                         </div>
                         {% if details.total_steps > 0 %}
@@ -624,7 +684,7 @@
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">前へ</a>
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}&witness_status={{ witness_status }}&survey_status={{ survey_status }}&estimate_status={{ estimate_status }}&construction_status={{ construction_status }}&assignee_name={{ assignee_name }}">前へ</a>
             </li>
             {% endif %}
 
@@ -632,13 +692,13 @@
                 {% if page_obj.number == num %}
                 <li class="page-item active"><span class="page-link">{{ num }}</span></li>
                 {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                <li class="page-item"><a class="page-link" href="?page={{ num }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">{{ num }}</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ num }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}&witness_status={{ witness_status }}&survey_status={{ survey_status }}&estimate_status={{ estimate_status }}&construction_status={{ construction_status }}&assignee_name={{ assignee_name }}">{{ num }}</a></li>
                 {% endif %}
             {% endfor %}
 
             {% if page_obj.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}">次へ</a>
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}&project_status={{ project_status }}&work_type={{ work_type }}&project_manager={{ project_manager }}&search={{ search_query }}&witness_status={{ witness_status }}&survey_status={{ survey_status }}&estimate_status={{ estimate_status }}&construction_status={{ construction_status }}&assignee_name={{ assignee_name }}">次へ</a>
             </li>
             {% endif %}
         </ul>

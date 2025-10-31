@@ -27,7 +27,7 @@ class Project(models.Model):
         max_length=20,  # max_lengthを20に拡張（「施工日待ち」対応）
         choices=PROJECT_STATUS_CHOICES,
         default='ネタ',  # 旧: 検討中
-        verbose_name='案件進捗'  # 旧: 受注ヨミ
+        verbose_name='受注ヨミ'
     )
     estimate_issued_date = models.DateField(
         null=True, blank=True, verbose_name='見積書発行日'
@@ -125,6 +125,73 @@ class Project(models.Model):
         ],
         default='not_required',
         verbose_name='現地調査ステータス'
+    )
+    survey_date = models.DateField(
+        null=True, blank=True, verbose_name='現調日'
+    )
+    survey_assignees = models.JSONField(
+        default=list, blank=True,
+        verbose_name='現調担当者',
+        help_text='現地調査の担当者リスト（職人）'
+    )
+
+    # 立ち会い関連 - Phase 11 追加
+    witness_date = models.DateField(
+        null=True, blank=True, verbose_name='立ち会い日'
+    )
+    witness_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('waiting', '立ち会い待ち'),
+            ('in_progress', '立ち会い中'),
+            ('completed', '完了'),
+        ],
+        default='waiting',
+        verbose_name='立ち会いステータス'
+    )
+    witness_assignees = models.JSONField(
+        default=list, blank=True,
+        verbose_name='立ち会い担当者',
+        help_text='立ち会いの担当者リスト（自社または職人）'
+    )
+    witness_assignee_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('internal', '自社'),
+            ('contractor', '職人'),
+        ],
+        default='internal',
+        verbose_name='立ち会い担当者タイプ'
+    )
+
+    # 見積もりステータス拡張 - Phase 11 追加
+    estimate_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('not_issued', '未発行'),
+            ('issued', '見積もり書発行'),
+            ('under_review', '見積もり審査中'),
+            ('approved', '承認'),
+        ],
+        default='not_issued',
+        verbose_name='見積もりステータス'
+    )
+
+    # 着工ステータス拡張 - Phase 11 追加
+    construction_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('waiting', '着工日待ち'),
+            ('in_progress', '工事中'),
+            ('completed', '完工'),
+        ],
+        default='waiting',
+        verbose_name='工事ステータス'
+    )
+    construction_assignees = models.JSONField(
+        default=list, blank=True,
+        verbose_name='施工担当者',
+        help_text='施工の担当者リスト（職人）'
     )
 
     # 支払管理（業者への支払）
@@ -329,16 +396,27 @@ class Project(models.Model):
 
         # 工期の緊急度（開始日が近いほど高得点）
         if self.work_start_date:
-            days_until_start = (self.work_start_date - timezone.now().date()).days
-            if days_until_start < 0:
-                # 既に開始日を過ぎている
-                score += 100
-            elif days_until_start <= 3:
-                score += 50
-            elif days_until_start <= 7:
-                score += 30
-            elif days_until_start <= 14:
-                score += 10
+            try:
+                # work_start_dateがdateオブジェクトでない場合の処理
+                from datetime import datetime
+                if isinstance(self.work_start_date, str):
+                    work_start = datetime.strptime(self.work_start_date, '%Y-%m-%d').date()
+                else:
+                    work_start = self.work_start_date
+
+                days_until_start = (work_start - timezone.now().date()).days
+                if days_until_start < 0:
+                    # 既に開始日を過ぎている
+                    score += 100
+                elif days_until_start <= 3:
+                    score += 50
+                elif days_until_start <= 7:
+                    score += 30
+                elif days_until_start <= 14:
+                    score += 10
+            except (ValueError, TypeError, AttributeError):
+                # 日付のパースに失敗した場合はスキップ
+                pass
 
         # ステータスによる重み付け
         status_weights = {
@@ -399,21 +477,36 @@ class Project(models.Model):
         if not self.work_start_date or not self.work_end_date:
             return 0
 
-        today = timezone.now().date()
+        try:
+            from datetime import datetime
+            # 日付を安全に変換
+            if isinstance(self.work_start_date, str):
+                work_start = datetime.strptime(self.work_start_date, '%Y-%m-%d').date()
+            else:
+                work_start = self.work_start_date
 
-        # 工事期間の計算
-        total_days = (self.work_end_date - self.work_start_date).days
-        if total_days <= 0:
-            return 100
+            if isinstance(self.work_end_date, str):
+                work_end = datetime.strptime(self.work_end_date, '%Y-%m-%d').date()
+            else:
+                work_end = self.work_end_date
 
-        # 経過日数の計算
-        if today < self.work_start_date:
-            return 0  # 開始前
-        elif today > self.work_end_date:
-            return 100  # 完了
-        else:
-            elapsed_days = (today - self.work_start_date).days
-            return min(100, max(0, int((elapsed_days / total_days) * 100)))
+            today = timezone.now().date()
+
+            # 工事期間の計算
+            total_days = (work_end - work_start).days
+            if total_days <= 0:
+                return 100
+
+            # 経過日数の計算
+            if today < work_start:
+                return 0  # 開始前
+            elif today > work_end:
+                return 100  # 完了
+            else:
+                elapsed_days = (today - work_start).days
+                return min(100, max(0, int((elapsed_days / total_days) * 100)))
+        except (ValueError, TypeError, AttributeError):
+            return 0
 
     def get_work_phase(self):
         """現在の工事フェーズを返す（実際の進捗ステップベース）"""
@@ -466,52 +559,79 @@ class Project(models.Model):
                 return '準備中'
             return '未定'
 
-        today = timezone.now().date()
-
-        if today < self.work_start_date:
-            return '開始前'
-        elif today > self.work_end_date:
-            return '完了'
-        else:
-            progress = self._get_date_based_progress()
-            if progress < 25:
-                return '着工'
-            elif progress < 75:
-                return '施工中'
+        try:
+            from datetime import datetime
+            # 日付を安全に変換
+            if isinstance(self.work_start_date, str):
+                work_start = datetime.strptime(self.work_start_date, '%Y-%m-%d').date()
             else:
-                return '完了間近'
+                work_start = self.work_start_date
+
+            if isinstance(self.work_end_date, str):
+                work_end = datetime.strptime(self.work_end_date, '%Y-%m-%d').date()
+            else:
+                work_end = self.work_end_date
+
+            today = timezone.now().date()
+
+            if today < work_start:
+                return '開始前'
+            elif today > work_end:
+                return '完了'
+            else:
+                progress = self._get_date_based_progress()
+                if progress < 25:
+                    return '着工'
+                elif progress < 75:
+                    return '施工中'
+                else:
+                    return '完了間近'
+        except (ValueError, TypeError, AttributeError):
+            return '未定'
 
     def get_progress_status(self):
-        """進捗状況の総合判定を返す"""
+        """進捗状況の総合判定を返す - 新5ステップシステムと同期"""
         if self.project_status == 'NG':
             return {'phase': 'NG', 'color': 'secondary', 'percentage': 0}
         elif self.project_status == 'ネタ':  # 旧: 検討中
             return {'phase': 'ネタ', 'color': 'warning', 'percentage': 0}
 
-        # 受注案件の進捗判定
-        phase = self.get_work_phase()
-        percentage = self.get_work_progress_percentage()
+        # 新5ステップシステムから現在の段階を取得
+        stage_info = self.get_current_project_stage()
+        phase = stage_info['stage']
+        color = stage_info['color']
 
-        if phase == '準備中':
-            color = 'info'
-        elif phase == '開始前':
-            color = 'primary'
-        elif phase == '見積済み':
-            color = 'info'
-        elif phase == '契約済み':
-            color = 'primary'
-        elif phase == '着工':
-            color = 'success'
-        elif phase == '初期段階':
-            color = 'info'
-        elif phase == '施工中':
-            color = 'success'
-        elif phase == '完了間近':
-            color = 'warning'
-        elif phase == '完了':
-            color = 'dark'
+        # パーセンテージを計算（5つのステップから）
+        if not self.additional_items:
+            percentage = 0
         else:
-            color = 'secondary'
+            complex_fields = self.additional_items.get('complex_step_fields', {})
+
+            # 5つのステップの完了状況をチェック
+            completed_count = 0
+            total_steps = 5
+
+            # 1. 立ち会い日
+            if complex_fields.get('attendance_actual_date'):
+                completed_count += 1
+
+            # 2. 現調日
+            if complex_fields.get('survey_actual_date'):
+                completed_count += 1
+
+            # 3. 見積もり発行日
+            if complex_fields.get('estimate_issued_date') or complex_fields.get('estimate_not_required'):
+                completed_count += 1
+
+            # 4. 着工日
+            if complex_fields.get('construction_start_actual_date'):
+                completed_count += 1
+
+            # 5. 完工日
+            if complex_fields.get('completion_actual_date') or complex_fields.get('completion_completed'):
+                completed_count += 1
+
+            percentage = int((completed_count / total_steps) * 100) if total_steps > 0 else 0
 
         return {'phase': phase, 'color': color, 'percentage': percentage}
 
@@ -556,6 +676,51 @@ class Project(models.Model):
                 for step in active_steps
             ]
         }
+
+    def get_current_project_stage(self):
+        """5つのステップに基づいた現在のプロジェクト段階を返す
+
+        カラーコード統一ルール:
+        - verified (濃い緑): 完了チェックボックスON
+        - success (緑): 実施日が入力されている
+        - warning (黄色): 予定日のみ入力されている
+        - secondary (グレー): 何も入力されていない
+        """
+        complex_fields = self.additional_items.get('complex_step_fields', {}) if self.additional_items else {}
+
+        # 完工日をチェック（基本フィールドと複合フィールドの両方）
+        if self.work_end_completed or complex_fields.get('completion_completed'):
+            return {'stage': '完工', 'color': 'verified'}  # 完了チェックON → 濃い緑
+        elif self.work_end_date or complex_fields.get('completion_actual_date'):
+            return {'stage': '完工', 'color': 'success'}  # 実施日入力 → 緑
+
+        # 着工日をチェック（基本フィールドと複合フィールドの両方）
+        if self.work_start_completed:
+            return {'stage': '工事中', 'color': 'verified'}  # 完了チェックON → 濃い緑
+        elif complex_fields.get('construction_start_actual_date'):
+            return {'stage': '工事中', 'color': 'success'}  # 実施日入力 → 緑
+        elif self.work_start_date or complex_fields.get('construction_start_scheduled_date'):
+            return {'stage': '着工日待ち', 'color': 'warning'}  # 予定日のみ → 黄色
+
+        # 見積もり発行日をチェック（基本フィールドと複合フィールドの両方）
+        if self.estimate_issued_date or complex_fields.get('estimate_issued_date'):
+            return {'stage': '見積もり審査中', 'color': 'warning'}  # 発行済み → 黄色
+        # 見積もり不要の場合は、次のステップの状態を表示するため、ここでは何もしない
+
+        # 現調日をチェック
+        if complex_fields.get('survey_actual_date'):
+            return {'stage': '現調済み', 'color': 'success'}  # 実施日入力 → 緑
+        elif complex_fields.get('survey_scheduled_date'):
+            return {'stage': '現調待ち', 'color': 'warning'}  # 予定日のみ → 黄色
+
+        # 立ち会い日をチェック
+        if complex_fields.get('attendance_actual_date'):
+            return {'stage': '立ち会い済み', 'color': 'success'}  # 実施日入力 → 緑
+        elif complex_fields.get('attendance_scheduled_date'):
+            return {'stage': '立ち会い待ち', 'color': 'warning'}  # 予定日のみ → 黄色
+
+        # デフォルト
+        return {'stage': '未開始', 'color': 'secondary'}  # 何も入力なし → グレー
 
     def get_days_until_deadline(self):
         """締切までの日数を返す"""

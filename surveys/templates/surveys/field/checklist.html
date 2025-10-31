@@ -2782,6 +2782,10 @@
                             <button class="btn-step btn-complete" onclick="completeStep('{{ current_step.id }}')">
                                 <i class="fas fa-check"></i> 部屋設定完了
                             </button>
+                        {% elif current_step.step_type == 'wall_setup' %}
+                            <button class="btn-step btn-complete" onclick="completeStep('{{ current_step.id }}')">
+                                <i class="fas fa-check"></i> 壁面設定完了
+                            </button>
                         {% elif current_step.step_type == 'wall_measurement' %}
                             <button class="btn-step btn-complete" onclick="completeMeasurement()">
                                 <i class="fas fa-save"></i> 測定完了

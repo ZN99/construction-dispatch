@@ -6,13 +6,18 @@
             <h6 class="mb-0">
                 <i class="fas fa-tasks me-2"></i>プロジェクト進捗
             </h6>
-            <div class="progress-info">
-                <span class="badge bg-{{ workflow_progress.current_stage.color }}">
-                    {{ workflow_progress.current_stage.name }}
-                </span>
-                <span class="text-muted small ms-2">
-                    {{ workflow_progress.completed_stages }}/{{ workflow_progress.total_stages }} 完了
-                </span>
+            <div class="d-flex align-items-center gap-2">
+                <div class="progress-info">
+                    <span class="badge bg-{{ workflow_progress.current_stage.color }}">
+                        {{ workflow_progress.current_stage.name }}
+                    </span>
+                    <span class="text-muted small ms-2">
+                        {{ workflow_progress.completed_stages }}/{{ workflow_progress.total_stages }} 完了
+                    </span>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="editStepsBtn">
+                    <i class="fas fa-edit"></i> ステップ編集
+                </button>
             </div>
         </div>
         <div class="card-body">
@@ -203,6 +208,51 @@
 </style>
 
 <script>
+// グローバル変数
+var editMode = false;
+
+// ステップ編集モードの切り替え
+function toggleEditMode() {
+    console.log('ステップ編集ボタンがクリックされました');
+    console.log('現在のeditMode:', editMode);
+
+    editMode = !editMode;
+    console.log('新しいeditMode:', editMode);
+
+    const btn = $('#editStepsBtn');
+
+    if (editMode) {
+        console.log('編集モードONに切り替え');
+        btn.html('<i class="fas fa-check"></i> 編集完了');
+        btn.removeClass('btn-outline-primary').addClass('btn-success');
+        // TODO: ドラッグハンドル、削除ボタン、ステップインベントリを表示
+        console.log('✅ 編集モードがONになりました');
+        alert('編集モードON（実装中）: ステップの編集機能は開発中です');
+    } else {
+        console.log('編集モードOFFに切り替え');
+        btn.html('<i class="fas fa-edit"></i> ステップ編集');
+        btn.removeClass('btn-success').addClass('btn-outline-primary');
+        // TODO: 変更を保存
+        console.log('✅ 編集モードがOFFになりました');
+    }
+
+    console.log('編集モード切り替え完了');
+}
+
+$(document).ready(function() {
+    console.log('Document ready - editMode初期化:', editMode);
+
+    // ステップ編集ボタンのイベントリスナーを設定
+    $('#editStepsBtn').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('ボタンクリックイベント発生（イベントリスナー経由）');
+        toggleEditMode();
+    });
+
+    console.log('✅ ステップ編集ボタンのイベントリスナー設定完了');
+});
+
 function confirmProject(projectId) {
     if (confirm('案件を確定しますか？確定後は職人アサインが可能になります。')) {
         fetch(`/api/projects/${projectId}/confirm/`, {
