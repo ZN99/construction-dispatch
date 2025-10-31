@@ -1,55 +1,32 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Renderデプロイ時の自動実行スクリプト
 
-# Build script for Render deployment
+set -o errexit  # エラーがあったら停止
 
-echo "Installing dependencies..."
+echo "📦 依存関係をインストール中..."
 pip install -r requirements.txt
 
-echo "Collecting static files..."
+echo "📊 静的ファイルを収集中..."
 python manage.py collectstatic --noinput
 
-echo "Running migrations..."
-python manage.py migrate
+echo "🔄 データベースマイグレーション実行中..."
+python manage.py migrate --noinput
 
-echo "Generating test data (50 projects)..."
-python manage.py create_dummy_data --count 50
+# テストデータの生成（既にデータがある場合はスキップ）
+echo "🗄️ データベースの状態を確認中..."
+PROJECT_COUNT=$(python manage.py shell -c "from order_management.models import Project; print(Project.objects.count())" 2>/dev/null || echo "0")
 
-echo "Creating initial data..."
-python initial_data.py
+if [ "$PROJECT_COUNT" -eq "0" ]; then
+    echo "📁 データベースが空です。包括的なテストデータを生成します..."
+    python manage.py load_comprehensive_test_data --count 120
+    echo "✅ テストデータ生成完了！"
+else
+    echo "ℹ️ 既に $PROJECT_COUNT 件の案件データがあります。"
+    echo "ℹ️ テストデータ生成をスキップします。"
+    echo ""
+    echo "💡 データをリセットしたい場合は、Renderのシェルで以下を実行："
+    echo "   python manage.py load_comprehensive_test_data --clear --count 120"
+fi
 
-echo "Creating production users..."
-python create_production_users.py
-
-echo "Creating progress step templates..."
-python populate_progress_steps.py
-
-echo "Creating craftsman data..."
-python craftsman_initial_data.py
-
-echo "Creating rental restoration projects..."
-python create_rental_restoration_data.py
-
-# echo "Creating contractor test data..."
-# python create_contractor_test_data.py  # TODO: Fix contractor_name field error
-
-echo "Creating survey test data..."
-python create_survey_test_data.py
-
-# echo "Creating sample surveys..."
-# python create_sample_surveys.py  # Creates 0 surveys
-
-echo "Creating material data..."
-python create_material_data.py
-
-# echo "Creating payment data..."
-# python create_payment_data.py  # TODO: Fix estimate_amount field error
-
-echo "Creating comprehensive test data (files, comments, photos)..."
-python create_comprehensive_test_data.py
-
-echo "Creating user profiles and assigning roles..."
-python create_user_profiles.py
-
-# Note: create_survey_data.py creates data but doesn't persist - using create_survey_test_data.py instead
-
-echo "Build completed successfully!"
+echo ""
+echo "🎉 ビルド完了！デプロイ準備ができました。"

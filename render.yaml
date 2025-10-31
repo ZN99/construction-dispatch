@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: construction-dispatch
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    # build.shスクリプトでインストール、マイグレーション、テストデータ生成を自動実行
+    buildCommand: ./build.sh
+    startCommand: gunicorn construction_dispatch.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DJANGO_SETTINGS_MODULE
+        value: construction_dispatch.settings
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+
+databases:
+  - name: construction-dispatch-db
+    databaseName: construction_dispatch
+    user: construction_user
+    plan: free

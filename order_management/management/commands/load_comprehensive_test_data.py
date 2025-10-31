@@ -263,19 +263,25 @@ class Command(BaseCommand):
             ('NG', 5),
         ]
 
-        # 4月1日から10月31日までの範囲
-        start_date = datetime(2025, 4, 1).date()
-        end_date = datetime(2025, 10, 31).date()
+        # 過去7ヶ月に分散（今日から遡る）
+        today_date = timezone.now().date()
+        start_date = (today_date - timedelta(days=210)).replace(day=1)  # 約7ヶ月前の月初
+        end_date = today_date
         total_days = (end_date - start_date).days
 
         projects = []
         for i in range(count):
-            # ランダムな作成日（4月1日〜10月31日）
+            # ランダムな作成日（過去7ヶ月）
             random_days = random.randint(0, total_days)
+            created_date = start_date + timedelta(days=random_days)
+
+            # 時刻もランダムに設定（営業時間内）
+            random_hour = random.randint(9, 17)
+            random_minute = random.randint(0, 59)
             created_at = timezone.make_aware(
                 datetime.combine(
-                    start_date + timedelta(days=random_days),
-                    datetime.now().time()
+                    created_date,
+                    datetime.min.time().replace(hour=random_hour, minute=random_minute)
                 )
             )
 
@@ -322,9 +328,13 @@ class Command(BaseCommand):
                 work_start_date=work_start_date,
                 work_end_date=work_end_date,
                 completion_date=completion_date,
-                created_at=created_at,
                 notes=f'テストデータ {i+1}'
             )
+
+            # auto_now_addがあるため、created_atを直接更新
+            Project.objects.filter(pk=project.pk).update(created_at=created_at)
+            project.refresh_from_db()  # インスタンスを更新
+
             projects.append(project)
 
             if (i + 1) % 20 == 0:
