@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views_skills import ContractorSkillsDashboardView, ContractorSkillsDetailView
 
 app_name = 'subcontract_management'
 
@@ -16,6 +17,10 @@ urlpatterns = [
     # 発注先マスター管理
     path('contractors/', views.contractor_list, name='contractor_list'),
     path('contractors/create/', views.contractor_create, name='contractor_create'),
+
+    # 職人スキル管理 - Phase 8
+    path('contractor-skills/', ContractorSkillsDashboardView.as_view(), name='contractor_skills_dashboard'),
+    path('contractor-skills/<int:pk>/', ContractorSkillsDetailView.as_view(), name='contractor_skills_detail'),
 
     # 利益分析
     path('profit-analysis/', views.profit_analysis_list, name='profit_analysis_list'),
