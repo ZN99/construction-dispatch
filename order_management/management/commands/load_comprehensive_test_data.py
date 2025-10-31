@@ -416,31 +416,59 @@ class Command(BaseCommand):
 
         count = 0
         for project in projects:
-            if project.project_status in ['完工', '進行中']:
-                # 入金（完工の場合）
-                if project.project_status == '完工' and project.completion_date:
+            # ネタとNG以外のプロジェクトに取引を作成
+            if project.project_status not in ['ネタ', 'NG'] and project.order_amount:
+                # 入金（完工・進行中・施工日待ちの場合）
+                if project.project_status in ['完工', '進行中', '施工日待ち']:
+                    if project.project_status == '完工' and project.completion_date:
+                        # 完工案件は入金済み
+                        transaction_date = project.completion_date + timedelta(days=random.randint(30, 60))
+                        is_planned = False
+                    elif project.project_status == '進行中':
+                        # 進行中は一部入金済み、一部予定
+                        transaction_date = project.created_at.date() + timedelta(days=random.randint(40, 70))
+                        is_planned = random.choice([True, False])
+                    else:  # 施工日待ち
+                        # 将来の入金予定
+                        transaction_date = timezone.now().date() + timedelta(days=random.randint(30, 90))
+                        is_planned = True
+
                     CashFlowTransaction.objects.create(
                         project=project,
                         transaction_type='revenue_cash',
-                        amount=project.order_amount or 0,
-                        transaction_date=project.completion_date + timedelta(days=random.randint(30, 60)),
+                        amount=project.order_amount,
+                        transaction_date=transaction_date,
                         description='工事代金入金',
-                        is_planned=False
+                        is_planned=is_planned
                     )
                     count += 1
 
-                # 出金（原価75%）
-                if project.order_amount:
-                    cost = int(project.order_amount * Decimal('0.75'))
-                    CashFlowTransaction.objects.create(
-                        project=project,
-                        transaction_type='expense_cash',
-                        amount=cost,
-                        transaction_date=project.created_at.date() + timedelta(days=random.randint(20, 50)),
-                        description='下請・材料費支払',
-                        is_planned=random.random() < 0.3
-                    )
-                    count += 1
+                # 出金（原価70-80%）
+                cost_ratio = Decimal(str(random.uniform(0.70, 0.80)))
+                cost = int(project.order_amount * cost_ratio)
+
+                if project.project_status == '完工':
+                    # 完工案件は支払済み
+                    expense_date = project.created_at.date() + timedelta(days=random.randint(20, 50))
+                    is_planned = False
+                elif project.project_status == '進行中':
+                    # 進行中は一部支払済み
+                    expense_date = project.created_at.date() + timedelta(days=random.randint(15, 45))
+                    is_planned = False
+                else:
+                    # 将来の支払予定
+                    expense_date = timezone.now().date() + timedelta(days=random.randint(15, 60))
+                    is_planned = True
+
+                CashFlowTransaction.objects.create(
+                    project=project,
+                    transaction_type='expense_cash',
+                    amount=cost,
+                    transaction_date=expense_date,
+                    description='下請・材料費支払',
+                    is_planned=is_planned
+                )
+                count += 1
 
         self.stdout.write(self.style.SUCCESS(f'  ✓ {count}件のキャッシュフロー取引を作成'))
 
@@ -516,15 +544,34 @@ class Command(BaseCommand):
 
         count = 0
         for project in projects:
-            if project.project_status == '進行中':
+            # ネタとNG以外のプロジェクトに進捗レコードを作成
+            if project.project_status not in ['ネタ', 'NG']:
+                # ステータスに応じて進捗率を設定
+                if project.project_status == '完工':
+                    progress_rate = Decimal('100')
+                    status = 'completed'
+                    notes = '工事完了'
+                elif project.project_status == '進行中':
+                    progress_rate = Decimal(str(random.randint(30, 90)))
+                    status = 'on_track'
+                    notes = '順調に進行中'
+                elif project.project_status == '施工日待ち':
+                    progress_rate = Decimal(str(random.randint(5, 25)))
+                    status = 'preparing'
+                    notes = '施工準備中'
+                else:
+                    progress_rate = Decimal(str(random.randint(0, 20)))
+                    status = 'on_track'
+                    notes = '受注準備中'
+
                 ProjectProgress.objects.create(
                     project=project,
-                    recorded_date=timezone.now().date(),
+                    recorded_date=project.created_at.date() + timedelta(days=random.randint(1, 10)),
                     recorded_by=admin,
-                    progress_rate=Decimal(str(random.randint(20, 90))),
-                    status='on_track',
-                    notes='順調に進行中',
-                    has_risk=False
+                    progress_rate=progress_rate,
+                    status=status,
+                    notes=notes,
+                    has_risk=random.random() < 0.15
                 )
                 count += 1
 
