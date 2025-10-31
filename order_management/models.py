@@ -319,6 +319,9 @@ class Project(models.Model):
 
         super().save(*args, **kwargs)
 
+        # ステップ完了状況から進捗率を自動更新
+        self._update_progress_from_steps()
+
     def _calculate_priority_score(self):
         """優先度スコアを計算（高いほど優先）"""
         score = 0
@@ -378,6 +381,65 @@ class Project(models.Model):
         }
         return color_map.get(self.project_status, '#ffffff')
 
+    def calculate_progress_from_steps(self):
+        """ステップの完了状況から進捗率を計算"""
+        # 基本ステップとその完了状況
+        steps = {
+            'estimate': self.estimate_issued_date is not None or self.estimate_not_required,
+            'contract': self.contract_date is not None,
+            'work_start': self.work_start_date is not None and self.work_start_date <= timezone.now().date(),
+            'work_end': self.work_end_date is not None and self.work_end_date <= timezone.now().date(),
+            'invoice': self.invoice_issued,
+        }
+
+        completed_steps = sum(1 for completed in steps.values() if completed)
+        total_steps = len(steps)
+
+        if total_steps == 0:
+            return Decimal('0.00')
+
+        return Decimal(str((completed_steps / total_steps) * 100))
+
+    def _update_progress_from_steps(self):
+        """ステップ完了状況からProjectProgressを自動更新"""
+        from order_management.models import ProjectProgress
+
+        # 進捗率を計算
+        progress_rate = self.calculate_progress_from_steps()
+
+        # ステータスを判定
+        if progress_rate == 100:
+            status = 'completed'
+        elif progress_rate >= 80:
+            status = 'on_track'
+        elif progress_rate >= 50:
+            status = 'on_track'
+        else:
+            status = 'on_track'
+
+        # 備考を生成
+        notes = f'ステップ完了状況から自動更新 ({int(progress_rate)}%)'
+
+        # 最新のProjectProgressレコードを取得または作成
+        latest_progress = self.progress_records.order_by('-recorded_date').first()
+
+        if latest_progress and latest_progress.recorded_date == timezone.now().date():
+            # 今日のレコードがあれば更新
+            latest_progress.progress_rate = progress_rate
+            latest_progress.status = status
+            latest_progress.notes = notes
+            latest_progress.save()
+        else:
+            # 新しいレコードを作成
+            ProjectProgress.objects.create(
+                project=self,
+                recorded_date=timezone.now().date(),
+                progress_rate=progress_rate,
+                status=status,
+                notes=notes,
+                recorded_by=None  # システム自動更新
+            )
+
     def get_work_progress_percentage(self):
         """工事進捗率を計算して返す（ProjectProgressから取得）"""
         # 最新の進捗レコードから取得
@@ -385,8 +447,8 @@ class Project(models.Model):
         if latest_progress:
             return int(latest_progress.progress_rate)
 
-        # 進捗レコードがない場合は日付ベースで計算
-        return self._get_date_based_progress()
+        # 進捗レコードがない場合はステップベースで計算
+        return int(self.calculate_progress_from_steps())
 
     def _get_date_based_progress(self):
         """日付ベースの進捗計算（フォールバック）"""
