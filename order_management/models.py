@@ -2008,6 +2008,42 @@ class Comment(models.Model):
         return User.objects.filter(username__in=usernames)
 
 
+class CommentAttachment(models.Model):
+    """コメント添付ファイル"""
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='attachments', verbose_name="コメント")
+    file = models.FileField(upload_to='comment_attachments/%Y/%m/%d/', verbose_name="ファイル")
+    file_name = models.CharField(max_length=255, verbose_name="ファイル名")
+    file_size = models.IntegerField(verbose_name="ファイルサイズ（バイト）")
+    file_type = models.CharField(max_length=100, verbose_name="ファイルタイプ")
+    uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name="アップロード日時")
+
+    class Meta:
+        verbose_name = "コメント添付ファイル"
+        verbose_name_plural = "コメント添付ファイル一覧"
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f"{self.comment.project.site_name} - {self.file_name}"
+
+    def get_file_size_display(self):
+        """ファイルサイズを読みやすい形式で表示"""
+        size = self.file_size
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
+
+    def is_image(self):
+        """画像ファイルかどうか"""
+        image_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
+        return self.file_type.lower() in image_types or any(ext in self.file_name.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'])
+
+    def is_pdf(self):
+        """PDFファイルかどうか"""
+        return 'pdf' in self.file_type.lower() or self.file_name.lower().endswith('.pdf')
+
+
 class Notification(models.Model):
     """通知モデル"""
     NOTIFICATION_TYPES = [

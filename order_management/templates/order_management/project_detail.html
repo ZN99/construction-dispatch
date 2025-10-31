@@ -4869,6 +4869,26 @@ function confirmFileDelete(fileId, fileName) {
                             <i class="fas fa-info-circle"></i> @ユーザー名 でメンションすると、そのユーザーに通知が送られます
                         </small>
                     </div>
+
+                    <!-- ファイルアップロードセクション -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-paperclip me-1"></i>ファイルを添付 (複数選択可)
+                        </label>
+                        <input
+                            type="file"
+                            class="form-control"
+                            id="comment-files"
+                            multiple
+                            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                        >
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> 画像、PDF、Office文書に対応（最大10MB/ファイル）
+                        </small>
+                        <!-- 選択したファイルのプレビュー -->
+                        <div id="file-preview" class="mt-2"></div>
+                    </div>
+
                     <div class="form-check mb-3">
                         <input
                             type="checkbox"
@@ -4933,6 +4953,114 @@ function confirmFileDelete(fileId, fileName) {
     font-size: 0.8em;
     margin-left: 10px;
 }
+
+/* 添付ファイル関連のスタイル */
+.comment-attachments {
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.attachment-item {
+    margin-bottom: 10px;
+}
+
+.attachment-link {
+    display: inline-block;
+    padding: 5px 10px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.attachment-link:hover {
+    background: #e9ecef;
+    border-color: #0d6efd;
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.attachment-name {
+    margin: 0 5px;
+}
+
+.attachment-size {
+    color: #6c757d;
+    font-size: 0.85em;
+}
+
+.attachment-preview {
+    max-width: 300px;
+    max-height: 200px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.attachment-preview:hover {
+    transform: scale(1.05);
+}
+
+/* 画像モーダル */
+.image-modal {
+    display: block;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.9);
+}
+
+.image-modal-content {
+    position: relative;
+    margin: auto;
+    padding: 20px;
+    max-width: 90%;
+    max-height: 90%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.image-modal-content img {
+    max-width: 100%;
+    max-height: 80vh;
+    display: block;
+    margin: auto;
+}
+
+.image-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 25px;
+    color: #f1f1f1;
+    font-size: 35px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.image-modal-close:hover,
+.image-modal-close:focus {
+    color: #bbb;
+}
+
+/* ファイルプレビュー */
+.file-item {
+    padding: 5px;
+    margin: 2px 0;
+    background: #f8f9fa;
+    border-radius: 3px;
+}
+
+.selected-files {
+    margin-bottom: 5px;
+    color: #0d6efd;
+}
 </style>
 
 <script>
@@ -4982,6 +5110,26 @@ function displayComments(comments) {
         const importantBadge = comment.is_important ?
             '<span class="comment-important-badge"><i class="fas fa-exclamation-triangle"></i> 重要</span>' : '';
 
+        // 添付ファイルのHTML生成
+        let attachmentsHtml = '';
+        if (comment.attachments && comment.attachments.length > 0) {
+            attachmentsHtml = '<div class="comment-attachments mt-2">';
+            comment.attachments.forEach(attachment => {
+                const icon = getFileIcon(attachment);
+                attachmentsHtml += `
+                    <div class="attachment-item">
+                        <a href="${attachment.file_url}" target="_blank" class="attachment-link">
+                            <i class="${icon}"></i>
+                            <span class="attachment-name">${escapeHtml(attachment.file_name)}</span>
+                            <span class="attachment-size">(${attachment.file_size})</span>
+                        </a>
+                        ${attachment.is_image ? `<div class="mt-2"><img src="${attachment.file_url}" class="attachment-preview" onclick="openImageModal('${attachment.file_url}', '${escapeHtml(attachment.file_name)}')"></div>` : ''}
+                    </div>
+                `;
+            });
+            attachmentsHtml += '</div>';
+        }
+
         html += `
             <div class="comment-item ${importantClass}">
                 <div class="comment-header">
@@ -4996,6 +5144,7 @@ function displayComments(comments) {
                 <div class="comment-content">
                     ${formatCommentContent(comment.content)}
                 </div>
+                ${attachmentsHtml}
             </div>
         `;
     });
@@ -5023,25 +5172,41 @@ function escapeHtml(text) {
 function postComment() {
     const content = document.getElementById('comment-content').value.trim();
     const isImportant = document.getElementById('comment-important').checked;
+    const filesInput = document.getElementById('comment-files');
+    const files = filesInput.files;
 
     if (!content) {
         alert('コメント内容を入力してください');
         return;
     }
 
+    // ファイルサイズチェック（10MB制限）
+    for (let file of files) {
+        if (file.size > 10 * 1024 * 1024) {
+            alert(`ファイル "${file.name}" が10MBを超えています`);
+            return;
+        }
+    }
+
     // CSRFトークンを取得
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    // FormDataを使ってファイルとテキストを送信
+    const formData = new FormData();
+    formData.append('content', content);
+    formData.append('is_important', isImportant);
+
+    // ファイルを追加
+    for (let file of files) {
+        formData.append('files', file);
+    }
 
     fetch(`/orders/api/projects/${projectId}/comments/post/`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRFToken': csrftoken
         },
-        body: JSON.stringify({
-            content: content,
-            is_important: isImportant
-        })
+        body: formData
     })
     .then(response => response.json())
     .then(data => {
@@ -5049,6 +5214,8 @@ function postComment() {
             // フォームをリセット
             document.getElementById('comment-content').value = '';
             document.getElementById('comment-important').checked = false;
+            filesInput.value = '';
+            document.getElementById('file-preview').innerHTML = '';
 
             // コメント一覧を再読み込み
             loadComments();
@@ -5080,6 +5247,64 @@ function showToast(message, type = 'info') {
         toast.remove();
     }, 3000);
 }
+
+// ファイルアイコンを取得
+function getFileIcon(attachment) {
+    if (attachment.is_image) {
+        return 'fas fa-file-image text-info';
+    } else if (attachment.is_pdf) {
+        return 'fas fa-file-pdf text-danger';
+    } else if (attachment.file_type.includes('word') || attachment.file_type.includes('document')) {
+        return 'fas fa-file-word text-primary';
+    } else if (attachment.file_type.includes('excel') || attachment.file_type.includes('spreadsheet')) {
+        return 'fas fa-file-excel text-success';
+    } else {
+        return 'fas fa-file text-secondary';
+    }
+}
+
+// 画像モーダルを開く
+function openImageModal(imageUrl, imageName) {
+    const modal = document.createElement('div');
+    modal.className = 'image-modal';
+    modal.innerHTML = `
+        <div class="image-modal-content">
+            <span class="image-modal-close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+            <img src="${imageUrl}" alt="${imageName}">
+            <p class="text-center mt-2">${imageName}</p>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // モーダル外クリックで閉じる
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+// ファイル選択時のプレビュー表示
+document.getElementById('comment-files').addEventListener('change', function(e) {
+    const files = e.target.files;
+    const preview = document.getElementById('file-preview');
+    preview.innerHTML = '';
+
+    if (files.length === 0) return;
+
+    preview.innerHTML = '<div class="selected-files"><strong>選択したファイル:</strong></div>';
+    for (let file of files) {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        const sizeKB = (file.size / 1024).toFixed(1);
+        fileItem.innerHTML = `
+            <i class="fas fa-file me-2"></i>
+            <span>${file.name}</span>
+            <span class="text-muted ms-2">(${sizeKB} KB)</span>
+        `;
+        preview.appendChild(fileItem);
+    }
+});
 
 // エンターキーでの送信（Shift+Enterで改行）
 document.getElementById('comment-content').addEventListener('keydown', function(e) {

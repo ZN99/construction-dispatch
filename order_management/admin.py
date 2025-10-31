@@ -1,8 +1,9 @@
 from django.contrib import admin
+from . import models
 from .models import (
     Project, CashFlowTransaction, ForecastScenario,
     ProjectProgress, Report, SeasonalityIndex, UserProfile,
-    Comment, Notification, ClientCompany, ContractorReview,
+    Comment, Notification, CommentAttachment, ClientCompany, ContractorReview,
     ApprovalLog, ChecklistTemplate, ProjectChecklist, ProjectFile
 )
 
@@ -432,14 +433,23 @@ class UserProfileAdmin(admin.ModelAdmin):
     get_roles_display.short_description = "ロール"
 
 
+class CommentAttachmentInline(admin.TabularInline):
+    """コメント添付ファイルのインライン表示"""
+    model = models.CommentAttachment
+    extra = 0
+    readonly_fields = ["file_name", "file_size", "file_type", "uploaded_at"]
+    fields = ["file", "file_name", "file_size", "uploaded_at"]
+
+
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     """コメント管理"""
-    list_display = ["project", "author", "get_content_preview", "is_important", "created_at"]
+    list_display = ["project", "author", "get_content_preview", "get_attachments_count", "is_important", "created_at"]
     list_filter = ["is_important", "created_at", "author"]
     search_fields = ["project__site_name", "project__management_no", "content", "author__username"]
     date_hierarchy = "created_at"
     readonly_fields = ["created_at", "updated_at"]
+    inlines = [CommentAttachmentInline]
 
     fieldsets = (
         ("基本情報", {
@@ -458,6 +468,22 @@ class CommentAdmin(admin.ModelAdmin):
         """コメント内容のプレビュー"""
         return obj.content[:50] + "..." if len(obj.content) > 50 else obj.content
     get_content_preview.short_description = "コメント"
+
+    def get_attachments_count(self, obj):
+        """添付ファイル数"""
+        count = obj.attachments.count()
+        return f"{count}件" if count > 0 else "-"
+    get_attachments_count.short_description = "添付"
+
+
+@admin.register(models.CommentAttachment)
+class CommentAttachmentAdmin(admin.ModelAdmin):
+    """コメント添付ファイル管理"""
+    list_display = ["comment", "file_name", "get_file_size_display", "file_type", "uploaded_at"]
+    list_filter = ["uploaded_at", "file_type"]
+    search_fields = ["comment__content", "file_name"]
+    date_hierarchy = "uploaded_at"
+    readonly_fields = ["file_size", "file_type", "uploaded_at"]
 
 
 @admin.register(Notification)
