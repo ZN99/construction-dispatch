@@ -93,8 +93,7 @@ def project_list(request):
     """案件一覧表示"""
     # パフォーマンス最適化：関連データを事前取得
     projects = Project.objects.select_related().prefetch_related(
-        'progress_steps',
-        'progress_steps__template'
+        'progress_records'
     )
 
     # フィルタリング
@@ -807,8 +806,7 @@ def project_api_list(request):
     if request.method == 'GET':
         # パフォーマンス最適化：関連データを事前取得し、必要な列のみ選択
         projects = Project.objects.select_related().prefetch_related(
-            'progress_steps',
-            'progress_steps__template'
+            'progress_records'
         ).only(
             'id', 'management_no', 'site_name', 'site_address', 'work_type',
             'project_status', 'client_name', 'project_manager',

@@ -61,11 +61,7 @@ urlpatterns = (
             api_views.project_workflow_status,
             name="api_project_workflow",
         ),
-        path(
-            "api/projects/<int:project_id>/add-survey-step/",
-            api_views.add_survey_step,
-            name="api_add_survey_step",
-        ),
+        # Removed: add-survey-step endpoint (ProjectProgressStep system removed)
     ]
     + survey_urlpatterns
     + survey_record_urlpatterns

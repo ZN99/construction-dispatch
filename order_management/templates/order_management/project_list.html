@@ -723,11 +723,13 @@ $(document).ready(function() {
         ],
         scrollX: false, // レスポンシブモードと競合するため無効化
         paging: false, // ページネーションはサーバーサイドで処理
-        info: false
+        info: false,
+        searching: false, // サーバーサイドの検索フォームを使用するため無効化
+        dom: 'rt' // 検索ボックスとページネーションコントロールを非表示（テーブルのみ表示）
     });
 
-    // 保存されたモードの復元（デフォルトをサマリーのリストモードに）
-    var savedMode = localStorage.getItem('projectViewMode') || 'summary';
+    // 保存されたモードの復元（デフォルトを詳細モードに変更して検索フォームを表示）
+    var savedMode = localStorage.getItem('projectViewMode') || 'detail';
     switchMode(savedMode);
 
     // サマリーモードの場合、リストビューをデフォルトに
