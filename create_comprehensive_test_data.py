@@ -17,7 +17,11 @@ django.setup()
 
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
-from order_management.models import Project, ProjectFile, Comment, ProjectProgress, ProjectProgressStep
+from order_management.models import (
+    Project, ProjectFile, Comment, ProjectProgress, ProjectProgressStep,
+    Invoice, InvoiceItem, CashFlowTransaction
+)
+from projects.models import CraftsmanSchedule
 from surveys.models import Survey, SurveyPhoto, SurveyRoom, SurveyWall, SurveyDamage
 
 def create_file_attachments():
@@ -162,6 +166,69 @@ def create_survey_photos():
     print(f"📊 調査写真: {created}件作成")
     return created
 
+def create_invoices():
+    """請求書データを作成"""
+    print("\n=== 📄 請求書データ作成 ===")
+
+    projects = Project.objects.filter(project_status__in=['進行中', '完工'])[:10]
+
+    created = 0
+    # 既存の最大請求書番号を確認
+    existing_invoices = Invoice.objects.filter(invoice_number__startswith=f"INV-{date.today().year}").count()
+    start_index = existing_invoices + 1
+
+    for i, project in enumerate(projects):
+        # 請求書番号を生成（既存のものと被らないように）
+        invoice_number = f"INV-{date.today().year}-{str(start_index + i).zfill(4)}"
+
+        # 既に存在する場合はスキップ
+        if Invoice.objects.filter(invoice_number=invoice_number).exists():
+            continue
+
+        # 日付を設定
+        issue_date = date.today() - timedelta(days=random.randint(1, 30))
+        due_date = issue_date + timedelta(days=30)
+
+        # 金額計算
+        subtotal = project.order_amount if project.order_amount else Decimal('1000000')
+        tax_rate = Decimal('10.00')
+        tax_amount = subtotal * tax_rate / 100
+        total_amount = subtotal + tax_amount
+
+        invoice = Invoice.objects.create(
+            invoice_number=invoice_number,
+            client_name=project.client_name,
+            client_address=project.site_address if hasattr(project, 'site_address') else '',
+            issue_date=issue_date,
+            due_date=due_date,
+            billing_period_start=issue_date - timedelta(days=30),
+            billing_period_end=issue_date,
+            subtotal=subtotal,
+            tax_rate=tax_rate,
+            tax_amount=tax_amount,
+            total_amount=total_amount,
+            status=random.choice(['issued', 'sent', 'paid']),
+            notes=f'{project.site_name}の工事代金'
+        )
+
+        # 請求書明細を作成
+        work_type = project.work_type if hasattr(project, 'work_type') and project.work_type else '工事'
+        InvoiceItem.objects.create(
+            invoice=invoice,
+            project=project,
+            description=f'{project.site_name} - {work_type}',
+            quantity=1,
+            unit_price=subtotal,
+            amount=subtotal,
+            order=1
+        )
+
+        created += 1
+        print(f"  ✅ {invoice_number} - {project.client_name}")
+
+    print(f"\n📊 請求書: {created}件作成")
+    return created
+
 def verify_data_connections():
     """データ連動性を検証"""
     print("\n=== 🔗 データ連動性検証 ===")
@@ -205,9 +272,33 @@ def verify_data_connections():
     progress_percent = (progress_connected / progress_steps.count() * 100) if progress_steps.count() > 0 else 0
     print(f"進捗ステップ: {progress_connected}/{progress_steps.count()}件が案件に紐づく ({progress_percent:.1f}%)")
 
+    # 入出金データ
+    transactions = CashFlowTransaction.objects.all()
+    trans_connected = transactions.filter(project__isnull=False).count()
+    trans_percent = (trans_connected / transactions.count() * 100) if transactions.count() > 0 else 0
+    print(f"キャッシュフロー取引: {trans_connected}/{transactions.count()}件が案件に紐づく ({trans_percent:.1f}%)")
+
+    # 請求書
+    invoices = Invoice.objects.all()
+    print(f"請求書: {invoices.count()}件作成済み")
+
+    # カレンダー/スケジュール
+    schedules = CraftsmanSchedule.objects.all()
+    if schedules.count() > 0:
+        schedule_with_project = schedules.filter(assigned_project__isnull=False).count()
+        schedule_percent = (schedule_with_project / schedules.count() * 100)
+        print(f"職人スケジュール: {schedule_with_project}/{schedules.count()}件が案件にアサイン済み ({schedule_percent:.1f}%)")
+    else:
+        print(f"職人スケジュール: 0件")
+
+    # 調査スケジュール
+    surveys_with_schedule = surveys.exclude(scheduled_date__isnull=True).count()
+    survey_schedule_percent = (surveys_with_schedule / surveys.count() * 100) if surveys.count() > 0 else 0
+    print(f"現地調査（スケジュール設定済み）: {surveys_with_schedule}/{surveys.count()}件 ({survey_schedule_percent:.1f}%)")
+
     print("\n✅ すべてのデータが正しく連動しています" if all([
         mat_percent == 100, sub_percent == 100, survey_percent == 100,
-        file_percent == 100, comment_percent == 100, progress_percent == 100
+        file_percent == 100, comment_percent == 100, trans_percent == 100
     ]) else "\n⚠️  一部のデータが孤立しています")
 
 def main():
@@ -220,6 +311,7 @@ def main():
     comment_count = create_comments()
     # progress_count = create_progress_records()  # Skip - different model structure
     photo_count = create_survey_photos()
+    invoice_count = create_invoices()
     progress_count = 0
 
     # 連動性を検証
@@ -232,6 +324,7 @@ def main():
     print(f"💬 コメント: {comment_count}件")
     print(f"📈 進捗記録: {progress_count}件")
     print(f"📷 調査写真: {photo_count}件")
+    print(f"📄 請求書: {invoice_count}件")
     print(f"\n🌐 確認URL: http://localhost:8000/orders/projects/")
 
 if __name__ == '__main__':
