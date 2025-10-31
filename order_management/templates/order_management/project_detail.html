@@ -4038,33 +4038,8 @@ $(document).ready(function() {
         const $btn = $(this);
 
         if (stepData) {
-            // 現地調査ステップで survey_required=false の場合はAPIを呼ぶ
-            if (stepData.key === 'survey' && stepData.apiEndpoint && !{% if project.survey_required %}true{% else %}false{% endif %}) {
-                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> 追加中...');
-
-                fetch(stepData.apiEndpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // 成功時：ページをリロードして新しいステップを表示
-                        location.reload();
-                    } else {
-                        alert('ステップの追加に失敗しました: ' + data.error);
-                        $btn.prop('disabled', false).html('<i class="fas fa-plus"></i> 追加');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('エラーが発生しました');
-                    $btn.prop('disabled', false).html('<i class="fas fa-plus"></i> 追加');
-                });
-            } else {
+            // 全てのステップを同じように扱う（APIエンドポイント削除により統一）
+            {
                 // 通常のステップの場合（基本ステップも含む）
                 if (stepData.type === 'basic') {
                     // 基本ステップの場合は対応するHTML生成関数を呼ぶ
