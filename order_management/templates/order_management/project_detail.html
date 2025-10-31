@@ -2417,8 +2417,49 @@ $(document).ready(function() {
             $('#stepInventory').show();
             loadAvailableSteps();
         } else {
-            // 編集モードOFF
-            console.log('編集モードOFFに切り替え');
+            // 編集モードOFF - 変更を保存
+            console.log('編集モードOFFに切り替え - 変更を保存中...');
+
+            // ステップ順序を保存
+            saveStepOrder();
+
+            // チェックボックスの状態を収集
+            const stepStates = [];
+            $('.progress-step').each(function() {
+                const stepKey = $(this).data('step');
+                const isCompleted = $(this).find('input[type="checkbox"]').is(':checked');
+                stepStates.push({
+                    step: stepKey,
+                    completed: isCompleted
+                });
+            });
+
+            // サーバーに保存（AJAX）
+            $.ajax({
+                url: '{% url "order_management:project_update" project.pk %}',
+                method: 'POST',
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    step_order: $('#stepOrderInput').val(),
+                    step_states: JSON.stringify(stepStates),
+                    ajax_save: 'true'  // AJAX保存フラグ
+                },
+                success: function(response) {
+                    console.log('✅ ステップ変更を保存しました');
+                    // 成功メッセージを表示
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success('変更を保存しました');
+                    } else {
+                        alert('変更を保存しました');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('❌ 保存エラー:', error);
+                    alert('保存中にエラーが発生しました。ページをリロードしてもう一度お試しください。');
+                }
+            });
+
+            // UIを編集モードOFFに
             btn.html('<i class="fas fa-edit"></i> ステップ編集');
             btn.removeClass('btn-success').addClass('btn-outline-primary');
             $('.remove-step-btn').hide();
