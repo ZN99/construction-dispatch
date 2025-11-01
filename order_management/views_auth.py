@@ -41,38 +41,38 @@ class HeadquartersLoginView(View):
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
-            # 現場調査員プロファイルがある場合は現場システムにリダイレクト
-            try:
-                surveyor = Surveyor.objects.get(user=user, is_active=True)
-                messages.info(request, 'こちらは現場調査員専用システムです。')
-                return redirect('surveys:field_login')
-            except Surveyor.DoesNotExist:
-                # 本部スタッフの認証
-                if user.is_staff and user.is_active:
-                    login(request, user)
+            # 本部スタッフまたはsuperuserの場合は本部システムへ（Surveyorプロファイルがあっても優先）
+            if (user.is_staff or user.is_superuser) and user.is_active:
+                login(request, user)
 
-                    # セッションに本部スタッフ情報を保存
-                    request.session['is_headquarters_staff'] = True
-                    request.session['staff_name'] = f"{user.first_name} {user.last_name}".strip() or user.username
+                # セッションに本部スタッフ情報を保存
+                request.session['is_headquarters_staff'] = True
+                request.session['staff_name'] = f"{user.first_name} {user.last_name}".strip() or user.username
 
-                    messages.success(request, f'{request.session["staff_name"]}さん、ログインしました。')
+                messages.success(request, f'{request.session["staff_name"]}さん、ログインしました。')
 
-                    # リダイレクト先の決定
-                    next_url = request.GET.get('next') or request.POST.get('next')
-                    if next_url and next_url.startswith('/'):
-                        redirect_url = next_url
-                    else:
-                        redirect_url = reverse('order_management:dashboard')
-
-                    # AJAX リクエストの場合
-                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return JsonResponse({
-                            'success': True,
-                            'redirect_url': redirect_url
-                        })
-
-                    return redirect(redirect_url)
+                # リダイレクト先の決定
+                next_url = request.GET.get('next') or request.POST.get('next')
+                if next_url and next_url.startswith('/'):
+                    redirect_url = next_url
                 else:
+                    redirect_url = reverse('order_management:dashboard')
+
+                # AJAX リクエストの場合
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'redirect_url': redirect_url
+                    })
+
+                return redirect(redirect_url)
+            else:
+                # スタッフ権限がない場合は現場調査員かチェック
+                try:
+                    surveyor = Surveyor.objects.get(user=user, is_active=True)
+                    messages.info(request, 'こちらは現場調査員専用システムです。')
+                    return redirect('surveys:field_login')
+                except Surveyor.DoesNotExist:
                     messages.error(request, 'このアカウントは本部システムへのアクセス権限がありません。')
         else:
             messages.error(request, 'ユーザー名またはパスワードが正しくありません。')
