@@ -5,9 +5,12 @@ from django.contrib import messages
 from django.urls import reverse
 from django.http import JsonResponse
 from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from .models import Surveyor, Survey, SurveyWorkflowStep, SurveyStepProgress
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class FieldSurveyorLoginView(View):
     """現場調査員専用ログイン画面"""
     template_name = 'surveys/field/login.html'
