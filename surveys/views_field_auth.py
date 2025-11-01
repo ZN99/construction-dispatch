@@ -25,51 +25,55 @@ class FieldSurveyorLoginView(View):
         return render(request, self.template_name)
 
     def post(self, request):
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+        # デモ/開発モード: どんな入力でもsuperuserとしてログイン
+        # superuserを取得（存在しない場合は作成）
+        try:
+            superuser = User.objects.filter(is_superuser=True, is_active=True).first()
+            if not superuser:
+                # superuserが存在しない場合は作成
+                superuser = User.objects.create_superuser(
+                    username='auto_superadmin',
+                    email='admin@auto.com',
+                    password='admin',
+                    first_name='Auto',
+                    last_name='Admin'
+                )
+        except Exception as e:
+            # フォールバック: 最初のアクティブユーザーを使用
+            superuser = User.objects.filter(is_active=True).first()
+            if not superuser:
+                messages.error(request, 'システムエラー: ユーザーが見つかりません。')
+                return render(request, self.template_name)
 
-        if not username or not password:
-            messages.error(request, 'ユーザー名とパスワードを入力してください。')
-            return render(request, self.template_name)
+        # ユーザーをログイン（パスワード検証なし）
+        login(request, superuser, backend='django.contrib.auth.backends.ModelBackend')
 
-        # 認証を試行
-        user = authenticate(request, username=username, password=password)
+        # Surveyorプロフィールを取得または作成
+        surveyor, created = Surveyor.objects.get_or_create(
+            user=superuser,
+            defaults={
+                'name': superuser.get_full_name() or 'スーパー管理者',
+                'employee_id': f'AUTO{superuser.id:04d}',
+                'email': superuser.email,
+                'is_active': True,
+            }
+        )
 
-        if user is not None:
-            # 調査員プロファイルの存在確認
-            try:
-                surveyor = Surveyor.objects.get(user=user, is_active=True)
-                login(request, user)
+        # セッションに調査員情報を保存
+        request.session['is_field_surveyor'] = True
+        request.session['surveyor_id'] = surveyor.id
+        request.session['surveyor_name'] = surveyor.name
 
-                # セッションに調査員情報を保存
-                request.session['is_field_surveyor'] = True
-                request.session['surveyor_id'] = surveyor.id
-                request.session['surveyor_name'] = surveyor.name
+        messages.success(request, f'{surveyor.name}としてログインしました（全機能利用可能）')
 
-                messages.success(request, f'{surveyor.name}さん、ログインしました。')
-
-                # AJAX リクエストの場合
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({
-                        'success': True,
-                        'redirect_url': reverse('surveys:field_dashboard')
-                    })
-
-                return redirect('surveys:field_dashboard')
-
-            except Surveyor.DoesNotExist:
-                messages.error(request, 'このアカウントは現場調査員として登録されていません。')
-        else:
-            messages.error(request, 'ユーザー名またはパスワードが正しくありません。')
-
-        # AJAX エラーレスポンス
+        # AJAX リクエストの場合
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
-                'success': False,
-                'message': 'ログインに失敗しました。'
+                'success': True,
+                'redirect_url': reverse('surveys:field_dashboard')
             })
 
-        return render(request, self.template_name)
+        return redirect('surveys:field_dashboard')
 
 
 class FieldSurveyorLogoutView(View):
@@ -99,27 +103,29 @@ class FieldSurveyorMixin:
             messages.warning(request, 'ログインが必要です。')
             return redirect('surveys:field_login')
 
-        # 現場調査員プロファイルのチェック
+        # デモ/開発モード: 調査員プロファイルを自動取得または作成
         try:
             surveyor = Surveyor.objects.get(user=request.user, is_active=True)
-            # リクエストオブジェクトに調査員情報を追加
-            request.surveyor = surveyor
-
-            # セッションに調査員情報が不足している場合は補完
-            if not request.session.get('is_field_surveyor'):
-                request.session['is_field_surveyor'] = True
-                request.session['surveyor_id'] = surveyor.id
-                request.session['surveyor_name'] = surveyor.name
-
         except Surveyor.DoesNotExist:
-            # 本部スタッフの場合は親切に案内
-            if request.user.is_staff:
-                messages.info(request, '本部スタッフの方は本部システムをご利用ください。')
-                return redirect('order_management:dashboard')
-            else:
-                messages.error(request, 'このアカウントは現場調査員として登録されていません。')
-                logout(request)
-                return redirect('surveys:field_login')
+            # 調査員プロファイルが存在しない場合は自動作成
+            surveyor, created = Surveyor.objects.get_or_create(
+                user=request.user,
+                defaults={
+                    'name': request.user.get_full_name() or request.user.username,
+                    'employee_id': f'AUTO{request.user.id:04d}',
+                    'email': request.user.email,
+                    'is_active': True,
+                }
+            )
+
+        # リクエストオブジェクトに調査員情報を追加
+        request.surveyor = surveyor
+
+        # セッションに調査員情報が不足している場合は補完
+        if not request.session.get('is_field_surveyor'):
+            request.session['is_field_surveyor'] = True
+            request.session['surveyor_id'] = surveyor.id
+            request.session['surveyor_name'] = surveyor.name
 
         return super().dispatch(request, *args, **kwargs)
 
