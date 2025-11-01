@@ -21,6 +21,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'construction_dispatch.settings'
 django.setup()
 
 from django.contrib.auth.models import User
+from surveys.models import Surveyor
 
 def create_production_users():
     """本番環境用のユーザーを作成"""
@@ -86,7 +87,24 @@ def create_production_users():
 
         print(f"   ID: {username}")
         print(f"   パスワード: {user_data['password']}")
-        print(f"   役割: {user_data['role']}\n")
+        print(f"   役割: {user_data['role']}")
+
+        # 調査員用ユーザーの場合はSurveyorプロフィールを作成
+        if user_data['role'].startswith('【調査員】'):
+            surveyor, created = Surveyor.objects.get_or_create(
+                user=user,
+                defaults={
+                    'name': user.get_full_name() or username,
+                    'employee_id': f'EMP{user.id:04d}',
+                    'email': user.email,
+                    'is_active': True,
+                }
+            )
+            if created:
+                print(f"   ✅ 調査員プロフィール作成完了")
+            else:
+                print(f"   ✅ 調査員プロフィール既存")
+        print()
 
     print("=" * 70)
     print("✅ 全ユーザー作成/更新完了")
