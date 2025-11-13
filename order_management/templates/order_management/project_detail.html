@@ -1702,7 +1702,7 @@ function toggleEditMode() {
 
                 // チェックボックスとラジオボタンの場合
                 if (fieldElement.is(':checkbox')) {
-                    fieldValue = fieldElement.is(':checked') ? 'true' : 'false';
+                    fieldValue = fieldElement.is(':checked') ? 'on' : '';
                 } else if (fieldElement.is(':radio')) {
                     // ラジオボタンは選択されている場合のみ処理
                     if (!fieldElement.is(':checked')) return;
@@ -1711,16 +1711,26 @@ function toggleEditMode() {
                     fieldValue = fieldElement.val();
                 }
 
-                // 値が存在する場合のみ追加
-                if (fieldValue !== undefined && fieldValue !== '') {
-                    // dynamic_field_ プレフィックスを追加（まだない場合）
-                    const finalFieldName = fieldName.startsWith('dynamic_field_') ? fieldName : `dynamic_field_${fieldName}`;
-                    dynamicFields[finalFieldName] = fieldValue;
+                // 基本フィールドのリスト
+                const isBasicField = ['estimate_issued_date', 'estimate_not_required', 'contract_date',
+                                     'work_start_date', 'work_start_completed', 'work_end_date',
+                                     'work_end_completed', 'invoice_issued'].includes(fieldName);
+
+                // すべてのフィールドを空でもPOST（削除・クリア操作を可能にするため）
+                const finalFieldName = isBasicField ? fieldName :
+                                      (fieldName.startsWith('dynamic_field_') ? fieldName : `dynamic_field_${fieldName}`);
+                dynamicFields[finalFieldName] = fieldValue;
+
+                // デバッグ: estimate関連フィールドをログ出力
+                if (fieldName.includes('estimate')) {
+                    console.log(`DEBUG: ${fieldName} = "${fieldValue}" (type: ${typeof fieldValue}, is checkbox: ${fieldElement.is(':checkbox')}, checked: ${fieldElement.is(':checked')})`);
                 }
             });
         });
 
         console.log('Saving dynamic fields:', dynamicFields);
+        console.log('DEBUG: estimate_not_required in POST?', 'estimate_not_required' in dynamicFields);
+        console.log('DEBUG: estimate_not_required value:', dynamicFields.estimate_not_required);
 
         // サーバーに保存（AJAX）
         $.ajax({

@@ -822,6 +822,49 @@ def project_update(request, pk):
             if request.POST.get('ajax_save'):
                 import json
 
+                # デバッグ: POSTデータの確認
+                print(f"\n{'='*80}")
+                print(f"DEBUG project_update for project {pk}")
+                print(f"POST data keys: {list(request.POST.keys())}")
+                print(f"estimate_not_required in POST? {'estimate_not_required' in request.POST}")
+                print(f"estimate_not_required raw value: {repr(request.POST.get('estimate_not_required'))}")
+                print(f"estimate_issued_date raw value: {repr(request.POST.get('estimate_issued_date'))}")
+                print(f"{'='*80}\n")
+
+                # 基本フィールドの処理
+                estimate_not_required = request.POST.get('estimate_not_required')
+                estimate_issued_date = request.POST.get('estimate_issued_date')
+                contract_date = request.POST.get('contract_date')
+                work_start_date = request.POST.get('work_start_date')
+                work_start_completed = request.POST.get('work_start_completed')
+                work_end_date = request.POST.get('work_end_date')
+                work_end_completed = request.POST.get('work_end_completed')
+                invoice_issued = request.POST.get('invoice_issued')
+
+                # チェックボックスの処理
+                if estimate_not_required is not None:
+                    project.estimate_not_required = estimate_not_required == 'on'
+                    print(f"After assignment: project.estimate_not_required = {project.estimate_not_required}")
+
+                if work_start_completed is not None:
+                    project.work_start_completed = work_start_completed == 'on'
+
+                if work_end_completed is not None:
+                    project.work_end_completed = work_end_completed == 'on'
+
+                # 日付フィールドの処理
+                if estimate_issued_date is not None:
+                    project.estimate_issued_date = estimate_issued_date if estimate_issued_date else None
+
+                if contract_date is not None:
+                    project.contract_date = contract_date if contract_date else None
+
+                if work_start_date is not None:
+                    project.work_start_date = work_start_date if work_start_date else None
+
+                if work_end_date is not None:
+                    project.work_end_date = work_end_date if work_end_date else None
+
                 # ステップ順序の保存
                 step_order_json = request.POST.get('step_order')
                 if step_order_json:
@@ -854,6 +897,13 @@ def project_update(request, pk):
                         pass
 
                 project.save()
+
+                # デバッグ: 保存後の確認
+                project.refresh_from_db()
+                print(f"After save and refresh:")
+                print(f"  project.estimate_not_required = {project.estimate_not_required}")
+                print(f"  project.estimate_issued_date = {project.estimate_issued_date}\n")
+
                 return JsonResponse({
                     'success': True,
                     'message': '変更を保存しました'
